@@ -42,7 +42,7 @@ public struct XstreamUserInfo: Decodable, Sendable {
 }
 
 /// A live-stream category from Xtream Codes.
-public struct XstreamCategory: Decodable, Sendable, Identifiable {
+public struct XstreamCategory: Decodable, Sendable, Identifiable, Hashable, Equatable {
     public let id: String
     public let name: String
 

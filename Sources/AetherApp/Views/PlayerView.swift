@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import AVKit
 import AetherCore
 
@@ -298,7 +299,7 @@ struct PlayerControls: View {
 
 // MARK: - FavoriteButton
 
-private struct FavoriteButton: View {
+fileprivate struct FavoriteButton: View {
     let channel: Channel?
     @Query private var favorites: [FavoriteRecord]
     @Environment(\.modelContext) private var modelContext
