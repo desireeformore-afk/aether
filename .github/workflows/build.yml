@@ -5,7 +5,6 @@ on:
     branches: ["*"]
     paths-ignore:
       - "**.md"
-      - ".github/**"
   workflow_dispatch:  # manual trigger — Hermes może odpalić przez GitHub API
 
 jobs:
