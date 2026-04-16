@@ -8,16 +8,6 @@ struct AetherApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: [])
-    }
-}
-
-struct ContentView: View {
-    var body: some View {
-        Text("Aether")
-            .font(.aetherTitle)
-            .foregroundStyle(Color.aetherPrimary)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.aetherBackground)
+        .modelContainer(for: [PlaylistRecord.self, ChannelRecord.self])
     }
 }

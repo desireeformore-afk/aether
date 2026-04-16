@@ -7,4 +7,5 @@ public extension Color {
     static let aetherPrimary = Color(nsColor: .labelColor)
     static let aetherSecondary = Color(nsColor: .secondaryLabelColor)
     static let aetherDestructive = Color(nsColor: .systemRed)
+    static let aetherText = Color(nsColor: .labelColor)
 }
