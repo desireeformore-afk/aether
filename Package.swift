@@ -19,6 +19,10 @@ let package = Package(
             name: "AetherApp",
             dependencies: ["AetherCore"],
             path: "Sources/AetherApp",
+            resources: [
+                .process("Resources/Assets.xcassets"),
+                .copy("Resources/Info.plist"),
+            ],
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"])
             ]

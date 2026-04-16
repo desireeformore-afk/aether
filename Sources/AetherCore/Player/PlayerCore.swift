@@ -23,6 +23,12 @@ public final class PlayerCore: ObservableObject {
     @Published public private(set) var isMuted: Bool = false
     @Published public private(set) var volume: Float = 1.0
     @Published public private(set) var isPiPActive: Bool = false
+    @Published public var selectedQuality: StreamQuality = StreamQuality.auto {
+        didSet { StreamQualityService().apply(selectedQuality, to: player) }
+    }
+
+    /// Available quality presets.
+    public let qualityPresets: [StreamQuality] = StreamQualityPreset.allCases.map { $0.quality }
 
     // MARK: - Channel navigation support
 
@@ -46,6 +52,7 @@ public final class PlayerCore: ObservableObject {
         state = .loading
 
         let item = AVPlayerItem(url: channel.streamURL)
+        item.preferredPeakBitRate = selectedQuality.peakBitRate
         player.replaceCurrentItem(with: item)
         player.play()
         observePlayerItem(item)

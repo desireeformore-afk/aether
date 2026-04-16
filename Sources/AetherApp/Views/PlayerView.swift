@@ -266,6 +266,34 @@ struct PlayerControls: View {
 
             Divider().frame(height: 24)
 
+            // Stream quality picker
+            Menu {
+                ForEach(player.qualityPresets) { preset in
+                    Button(action: { player.selectedQuality = preset }) {
+                        HStack {
+                            Text(preset.label)
+                            if player.selectedQuality == preset {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "dial.medium")
+                        .font(.title3)
+                    Text(player.selectedQuality.label)
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundStyle(Color.aetherText)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .disabled(player.currentChannel == nil)
+            .help("Stream Quality")
+
+            Divider().frame(height: 24)
+
             // Mute
             Button(action: { player.toggleMute() }) {
                 Image(systemName: player.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")

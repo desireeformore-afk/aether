@@ -15,6 +15,8 @@ public final class PlaylistRecord {
     /// M3U URL string (used when `playlistType == .m3u`).
     public var urlString: String
     public var lastRefreshed: Date?
+    /// Display order in the sidebar.
+    public var sortIndex: Int
     /// Raw value of `PlaylistType`.
     public var playlistTypeRaw: String
     // Xtream Codes credentials (used when `playlistType == .xtream`)
@@ -32,6 +34,7 @@ public final class PlaylistRecord {
         name: String,
         urlString: String = "",
         lastRefreshed: Date? = nil,
+        sortIndex: Int = 0,
         playlistType: PlaylistType = .m3u,
         xstreamHost: String? = nil,
         xstreamUsername: String? = nil,
@@ -43,6 +46,7 @@ public final class PlaylistRecord {
         self.name = name
         self.urlString = urlString
         self.lastRefreshed = lastRefreshed
+        self.sortIndex = sortIndex
         self.playlistTypeRaw = playlistType.rawValue
         self.xstreamHost = xstreamHost
         self.xstreamUsername = xstreamUsername

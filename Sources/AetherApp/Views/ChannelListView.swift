@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import AetherCore
 
-/// Middle column: channels grouped by `groupTitle`, with search + Favorites tab.
+/// Middle column: channels grouped by `groupTitle`, with search, genre filter chips, and Favorites tab.
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var epgStore: EPGStore
@@ -12,9 +12,10 @@ struct ChannelListView: View {
     @ObservedObject var player: PlayerCore
 
     @State private var searchText = ""
+    @State private var selectedGroup: String? = nil
     @State private var isRefreshing = false
     @State private var errorMessage: String?
-    @State private var nowPlaying: [String: EPGEntry] = [:]  // channelID → current entry
+    @State private var nowPlaying: [String: EPGEntry] = [:]
     @State private var activeTab: ListTab = .all
 
     // MARK: - Body
@@ -64,22 +65,44 @@ struct ChannelListView: View {
     // MARK: - All Channels List
 
     private var allChannelsList: some View {
-        List(selection: $selectedChannel) {
-            if let error = errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
+        VStack(spacing: 0) {
+            // Genre filter chips
+            if allGroups.count > 1 {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        FilterChip(label: "All", isSelected: selectedGroup == nil) {
+                            selectedGroup = nil
+                        }
+                        ForEach(allGroups, id: \.self) { group in
+                            FilterChip(label: group, isSelected: selectedGroup == group) {
+                                selectedGroup = (selectedGroup == group) ? nil : group
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                }
+                .background(Color.aetherSurface)
+                Divider()
             }
-            ForEach(groupedChannels, id: \.group) { section in
-                Section(section.group) {
-                    ForEach(section.channels) { record in
-                        if let channel = record.toChannel() {
-                            ChannelRow(
-                                channel: channel,
-                                isPlaying: player.currentChannel == channel,
-                                epgEntry: nowPlaying[record.epgId ?? record.name]
-                            )
-                            .tag(channel)
-                            .onTapGesture { selectAndPlay(channel) }
+
+            List(selection: $selectedChannel) {
+                if let error = errorMessage {
+                    Label(error, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
+                }
+                ForEach(groupedChannels, id: \.group) { section in
+                    Section(section.group) {
+                        ForEach(section.channels) { record in
+                            if let channel = record.toChannel() {
+                                ChannelRow(
+                                    channel: channel,
+                                    isPlaying: player.currentChannel == channel,
+                                    epgEntry: nowPlaying[record.epgId ?? record.name]
+                                )
+                                .tag(channel)
+                                .onTapGesture { selectAndPlay(channel) }
+                            }
                         }
                     }
                 }
@@ -87,17 +110,30 @@ struct ChannelListView: View {
         }
     }
 
+    // MARK: - Groups
+
+    private var allGroups: [String] {
+        let groups = Set(playlist.channels.map { $0.groupTitle })
+        return groups.sorted()
+    }
+
     // MARK: - Grouped channels
 
     private var groupedChannels: [(group: String, channels: [ChannelRecord])] {
-        let filtered: [ChannelRecord]
-        if searchText.isEmpty {
-            filtered = playlist.channels
-        } else {
-            filtered = playlist.channels.filter {
+        var filtered = playlist.channels
+
+        // Group filter
+        if let group = selectedGroup {
+            filtered = filtered.filter { $0.groupTitle == group }
+        }
+
+        // Search filter
+        if !searchText.isEmpty {
+            filtered = filtered.filter {
                 $0.name.localizedCaseInsensitiveContains(searchText)
             }
         }
+
         let sorted = filtered.sorted { $0.sortIndex < $1.sortIndex }
         let grouped = Dictionary(grouping: sorted) { $0.groupTitle }
         return grouped
@@ -109,7 +145,6 @@ struct ChannelListView: View {
 
     private func selectAndPlay(_ channel: Channel) {
         selectedChannel = channel
-        // Keep channelList in sync for prev/next navigation
         let flat = groupedChannels.flatMap(\.channels).compactMap { $0.toChannel() }
         player.channelList = flat
         player.play(channel)
@@ -158,6 +193,38 @@ struct ChannelListView: View {
             }
         }
         nowPlaying = entries
+    }
+}
+
+// MARK: - FilterChip
+
+private struct FilterChip: View {
+    let label: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(isSelected ? .white : Color.aetherText)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(
+                    isSelected
+                        ? Color.aetherPrimary
+                        : Color.aetherSurface,
+                    in: Capsule()
+                )
+                .overlay(
+                    Capsule()
+                        .strokeBorder(
+                            isSelected ? Color.clear : Color.aetherText.opacity(0.2),
+                            lineWidth: 1
+                        )
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 
