@@ -1,0 +1,21 @@
+name: Build & Test
+
+on:
+  push:
+    branches: ["*"]
+    paths-ignore:
+      - "**.md"
+      - ".github/**"
+  workflow_dispatch:  # manual trigger — Hermes może odpalić przez GitHub API
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: swift build 2>&1
+
+      - name: Test
+        run: swift test 2>&1
