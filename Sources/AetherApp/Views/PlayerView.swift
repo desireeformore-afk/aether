@@ -6,10 +6,13 @@ import AetherCore
 /// Detail pane: AVPlayer video + transport controls + EPG info bar.
 struct PlayerView: View {
     @EnvironmentObject private var epgStore: EPGStore
+    @EnvironmentObject private var sleepTimer: SleepTimerService
+    @EnvironmentObject private var subtitleStore: SubtitleStore
     @ObservedObject var player: PlayerCore
 
     @State private var nowPlaying: EPGEntry?
     @State private var nextUp: EPGEntry?
+    @State private var showStats = false
 
     var body: some View {
         ZStack {
@@ -17,14 +20,27 @@ struct PlayerView: View {
 
             VStack(spacing: 0) {
                 // Video layer
-                VideoPlayerLayer(avPlayer: player.player)
-                    .aspectRatio(16 / 9, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding([.horizontal, .top])
-                    .overlay(alignment: .bottomLeading) {
-                        stateOverlay
-                            .padding([.horizontal, .bottom], 20)
+                ZStack(alignment: .bottom) {
+                    VideoPlayerLayer(avPlayer: player.player)
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .overlay(alignment: .bottomLeading) {
+                            stateOverlay
+                                .padding([.horizontal, .bottom], 20)
+                        }
+
+                    // Subtitle overlay — non-interactive
+                    SubtitleOverlayView(store: subtitleStore)
+
+                    // Stream stats HUD — top-trailing corner
+                    if showStats {
+                        StreamStatsView(player: player.player)
+                            .padding(10)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                            .allowsHitTesting(false)
                     }
+                }
+                .padding([.horizontal, .top])
 
                 // EPG info bar
                 if let entry = nowPlaying {
@@ -36,13 +52,22 @@ struct PlayerView: View {
                 Spacer(minLength: 8)
 
                 // Controls
-                PlayerControls(player: player)
+                PlayerControls(player: player, showStats: $showStats)
                     .padding(.horizontal)
                     .padding(.bottom)
             }
         }
         .onChange(of: player.currentChannel) { _, newChannel in
             Task { await loadEPG(for: newChannel) }
+            // Auto-search subtitles: use channel name (EPG title loaded async)
+            if let name = newChannel?.name {
+                subtitleStore.search(for: name)
+            }
+        }
+        // Subtitle cue update ticker (0.5s)
+        .onReceive(Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()) { _ in
+            let t = player.player.currentTime().seconds
+            if t.isFinite { subtitleStore.updateCurrentCue(time: t) }
         }
         // Keyboard shortcuts (6c)
         .onKeyPress(.space) {
@@ -63,10 +88,18 @@ struct PlayerView: View {
     private var stateOverlay: some View {
         switch player.state {
         case .loading:
-            ProgressView()
-                .scaleEffect(1.5)
-                .padding(12)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+            VStack(spacing: 10) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.white)
+                if player.retryCount > 0 {
+                    Text("Buffering… (\(player.retryCount)/\(player.maxRetries))")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+            }
+            .padding(16)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
         case .error(let msg):
             ErrorRetryView(message: msg) {
                 if let channel = player.currentChannel {
@@ -206,6 +239,7 @@ struct PlayerControls: View {
     @ObservedObject var player: PlayerCore
     @EnvironmentObject private var sleepTimer: SleepTimerService
     @Environment(\.modelContext) private var modelContext
+    @Binding var showStats: Bool
 
     var body: some View {
         HStack(spacing: 20) {
@@ -320,6 +354,22 @@ struct PlayerControls: View {
 
             Divider().frame(height: 24)
 
+            // Subtitle picker
+            SubtitlePickerButton()
+
+            Divider().frame(height: 24)
+
+            // Stream stats toggle
+            Button(action: { showStats.toggle() }) {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.title3)
+                    .foregroundStyle(showStats ? Color.aetherAccent : Color.aetherText)
+            }
+            .buttonStyle(.plain)
+            .help(showStats ? "Hide Stream Stats" : "Show Stream Stats")
+
+            Divider().frame(height: 24)
+
             // Favorite toggle
             FavoriteButton(channel: player.currentChannel)
         }
@@ -329,6 +379,39 @@ struct PlayerControls: View {
 
     private var isPlaying: Bool { player.state == .playing }
     private var playPauseIcon: String { isPlaying ? "pause.fill" : "play.fill" }
+}
+
+// MARK: - SubtitlePickerButton
+
+fileprivate struct SubtitlePickerButton: View {
+    @EnvironmentObject private var subtitleStore: SubtitleStore
+
+    var body: some View {
+        Menu {
+            if subtitleStore.tracks.isEmpty && !subtitleStore.isSearching {
+                Text("No subtitles found").foregroundStyle(.secondary)
+            }
+            if subtitleStore.isSearching {
+                Text("Searching…").foregroundStyle(.secondary)
+            }
+            ForEach(subtitleStore.tracks) { track in
+                Button(action: { subtitleStore.load(track: track) }) {
+                    Label("\(track.languageName)  ★\(String(format: "%.1f", track.rating))",
+                          systemImage: "captions.bubble")
+                }
+            }
+            if subtitleStore.currentCue != nil || !subtitleStore.cues.isEmpty {
+                Divider()
+                Button("Clear subtitles", role: .destructive) { subtitleStore.clear() }
+            }
+        } label: {
+            Image(systemName: subtitleStore.cues.isEmpty ? "captions.bubble" : "captions.bubble.fill")
+                .font(.title3)
+                .foregroundStyle(subtitleStore.cues.isEmpty ? Color.aetherText : Color.aetherAccent)
+        }
+        .menuStyle(.borderlessButton)
+        .help("Subtitles")
+    }
 }
 
 // MARK: - ErrorRetryView

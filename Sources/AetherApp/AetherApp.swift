@@ -8,6 +8,7 @@ struct AetherApp: App {
     @StateObject private var playerCore = PlayerCore()
     @StateObject private var historyCoordinator = HistoryCoordinator()
     @StateObject private var sleepTimer = SleepTimerService()
+    @StateObject private var subtitleStore = SubtitleStore()
 
     var body: some Scene {
         WindowGroup {
@@ -15,6 +16,7 @@ struct AetherApp: App {
                 .environmentObject(epgStore)
                 .environmentObject(playerCore)
                 .environmentObject(sleepTimer)
+                .environmentObject(subtitleStore)
                 .task {
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)

@@ -26,6 +26,10 @@ struct SettingsView: View {
 
             cacheTab
                 .tabItem { Label("Cache", systemImage: "internaldrive") }
+
+            SubtitleSettingsView()
+                .tabItem { Label("Subtitles", systemImage: "captions.bubble") }
+                .tag("subtitles")
         }
         .padding(20)
         .frame(width: 480)

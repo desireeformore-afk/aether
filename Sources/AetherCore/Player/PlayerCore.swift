@@ -13,6 +13,7 @@ public enum PlayerState: Sendable, Equatable {
 
 /// A `@MainActor` wrapper around `AVPlayer` for IPTV stream playback.
 /// Supports play/pause/stop/mute/volume, PiP delegation, channel navigation,
+/// auto-retry on stall/error (max 3x with exponential backoff),
 /// and watch session tracking via `onWatchSessionEnd` callback.
 @MainActor
 public final class PlayerCore: ObservableObject {
@@ -27,6 +28,12 @@ public final class PlayerCore: ObservableObject {
     @Published public var selectedQuality: StreamQuality = StreamQuality.auto {
         didSet { StreamQualityService().apply(selectedQuality, to: player) }
     }
+
+    /// Current retry attempt count (0 = first play, >0 = retrying).
+    @Published public private(set) var retryCount: Int = 0
+
+    /// Maximum number of auto-retries before giving up.
+    public let maxRetries: Int = 3
 
     /// Available quality presets.
     public let qualityPresets: [StreamQuality] = StreamQualityPreset.allCases.map { $0.quality }
@@ -48,6 +55,9 @@ public final class PlayerCore: ObservableObject {
     public let player: AVPlayer = AVPlayer()
 
     private var statusObserver: AnyCancellable?
+    private var stallObserver: NSObjectProtocol?
+    private var failedObserver: NSObjectProtocol?
+    private var isRetrying: Bool = false
 
     /// Tracks when the current channel started playing.
     private var watchStartTime: Date?
@@ -76,11 +86,20 @@ public final class PlayerCore: ObservableObject {
         watchStartTime = .now
         state = .loading
 
+        // Remove previous notification observers
+        removeRetryObservers()
+
         let item = AVPlayerItem(url: channel.streamURL)
         item.preferredPeakBitRate = selectedQuality.peakBitRate
+
+        // Apply aggressive buffering settings
+        BufferingConfig.apply(to: item)
+        BufferingConfig.apply(to: player)
+
         player.replaceCurrentItem(with: item)
         player.play()
         observePlayerItem(item)
+        registerRetryObservers(for: item)
     }
 
     /// Resumes paused playback.
@@ -109,9 +128,12 @@ public final class PlayerCore: ObservableObject {
     /// Stops playback and clears the current channel.
     public func stop() {
         endWatchSession()
+        removeRetryObservers()
         player.pause()
         player.replaceCurrentItem(with: nil)
         currentChannel = nil
+        retryCount = 0
+        isRetrying = false
         state = .idle
         statusObserver = nil
     }
@@ -135,6 +157,7 @@ public final class PlayerCore: ObservableObject {
         guard let current = currentChannel,
               let idx = channelList.firstIndex(of: current),
               idx + 1 < channelList.count else { return }
+        retryCount = 0
         play(channelList[idx + 1])
     }
 
@@ -143,6 +166,7 @@ public final class PlayerCore: ObservableObject {
         guard let current = currentChannel,
               let idx = channelList.firstIndex(of: current),
               idx > 0 else { return }
+        retryCount = 0
         play(channelList[idx - 1])
     }
 
@@ -151,6 +175,64 @@ public final class PlayerCore: ObservableObject {
     /// Called by the AVPlayerView coordinator when PiP state changes.
     public func setPiPActive(_ active: Bool) {
         isPiPActive = active
+    }
+
+    // MARK: - Auto-retry
+
+    /// Schedules a retry with exponential backoff (2s, 4s, 6s).
+    private func scheduleRetry() {
+        guard !isRetrying else { return }
+        guard retryCount < maxRetries, let channel = currentChannel else {
+            state = .error("Stream unavailable after \(maxRetries) retries")
+            return
+        }
+        isRetrying = true
+        retryCount += 1
+        let delay = Double(retryCount) * 2.0
+        state = .loading
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(delay))
+            // Only retry if we're still on the same channel
+            guard self.currentChannel?.id == channel.id else {
+                self.isRetrying = false
+                return
+            }
+            self.isRetrying = false
+            self.removeRetryObservers()
+            self.play(channel)
+        }
+    }
+
+    private func registerRetryObservers(for item: AVPlayerItem) {
+        let center = NotificationCenter.default
+
+        // Failed to play to end
+        failedObserver = center.addObserver(
+            forName: .AVPlayerItemFailedToPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.scheduleRetry()
+            }
+        }
+
+        // Playback stalled
+        stallObserver = center.addObserver(
+            forName: .AVPlayerItemPlaybackStalled,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.scheduleRetry()
+            }
+        }
+    }
+
+    private func removeRetryObservers() {
+        let center = NotificationCenter.default
+        if let obs = stallObserver { center.removeObserver(obs); stallObserver = nil }
+        if let obs = failedObserver { center.removeObserver(obs); failedObserver = nil }
     }
 
     // MARK: - Private
@@ -172,10 +254,10 @@ public final class PlayerCore: ObservableObject {
                 guard let self else { return }
                 switch status {
                 case .readyToPlay:
+                    self.retryCount = 0
                     self.state = .playing
                 case .failed:
-                    let msg = item.error?.localizedDescription ?? "Unknown error"
-                    self.state = .error(msg)
+                    self.scheduleRetry()
                 case .unknown:
                     break
                 @unknown default:
