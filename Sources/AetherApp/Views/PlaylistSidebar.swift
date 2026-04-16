@@ -11,6 +11,7 @@ struct PlaylistSidebar: View {
 
     @Binding var selectedPlaylist: PlaylistRecord?
     @State private var showAddSheet = false
+    @State private var showHistory = false
 
     // Deduplicated last 5 unique channels from history
     private var recentChannels: [WatchHistoryRecord] {
@@ -51,6 +52,17 @@ struct PlaylistSidebar: View {
                 .help("Add Playlist  ⌘N")
                 .keyboardShortcut("n", modifiers: .command)
             }
+            ToolbarItem(placement: .secondaryAction) {
+                Button(action: { showHistory = true }) {
+                    Image(systemName: "clock.arrow.circlepath")
+                }
+                .help("Watch History")
+                .disabled(history.isEmpty)
+            }
+        }
+        .sheet(isPresented: $showHistory) {
+            WatchHistoryView()
+                .environmentObject(playerCore)
         }
         .sheet(isPresented: $showAddSheet) {
             AddPlaylistSheet { record in

@@ -7,15 +7,21 @@ struct AetherApp: App {
     @StateObject private var epgStore = EPGStore()
     @StateObject private var playerCore = PlayerCore()
     @StateObject private var historyCoordinator = HistoryCoordinator()
+    @StateObject private var sleepTimer = SleepTimerService()
 
     var body: some Scene {
         WindowGroup {
             ContentView(playerCore: playerCore)
                 .environmentObject(epgStore)
                 .environmentObject(playerCore)
+                .environmentObject(sleepTimer)
                 .task {
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)
+                    // Wire sleep timer → stop
+                    sleepTimer.onExpired = { [weak playerCore] in
+                        playerCore?.stop()
+                    }
                 }
         }
         .modelContainer(for: [

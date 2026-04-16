@@ -204,6 +204,7 @@ struct VideoPlayerLayer: NSViewRepresentable {
 
 struct PlayerControls: View {
     @ObservedObject var player: PlayerCore
+    @EnvironmentObject private var sleepTimer: SleepTimerService
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -314,6 +315,11 @@ struct PlayerControls: View {
 
             Divider().frame(height: 24)
 
+            // Sleep timer
+            SleepTimerButton()
+
+            Divider().frame(height: 24)
+
             // Favorite toggle
             FavoriteButton(channel: player.currentChannel)
         }
@@ -391,5 +397,96 @@ fileprivate struct FavoriteButton: View {
         } else {
             modelContext.insert(FavoriteRecord(channel: channel))
         }
+    }
+}
+
+// MARK: - SleepTimerButton
+
+fileprivate struct SleepTimerButton: View {
+    @EnvironmentObject private var sleepTimer: SleepTimerService
+    @State private var showSheet = false
+
+    var body: some View {
+        Button(action: { showSheet = true }) {
+            HStack(spacing: 4) {
+                Image(systemName: sleepTimer.isActive ? "moon.fill" : "moon")
+                    .font(.title3)
+                    .foregroundStyle(sleepTimer.isActive ? Color.aetherAccent : Color.aetherText)
+                if sleepTimer.isActive {
+                    Text(sleepTimer.remainingFormatted)
+                        .font(.aetherCaption)
+                        .foregroundStyle(Color.aetherAccent)
+                        .monospacedDigit()
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .help(sleepTimer.isActive ? "Sleep timer active — click to change" : "Set sleep timer")
+        .sheet(isPresented: $showSheet) {
+            SleepTimerView()
+        }
+    }
+}
+
+// MARK: - SleepTimerView
+
+fileprivate struct SleepTimerView: View {
+    @EnvironmentObject private var sleepTimer: SleepTimerService
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Sleep Timer")
+                .font(.aetherHeadline)
+                .foregroundStyle(Color.aetherText)
+
+            if sleepTimer.isActive {
+                VStack(spacing: 8) {
+                    Text("Time remaining")
+                        .font(.aetherCaption)
+                        .foregroundStyle(Color.aetherText.opacity(0.6))
+                    Text(sleepTimer.remainingFormatted)
+                        .font(.system(size: 40, weight: .thin, design: .monospaced))
+                        .foregroundStyle(Color.aetherAccent)
+                        .monospacedDigit()
+                }
+                .padding(.vertical, 8)
+
+                Button(role: .destructive) {
+                    sleepTimer.cancel()
+                    dismiss()
+                } label: {
+                    Label("Cancel Timer", systemImage: "xmark.circle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.aetherPrimary)
+            } else {
+                Text("Auto-stop playback after:")
+                    .font(.aetherCaption)
+                    .foregroundStyle(Color.aetherText.opacity(0.7))
+
+                VStack(spacing: 10) {
+                    ForEach(SleepTimerDuration.allCases, id: \.self) { duration in
+                        Button(action: {
+                            sleepTimer.start(duration: duration)
+                            dismiss()
+                        }) {
+                            Text(duration.label)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Color.aetherPrimary)
+                    }
+                }
+            }
+
+            Button("Close") { dismiss() }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.aetherText.opacity(0.5))
+        }
+        .padding(24)
+        .frame(width: 260)
+        .background(Color.aetherBackground)
     }
 }
