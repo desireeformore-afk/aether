@@ -5,10 +5,19 @@ import AetherCore
 /// Root view: NavigationSplitView with playlist sidebar, channel list, and player.
 struct ContentView: View {
     @EnvironmentObject private var epgStore: EPGStore
-    @StateObject private var player = PlayerCore()
+    @ObservedObject var playerCore: PlayerCore
+
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var selectedChannel: Channel?
     @State private var showVODBrowser = false
+
+    // Keyboard handler — retained for the lifetime of this view
+    private let keyboardHandler: KeyboardShortcutHandler
+
+    init(playerCore: PlayerCore) {
+        self.playerCore = playerCore
+        self.keyboardHandler = KeyboardShortcutHandler(playerCore: playerCore)
+    }
 
     var body: some View {
         NavigationSplitView {
@@ -18,7 +27,7 @@ struct ContentView: View {
                 ChannelListView(
                     playlist: playlist,
                     selectedChannel: $selectedChannel,
-                    player: player
+                    player: playerCore
                 )
                 .toolbar {
                     // VOD button — only for Xtream Codes playlists
@@ -30,7 +39,7 @@ struct ContentView: View {
                             }
                             .help("Open VOD Browser")
                             .sheet(isPresented: $showVODBrowser) {
-                                VODBrowserView(credentials: creds, player: player)
+                                VODBrowserView(credentials: creds, player: playerCore)
                             }
                         }
                     }
@@ -45,13 +54,19 @@ struct ContentView: View {
                 .background(Color.aetherBackground)
             }
         } detail: {
-            PlayerView(player: player)
+            PlayerView(player: playerCore)
         }
         .navigationSplitViewStyle(.balanced)
         .background(Color.aetherBackground)
         .onChange(of: selectedPlaylist) { _, newPlaylist in
             guard let playlist = newPlaylist else { return }
             Task { await epgStore.loadGuide(for: playlist) }
+        }
+        .onAppear {
+            keyboardHandler.startMonitoring()
+        }
+        .onDisappear {
+            keyboardHandler.stopMonitoring()
         }
     }
 }

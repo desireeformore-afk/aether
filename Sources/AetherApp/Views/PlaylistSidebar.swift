@@ -2,25 +2,47 @@ import SwiftUI
 import SwiftData
 import AetherCore
 
-/// Left sidebar: list of saved playlists with add/delete/reorder and active indicator.
+/// Left sidebar: recently watched channels + list of saved playlists.
 struct PlaylistSidebar: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \PlaylistRecord.sortIndex) private var playlists: [PlaylistRecord]
+    @Query(sort: \WatchHistoryRecord.watchedAt, order: .reverse) private var history: [WatchHistoryRecord]
+    @EnvironmentObject private var playerCore: PlayerCore
 
     @Binding var selectedPlaylist: PlaylistRecord?
     @State private var showAddSheet = false
-    @State private var isEditMode = false
+
+    // Deduplicated last 5 unique channels from history
+    private var recentChannels: [WatchHistoryRecord] {
+        var seen = Set<UUID>()
+        return history.filter { seen.insert($0.channelID).inserted }.prefix(5).map { $0 }
+    }
 
     var body: some View {
         List(selection: $selectedPlaylist) {
-            ForEach(playlists) { playlist in
-                PlaylistRow(playlist: playlist, isActive: selectedPlaylist == playlist)
-                    .tag(playlist)
+            // Recently Watched
+            if !recentChannels.isEmpty {
+                Section("Ostatnio oglądane") {
+                    ForEach(recentChannels) { record in
+                        if let channel = record.toChannel() {
+                            RecentChannelRow(record: record)
+                                .onTapGesture { playRecent(channel) }
+                        }
+                    }
+                }
             }
-            .onDelete(perform: deletePlaylists)
-            .onMove(perform: movePlaylists)
+
+            // Playlists
+            Section("Playlisty") {
+                ForEach(playlists) { playlist in
+                    PlaylistRow(playlist: playlist, isActive: selectedPlaylist == playlist)
+                        .tag(playlist)
+                }
+                .onDelete(perform: deletePlaylists)
+                .onMove(perform: movePlaylists)
+            }
         }
-        .navigationTitle("Playlists")
+        .navigationTitle("Aether")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: { showAddSheet = true }) {
@@ -29,27 +51,24 @@ struct PlaylistSidebar: View {
                 .help("Add Playlist  ⌘N")
                 .keyboardShortcut("n", modifiers: .command)
             }
-            ToolbarItem(placement: .secondaryAction) {
-                Button(action: { isEditMode.toggle() }) {
-                    Text(isEditMode ? "Done" : "Edit")
-                        .font(.aetherBody)
-                }
-                .help(isEditMode ? "Finish editing" : "Reorder or delete playlists")
-            }
         }
         .sheet(isPresented: $showAddSheet) {
             AddPlaylistSheet { record in
-                // Assign sort index at end of list
                 record.sortIndex = (playlists.last?.sortIndex ?? -1) + 1
                 selectedPlaylist = record
             }
         }
         .onChange(of: playlists) { _, newList in
-            // Auto-select first playlist if none selected
             if selectedPlaylist == nil, let first = newList.first {
                 selectedPlaylist = first
             }
         }
+    }
+
+    // MARK: - Actions
+
+    private func playRecent(_ channel: Channel) {
+        playerCore.play(channel)
     }
 
     private func deletePlaylists(at offsets: IndexSet) {
@@ -76,9 +95,37 @@ struct PlaylistSidebar: View {
     }
 }
 
+// MARK: - RecentChannelRow
+
+private struct RecentChannelRow: View {
+    let record: WatchHistoryRecord
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ChannelLogoView(
+                logoURL: record.logoURLString.flatMap { URL(string: $0) },
+                size: 28
+            )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(record.channelName)
+                    .font(.aetherBody)
+                    .foregroundStyle(Color.aetherText)
+                    .lineLimit(1)
+                Text(record.watchedAt, style: .relative)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 2)
+        .contentShape(Rectangle())
+    }
+}
+
 // MARK: - PlaylistRow
 
-/// Single row in the playlist sidebar.
 fileprivate struct PlaylistRow: View {
     let playlist: PlaylistRecord
     let isActive: Bool

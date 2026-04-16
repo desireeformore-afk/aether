@@ -12,7 +12,8 @@ public enum PlayerState: Sendable, Equatable {
 }
 
 /// A `@MainActor` wrapper around `AVPlayer` for IPTV stream playback.
-/// Supports play/pause/stop/mute/volume, PiP delegation, and channel navigation.
+/// Supports play/pause/stop/mute/volume, PiP delegation, channel navigation,
+/// and watch session tracking via `onWatchSessionEnd` callback.
 @MainActor
 public final class PlayerCore: ObservableObject {
 
@@ -36,11 +37,20 @@ public final class PlayerCore: ObservableObject {
     /// Set by `ChannelListView` when a playlist is loaded.
     public var channelList: [Channel] = []
 
+    // MARK: - Watch history callback
+
+    /// Called when a watch session ends (channel switched or stopped).
+    /// Parameters: (channel, startDate, durationSeconds)
+    public var onWatchSessionEnd: ((Channel, Date, Int) -> Void)?
+
     // MARK: - Internal
 
     public let player: AVPlayer = AVPlayer()
 
     private var statusObserver: AnyCancellable?
+
+    /// Tracks when the current channel started playing.
+    private var watchStartTime: Date?
 
     public init() {}
 
@@ -48,7 +58,11 @@ public final class PlayerCore: ObservableObject {
 
     /// Starts playback of `channel`.
     public func play(_ channel: Channel) {
+        // End previous watch session before switching
+        endWatchSession()
+
         currentChannel = channel
+        watchStartTime = .now
         state = .loading
 
         let item = AVPlayerItem(url: channel.streamURL)
@@ -83,6 +97,7 @@ public final class PlayerCore: ObservableObject {
 
     /// Stops playback and clears the current channel.
     public func stop() {
+        endWatchSession()
         player.pause()
         player.replaceCurrentItem(with: nil)
         currentChannel = nil
@@ -128,6 +143,16 @@ public final class PlayerCore: ObservableObject {
     }
 
     // MARK: - Private
+
+    /// Ends the current watch session and fires the callback.
+    private func endWatchSession() {
+        guard let channel = currentChannel, let start = watchStartTime else { return }
+        let duration = Int(Date.now.timeIntervalSince(start))
+        if duration > 3 { // ignore accidental taps (< 3 seconds)
+            onWatchSessionEnd?(channel, start, duration)
+        }
+        watchStartTime = nil
+    }
 
     private func observePlayerItem(_ item: AVPlayerItem) {
         statusObserver = item.publisher(for: \.status)
