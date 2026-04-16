@@ -11,7 +11,9 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            PlaylistSidebar(selectedPlaylist: $selectedPlaylist)
+            PlaylistSidebar(
+                selectedPlaylist: $selectedPlaylist
+            )
         } content: {
             if let playlist = selectedPlaylist {
                 ChannelListView(
@@ -33,5 +35,9 @@ struct ContentView: View {
         }
         .navigationSplitViewStyle(.balanced)
         .background(Color.aetherBackground)
+        .onChange(of: selectedPlaylist) { _, newPlaylist in
+            guard let playlist = newPlaylist else { return }
+            Task { await epgStore.loadGuide(for: playlist) }
+        }
     }
 }

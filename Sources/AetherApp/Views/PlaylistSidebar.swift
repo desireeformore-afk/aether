@@ -13,7 +13,7 @@ struct PlaylistSidebar: View {
     var body: some View {
         List(selection: $selectedPlaylist) {
             ForEach(playlists) { playlist in
-                Label(playlist.name, systemImage: "play.rectangle.on.rectangle")
+                PlaylistRow(playlist: playlist)
                     .tag(playlist)
             }
             .onDelete(perform: deletePlaylists)
@@ -28,16 +28,10 @@ struct PlaylistSidebar: View {
             }
         }
         .sheet(isPresented: $showAddSheet) {
-            AddPlaylistSheet { name, urlString in
-                addPlaylist(name: name, urlString: urlString)
+            AddPlaylistSheet { record in
+                selectedPlaylist = record
             }
         }
-    }
-
-    private func addPlaylist(name: String, urlString: String) {
-        let record = PlaylistRecord(name: name, urlString: urlString)
-        modelContext.insert(record)
-        selectedPlaylist = record
     }
 
     private func deletePlaylists(at offsets: IndexSet) {
@@ -45,6 +39,30 @@ struct PlaylistSidebar: View {
             let playlist = playlists[index]
             if selectedPlaylist == playlist { selectedPlaylist = nil }
             modelContext.delete(playlist)
+        }
+    }
+}
+
+/// Single row in the playlist list.
+private struct PlaylistRow: View {
+    let playlist: PlaylistRecord
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(playlist.name)
+                    .font(.aetherBody)
+                HStack(spacing: 4) {
+                    Image(systemName: playlist.playlistType == .xtream ? "server.rack" : "link")
+                        .font(.system(size: 9))
+                    Text(playlist.playlistType == .xtream ? "Xtream Codes" : "M3U")
+                        .font(.system(size: 10))
+                }
+                .foregroundStyle(.secondary)
+            }
+        } icon: {
+            Image(systemName: "play.rectangle.on.rectangle")
+                .foregroundStyle(Color.aetherPrimary)
         }
     }
 }

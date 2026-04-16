@@ -12,5 +12,10 @@ struct AetherApp: App {
                 .environmentObject(epgStore)
         }
         .modelContainer(for: [PlaylistRecord.self, ChannelRecord.self])
+
+        Settings {
+            SettingsView()
+                .environmentObject(epgStore)
+        }
     }
 }
