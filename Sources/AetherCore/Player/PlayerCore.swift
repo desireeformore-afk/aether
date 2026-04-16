@@ -54,10 +54,21 @@ public final class PlayerCore: ObservableObject {
 
     public init() {}
 
+    // MARK: - Last-channel persistence
+
+    private let lastChannelStore = LastChannelStore()
+
+    /// The last channel URL that was persisted (used by the app to restore on launch).
+    public func restoreLastChannel() -> Channel? {
+        lastChannelStore.restore()
+    }
+
     // MARK: - Public API
 
     /// Starts playback of `channel`.
     public func play(_ channel: Channel) {
+        // Persist before switching
+        lastChannelStore.save(channel)
         // End previous watch session before switching
         endWatchSession()
 

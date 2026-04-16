@@ -64,6 +64,10 @@ struct ContentView: View {
         }
         .onAppear {
             keyboardHandler.startMonitoring()
+            // Restore last-played channel on relaunch
+            if let lastChannel = playerCore.restoreLastChannel() {
+                playerCore.play(lastChannel)
+            }
         }
         .onDisappear {
             keyboardHandler.stopMonitoring()

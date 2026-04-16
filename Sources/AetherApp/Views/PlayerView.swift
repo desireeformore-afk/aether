@@ -68,11 +68,11 @@ struct PlayerView: View {
                 .padding(12)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
         case .error(let msg):
-            Label(msg, systemImage: "exclamationmark.triangle.fill")
-                .font(.aetherCaption)
-                .foregroundStyle(.white)
-                .padding(8)
-                .background(.red.opacity(0.85), in: RoundedRectangle(cornerRadius: 6))
+            ErrorRetryView(message: msg) {
+                if let channel = player.currentChannel {
+                    player.play(channel)
+                }
+            }
         default:
             EmptyView()
         }
@@ -323,6 +323,41 @@ struct PlayerControls: View {
 
     private var isPlaying: Bool { player.state == .playing }
     private var playPauseIcon: String { isPlaying ? "pause.fill" : "play.fill" }
+}
+
+// MARK: - ErrorRetryView
+
+/// Overlay shown when playback fails — displays the error message and a Retry button.
+struct ErrorRetryView: View {
+    let message: String
+    let onRetry: () -> Void
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(.white)
+
+            Text(message)
+                .font(.aetherCaption)
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .frame(maxWidth: 220)
+
+            Button(action: onRetry) {
+                Label("Retry", systemImage: "arrow.clockwise")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Color.aetherPrimary, in: RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 12))
+    }
 }
 
 // MARK: - FavoriteButton

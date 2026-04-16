@@ -2,7 +2,8 @@ import SwiftUI
 import SwiftData
 import AetherCore
 
-/// Middle column: channels grouped by `groupTitle`, with search, genre filter chips, and Favorites tab.
+/// Middle column: channels grouped by `groupTitle`, with search, genre filter chips,
+/// collapsible DisclosureGroup sections, and Favorites tab.
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var epgStore: EPGStore
@@ -17,6 +18,8 @@ struct ChannelListView: View {
     @State private var errorMessage: String?
     @State private var nowPlaying: [String: EPGEntry] = [:]
     @State private var activeTab: ListTab = .all
+    /// Tracks which group sections are expanded (key: group name, value: isExpanded).
+    @State private var expandedGroups: [String: Bool] = [:]
 
     // MARK: - Body
 
@@ -66,8 +69,8 @@ struct ChannelListView: View {
 
     private var allChannelsList: some View {
         VStack(spacing: 0) {
-            // Genre filter chips
-            if allGroups.count > 1 {
+            // Genre filter chips (only when not searching)
+            if allGroups.count > 1 && searchText.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         FilterChip(label: "All", isSelected: selectedGroup == nil) {
@@ -86,24 +89,79 @@ struct ChannelListView: View {
                 Divider()
             }
 
-            List(selection: $selectedChannel) {
-                if let error = errorMessage {
-                    Label(error, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.red)
-                }
-                ForEach(groupedChannels, id: \.group) { section in
-                    Section(section.group) {
-                        ForEach(section.channels) { record in
-                            if let channel = record.toChannel() {
-                                ChannelRow(
-                                    channel: channel,
-                                    isPlaying: player.currentChannel == channel,
-                                    epgEntry: nowPlaying[record.epgId ?? record.name]
-                                )
-                                .tag(channel)
-                                .onTapGesture { selectAndPlay(channel) }
-                            }
+            if let error = errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.red)
+                    .font(.aetherCaption)
+                    .padding()
+            }
+
+            // When a single group filter is active or searching, show a flat list.
+            // Otherwise show collapsible DisclosureGroup sections.
+            if selectedGroup != nil || !searchText.isEmpty || groupedChannels.count == 1 {
+                flatChannelList
+            } else {
+                collapsibleChannelList
+            }
+        }
+    }
+
+    // MARK: - Flat list (search / single-group mode)
+
+    private var flatChannelList: some View {
+        List(selection: $selectedChannel) {
+            ForEach(groupedChannels, id: \.group) { section in
+                Section(section.group) {
+                    ForEach(section.channels) { record in
+                        if let channel = record.toChannel() {
+                            ChannelRow(
+                                channel: channel,
+                                isPlaying: player.currentChannel == channel,
+                                epgEntry: nowPlaying[record.epgId ?? record.name]
+                            )
+                            .tag(channel)
+                            .onTapGesture { selectAndPlay(channel) }
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Collapsible DisclosureGroup list
+
+    private var collapsibleChannelList: some View {
+        List(selection: $selectedChannel) {
+            ForEach(groupedChannels, id: \.group) { section in
+                DisclosureGroup(
+                    isExpanded: Binding(
+                        get: { expandedGroups[section.group] ?? true },
+                        set: { expandedGroups[section.group] = $0 }
+                    )
+                ) {
+                    ForEach(section.channels) { record in
+                        if let channel = record.toChannel() {
+                            ChannelRow(
+                                channel: channel,
+                                isPlaying: player.currentChannel == channel,
+                                epgEntry: nowPlaying[record.epgId ?? record.name]
+                            )
+                            .tag(channel)
+                            .onTapGesture { selectAndPlay(channel) }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text(section.group)
+                            .font(.aetherBody.bold())
+                            .foregroundStyle(Color.aetherText)
+                        Spacer()
+                        Text("\(section.channels.count)")
+                            .font(.aetherCaption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(.secondary.opacity(0.15), in: Capsule())
                     }
                 }
             }
@@ -177,6 +235,8 @@ struct ChannelListView: View {
                 )
             }
             playlist.lastRefreshed = Date()
+            // Reset expanded state for new groups
+            expandedGroups = [:]
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -299,7 +359,9 @@ struct ChannelRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            ChannelLogoView(url: channel.logoURL, size: 36)
+            ChannelLogoView(url: channel.logoURL)
+                .frame(width: 32, height: 32)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(channel.name)
@@ -308,9 +370,7 @@ struct ChannelRow: View {
                     .lineLimit(1)
 
                 if let entry = epgEntry {
-                    EPGProgressRow(entry: entry)
-                } else if !channel.groupTitle.isEmpty {
-                    Text(channel.groupTitle)
+                    Text(entry.title)
                         .font(.aetherCaption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -321,44 +381,12 @@ struct ChannelRow: View {
 
             if isPlaying {
                 Image(systemName: "waveform")
+                    .font(.caption)
                     .foregroundStyle(Color.aetherPrimary)
-                    .symbolEffect(.variableColor.cumulative)
+                    .symbolEffect(.variableColor.iterative)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 3)
         .contentShape(Rectangle())
-    }
-}
-
-// MARK: - EPGProgressRow
-
-/// Compact EPG now-playing row with progress bar.
-struct EPGProgressRow: View {
-    let entry: EPGEntry
-    @State private var progress: Double = 0
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(entry.title)
-                .font(.aetherCaption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.aetherSurface)
-                        .frame(height: 3)
-                    Capsule()
-                        .fill(Color.aetherPrimary.opacity(0.7))
-                        .frame(width: geo.size.width * progress, height: 3)
-                }
-            }
-            .frame(height: 3)
-        }
-        .onAppear { progress = entry.progress() }
-        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
-            progress = entry.progress()
-        }
     }
 }
