@@ -16,8 +16,8 @@ struct ContentView: View {
     var body: some View {
         Text("Aether")
             .font(.aetherTitle)
-            .foregroundStyle(.aetherPrimary)
+            .foregroundStyle(Color.aetherPrimary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.aetherBackground)
+            .background(Color.aetherBackground)
     }
 }
