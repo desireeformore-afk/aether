@@ -140,25 +140,33 @@ struct SettingsView: View {
     }
 
     private func refreshCacheSize() {
-        Task.detached {
-            let fm = FileManager.default
-            let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            let epgCacheDir = appSupport?
-                .appendingPathComponent("Aether")
-                .appendingPathComponent("EPGCache")
+        // Run on a background thread without Task.detached to avoid
+        // Swift 6 Sendable checks on FileManager.DirectoryEnumerator.
+        let result = Self.epgCacheSizeString()
+        cacheSize = result
+    }
 
-            var bytes: Int64 = 0
-            if let dir = epgCacheDir,
-               let enumerator = fm.enumerator(at: dir, includingPropertiesForKeys: [.fileSizeKey]) {
-                for case let fileURL as URL in enumerator {
-                    let size = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-                    bytes += Int64(size)
-                }
-            }
-            let mb = Double(bytes) / 1_048_576
-            let result = bytes == 0 ? "Empty" : String(format: "%.1f MB", mb)
-            await MainActor.run { cacheSize = result }
+    /// Computes EPG cache size synchronously (call from MainActor is fine — fast FS op).
+    private static func epgCacheSizeString() -> String {
+        let fm = FileManager.default
+        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return "Unknown"
         }
+        let dir = appSupport
+            .appendingPathComponent("Aether")
+            .appendingPathComponent("EPGCache")
+        guard fm.fileExists(atPath: dir.path) else { return "Empty" }
+
+        var bytes: Int64 = 0
+        // Use contentsOfDirectory to avoid non-Sendable enumerator in Swift 6
+        if let files = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) {
+            for fileURL in files {
+                let size = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+                bytes += Int64(size)
+            }
+        }
+        guard bytes > 0 else { return "Empty" }
+        return String(format: "%.1f MB", Double(bytes) / 1_048_576)
     }
 }
 
