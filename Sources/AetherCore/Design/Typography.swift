@@ -1,6 +1,6 @@
 import SwiftUI
 
-extension Font {
+public extension Font {
     static let aetherTitle: Font = .system(.title, design: .rounded, weight: .semibold)
     static let aetherHeadline: Font = .system(.headline, design: .rounded, weight: .medium)
     static let aetherBody: Font = .system(.body, design: .default, weight: .regular)

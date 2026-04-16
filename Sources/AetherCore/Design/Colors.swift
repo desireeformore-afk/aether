@@ -1,6 +1,6 @@
 import SwiftUI
 
-extension Color {
+public extension Color {
     static let aetherBackground = Color(nsColor: .windowBackgroundColor)
     static let aetherSurface = Color(nsColor: .controlBackgroundColor)
     static let aetherAccent = Color.accentColor
