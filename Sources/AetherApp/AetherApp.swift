@@ -11,7 +11,7 @@ struct AetherApp: App {
             ContentView()
                 .environmentObject(epgStore)
         }
-        .modelContainer(for: [PlaylistRecord.self, ChannelRecord.self])
+        .modelContainer(for: [PlaylistRecord.self, ChannelRecord.self, FavoriteRecord.self])
 
         Settings {
             SettingsView()

@@ -43,6 +43,19 @@ struct PlayerView: View {
         .onChange(of: player.currentChannel) { _, newChannel in
             Task { await loadEPG(for: newChannel) }
         }
+        // Keyboard shortcuts (6c)
+        .onKeyPress(.space) {
+            player.togglePlayPause()
+            return .handled
+        }
+        .onKeyPress(.leftArrow) {
+            player.playPrevious()
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            player.playNext()
+            return .handled
+        }
     }
 
     @ViewBuilder
@@ -73,7 +86,7 @@ struct PlayerView: View {
         let cid = channel.epgId ?? channel.name
         let now = Date()
         nowPlaying = await epgStore.service.nowPlaying(for: cid, at: now)
-        nextUp = await epgStore.service.nextUp(for: cid, at: now)
+        nextUp    = await epgStore.service.nextUp(for: cid, at: now)
     }
 }
 
@@ -106,7 +119,6 @@ struct EPGInfoBar: View {
                             .padding(.vertical, 2)
                             .background(Color.aetherPrimary, in: RoundedRectangle(cornerRadius: 4))
                     }
-
                     Text("\(Self.timeFormatter.string(from: current.start)) – \(Self.timeFormatter.string(from: current.end))")
                         .font(.aetherCaption)
                         .foregroundStyle(.secondary)
@@ -167,7 +179,7 @@ struct EPGProgressBarView: View {
     }
 }
 
-// MARK: - VideoPlayerLayer
+// MARK: - VideoPlayerLayer (AVKit, fullscreen + PiP)
 
 struct VideoPlayerLayer: NSViewRepresentable {
     let avPlayer: AVPlayer
@@ -175,7 +187,10 @@ struct VideoPlayerLayer: NSViewRepresentable {
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
         view.player = avPlayer
-        view.controlsStyle = .none
+        // Show native controls including fullscreen and PiP buttons
+        view.controlsStyle = .floating
+        view.allowsPictureInPicturePlayback = true
+        view.showsFullScreenToggleButton = true
         return view
     }
 
@@ -188,6 +203,7 @@ struct VideoPlayerLayer: NSViewRepresentable {
 
 struct PlayerControls: View {
     @ObservedObject var player: PlayerCore
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         HStack(spacing: 20) {
@@ -204,15 +220,40 @@ struct PlayerControls: View {
             }
             Spacer()
 
-            Button(action: togglePlayPause) {
+            // Previous channel
+            Button(action: { player.playPrevious() }) {
+                Image(systemName: "backward.fill")
+                    .font(.title3)
+                    .foregroundStyle(Color.aetherText)
+            }
+            .buttonStyle(.plain)
+            .disabled(player.currentChannel == nil)
+            .help("Previous Channel  ←")
+            .keyboardShortcut(.leftArrow, modifiers: [])
+
+            // Play / Pause
+            Button(action: { player.togglePlayPause() }) {
                 Image(systemName: playPauseIcon)
                     .font(.title2)
                     .foregroundStyle(Color.aetherPrimary)
             }
             .buttonStyle(.plain)
             .disabled(player.currentChannel == nil)
-            .help(isPlaying ? "Pause" : "Play")
+            .help(isPlaying ? "Pause  Space" : "Play  Space")
+            .keyboardShortcut(" ", modifiers: [])
 
+            // Next channel
+            Button(action: { player.playNext() }) {
+                Image(systemName: "forward.fill")
+                    .font(.title3)
+                    .foregroundStyle(Color.aetherText)
+            }
+            .buttonStyle(.plain)
+            .disabled(player.currentChannel == nil)
+            .help("Next Channel  →")
+            .keyboardShortcut(.rightArrow, modifiers: [])
+
+            // Stop
             Button(action: { player.stop() }) {
                 Image(systemName: "stop.fill")
                     .font(.title2)
@@ -224,20 +265,28 @@ struct PlayerControls: View {
 
             Divider().frame(height: 24)
 
+            // Mute
             Button(action: { player.toggleMute() }) {
                 Image(systemName: player.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                     .font(.title3)
                     .foregroundStyle(Color.aetherText)
             }
             .buttonStyle(.plain)
-            .help(player.isMuted ? "Unmute" : "Mute")
+            .help(player.isMuted ? "Unmute  M" : "Mute  M")
+            .keyboardShortcut("m", modifiers: [])
 
+            // Volume slider
             Slider(value: Binding(
                 get: { Double(player.volume) },
                 set: { player.setVolume(Float($0)) }
             ), in: 0...1)
             .frame(width: 80)
             .disabled(player.isMuted)
+
+            Divider().frame(height: 24)
+
+            // Favorite toggle
+            FavoriteButton(channel: player.currentChannel)
         }
         .padding(12)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
@@ -245,8 +294,38 @@ struct PlayerControls: View {
 
     private var isPlaying: Bool { player.state == .playing }
     private var playPauseIcon: String { isPlaying ? "pause.fill" : "play.fill" }
+}
 
-    private func togglePlayPause() {
-        if isPlaying { player.pause() } else { player.resume() }
+// MARK: - FavoriteButton
+
+private struct FavoriteButton: View {
+    let channel: Channel?
+    @Query private var favorites: [FavoriteRecord]
+    @Environment(\.modelContext) private var modelContext
+
+    private var isFavorite: Bool {
+        guard let channel else { return false }
+        return favorites.contains { $0.channelID == channel.id }
+    }
+
+    var body: some View {
+        Button(action: toggleFavorite) {
+            Image(systemName: isFavorite ? "star.fill" : "star")
+                .font(.title3)
+                .foregroundStyle(isFavorite ? Color.aetherAccent : Color.aetherText)
+        }
+        .buttonStyle(.plain)
+        .disabled(channel == nil)
+        .help(isFavorite ? "Remove from Favorites  F" : "Add to Favorites  F")
+        .keyboardShortcut("f", modifiers: [])
+    }
+
+    private func toggleFavorite() {
+        guard let channel else { return }
+        if let existing = favorites.first(where: { $0.channelID == channel.id }) {
+            modelContext.delete(existing)
+        } else {
+            modelContext.insert(FavoriteRecord(channel: channel))
+        }
     }
 }

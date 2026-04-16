@@ -8,12 +8,11 @@ struct ContentView: View {
     @StateObject private var player = PlayerCore()
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var selectedChannel: Channel?
+    @State private var showVODBrowser = false
 
     var body: some View {
         NavigationSplitView {
-            PlaylistSidebar(
-                selectedPlaylist: $selectedPlaylist
-            )
+            PlaylistSidebar(selectedPlaylist: $selectedPlaylist)
         } content: {
             if let playlist = selectedPlaylist {
                 ChannelListView(
@@ -21,6 +20,21 @@ struct ContentView: View {
                     selectedChannel: $selectedChannel,
                     player: player
                 )
+                .toolbar {
+                    // VOD button — only for Xtream Codes playlists
+                    if playlist.playlistType == .xtream,
+                       let creds = playlist.xstreamCredentials {
+                        ToolbarItem {
+                            Button(action: { showVODBrowser = true }) {
+                                Label("VOD", systemImage: "film.stack")
+                            }
+                            .help("Open VOD Browser")
+                            .sheet(isPresented: $showVODBrowser) {
+                                VODBrowserView(credentials: creds, player: player)
+                            }
+                        }
+                    }
+                }
             } else {
                 ContentUnavailableView(
                     "No Playlist Selected",

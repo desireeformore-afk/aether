@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import AetherCore
 
-/// Middle column: channels grouped by `groupTitle`, with search.
+/// Middle column: channels grouped by `groupTitle`, with search + Favorites tab.
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var epgStore: EPGStore
@@ -14,44 +14,30 @@ struct ChannelListView: View {
     @State private var searchText = ""
     @State private var isRefreshing = false
     @State private var errorMessage: String?
-    @State private var nowPlaying: [String: EPGEntry] = [:]   // channelID → current entry
+    @State private var nowPlaying: [String: EPGEntry] = [:]  // channelID → current entry
+    @State private var activeTab: ListTab = .all
 
-    private var groupedChannels: [(group: String, channels: [ChannelRecord])] {
-        let filtered: [ChannelRecord]
-        if searchText.isEmpty {
-            filtered = playlist.channels
-        } else {
-            filtered = playlist.channels.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-        let sorted = filtered.sorted { $0.sortIndex < $1.sortIndex }
-        let grouped = Dictionary(grouping: sorted) { $0.groupTitle }
-        return grouped
-            .sorted { $0.key < $1.key }
-            .map { (group: $0.key, channels: $0.value) }
-    }
+    // MARK: - Body
 
     var body: some View {
-        List(selection: $selectedChannel) {
-            if let error = errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
-            }
-            ForEach(groupedChannels, id: \.group) { section in
-                Section(section.group) {
-                    ForEach(section.channels) { record in
-                        if let channel = record.toChannel() {
-                            ChannelRow(
-                                channel: channel,
-                                isPlaying: player.currentChannel == channel,
-                                epgEntry: nowPlaying[record.epgId ?? record.name]
-                            )
-                            .tag(channel)
-                            .onTapGesture { selectAndPlay(channel) }
-                        }
-                    }
+        VStack(spacing: 0) {
+            // Tab switcher
+            Picker("", selection: $activeTab) {
+                ForEach(ListTab.allCases, id: \.self) { tab in
+                    Label(tab.label, systemImage: tab.icon).tag(tab)
                 }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+
+            Divider()
+
+            switch activeTab {
+            case .all:
+                allChannelsList
+            case .favorites:
+                FavoritesListView(player: player, selectedChannel: $selectedChannel)
             }
         }
         .searchable(text: $searchText, prompt: "Search channels")
@@ -75,14 +61,63 @@ struct ChannelListView: View {
         }
     }
 
+    // MARK: - All Channels List
+
+    private var allChannelsList: some View {
+        List(selection: $selectedChannel) {
+            if let error = errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.red)
+            }
+            ForEach(groupedChannels, id: \.group) { section in
+                Section(section.group) {
+                    ForEach(section.channels) { record in
+                        if let channel = record.toChannel() {
+                            ChannelRow(
+                                channel: channel,
+                                isPlaying: player.currentChannel == channel,
+                                epgEntry: nowPlaying[record.epgId ?? record.name]
+                            )
+                            .tag(channel)
+                            .onTapGesture { selectAndPlay(channel) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Grouped channels
+
+    private var groupedChannels: [(group: String, channels: [ChannelRecord])] {
+        let filtered: [ChannelRecord]
+        if searchText.isEmpty {
+            filtered = playlist.channels
+        } else {
+            filtered = playlist.channels.filter {
+                $0.name.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+        let sorted = filtered.sorted { $0.sortIndex < $1.sortIndex }
+        let grouped = Dictionary(grouping: sorted) { $0.groupTitle }
+        return grouped
+            .sorted { $0.key < $1.key }
+            .map { (group: $0.key, channels: $0.value) }
+    }
+
+    // MARK: - Actions
+
     private func selectAndPlay(_ channel: Channel) {
         selectedChannel = channel
+        // Keep channelList in sync for prev/next navigation
+        let flat = groupedChannels.flatMap(\.channels).compactMap { $0.toChannel() }
+        player.channelList = flat
         player.play(channel)
     }
 
     @MainActor
     private func refresh() async {
-        guard let url = playlist.url else {
+        guard let url = playlist.effectiveURL else {
             errorMessage = "Invalid playlist URL"
             return
         }
@@ -123,6 +158,67 @@ struct ChannelListView: View {
             }
         }
         nowPlaying = entries
+    }
+}
+
+// MARK: - Tab enum
+
+private enum ListTab: String, CaseIterable {
+    case all, favorites
+
+    var label: String {
+        switch self {
+        case .all:       return "All"
+        case .favorites: return "Favorites"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .all:       return "list.bullet"
+        case .favorites: return "star.fill"
+        }
+    }
+}
+
+// MARK: - FavoritesListView
+
+private struct FavoritesListView: View {
+    @Query(sort: \FavoriteRecord.addedAt, order: .reverse) private var favorites: [FavoriteRecord]
+    @Environment(\.modelContext) private var modelContext
+    @ObservedObject var player: PlayerCore
+    @Binding var selectedChannel: Channel?
+
+    var body: some View {
+        List(selection: $selectedChannel) {
+            if favorites.isEmpty {
+                ContentUnavailableView(
+                    "No Favorites",
+                    systemImage: "star",
+                    description: Text("Tap ★ in the player to save a channel here.")
+                )
+            } else {
+                ForEach(favorites) { fav in
+                    if let channel = fav.toChannel() {
+                        ChannelRow(
+                            channel: channel,
+                            isPlaying: player.currentChannel == channel,
+                            epgEntry: nil
+                        )
+                        .tag(channel)
+                        .onTapGesture { play(channel) }
+                    }
+                }
+                .onDelete { offsets in
+                    for idx in offsets { modelContext.delete(favorites[idx]) }
+                }
+            }
+        }
+    }
+
+    private func play(_ channel: Channel) {
+        selectedChannel = channel
+        player.channelList = favorites.compactMap { $0.toChannel() }
+        player.play(channel)
     }
 }
 

@@ -12,6 +12,7 @@ public enum PlayerState: Sendable, Equatable {
 }
 
 /// A `@MainActor` wrapper around `AVPlayer` for IPTV stream playback.
+/// Supports play/pause/stop/mute/volume, PiP delegation, and channel navigation.
 @MainActor
 public final class PlayerCore: ObservableObject {
 
@@ -21,17 +22,21 @@ public final class PlayerCore: ObservableObject {
     @Published public private(set) var currentChannel: Channel?
     @Published public private(set) var isMuted: Bool = false
     @Published public private(set) var volume: Float = 1.0
+    @Published public private(set) var isPiPActive: Bool = false
+
+    // MARK: - Channel navigation support
+
+    /// The ordered list of channels the user is currently browsing.
+    /// Set by `ChannelListView` when a playlist is loaded.
+    public var channelList: [Channel] = []
 
     // MARK: - Internal
 
     public let player: AVPlayer = AVPlayer()
 
     private var statusObserver: AnyCancellable?
-    private var errorObserver: AnyCancellable?
 
-    public init() {
-        observePlayer()
-    }
+    public init() {}
 
     // MARK: - Public API
 
@@ -60,6 +65,15 @@ public final class PlayerCore: ObservableObject {
         state = .paused
     }
 
+    /// Toggles play/pause.
+    public func togglePlayPause() {
+        switch state {
+        case .playing: pause()
+        case .paused:  resume()
+        default: break
+        }
+    }
+
     /// Stops playback and clears the current channel.
     public func stop() {
         player.pause()
@@ -81,11 +95,32 @@ public final class PlayerCore: ObservableObject {
         player.volume = volume
     }
 
-    // MARK: - Private
+    // MARK: - Channel navigation
 
-    private func observePlayer() {
-        // Nothing global needed for now; item-level observation handles state.
+    /// Plays the next channel in `channelList`.
+    public func playNext() {
+        guard let current = currentChannel,
+              let idx = channelList.firstIndex(of: current),
+              idx + 1 < channelList.count else { return }
+        play(channelList[idx + 1])
     }
+
+    /// Plays the previous channel in `channelList`.
+    public func playPrevious() {
+        guard let current = currentChannel,
+              let idx = channelList.firstIndex(of: current),
+              idx > 0 else { return }
+        play(channelList[idx - 1])
+    }
+
+    // MARK: - PiP state callback (set by VideoPlayerLayer coordinator)
+
+    /// Called by the AVPlayerView coordinator when PiP state changes.
+    public func setPiPActive(_ active: Bool) {
+        isPiPActive = active
+    }
+
+    // MARK: - Private
 
     private func observePlayerItem(_ item: AVPlayerItem) {
         statusObserver = item.publisher(for: \.status)
