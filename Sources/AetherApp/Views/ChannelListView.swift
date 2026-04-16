@@ -5,6 +5,7 @@ import AetherCore
 /// Middle column: channels grouped by `groupTitle`, with search.
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var epgStore: EPGStore
 
     let playlist: PlaylistRecord
     @Binding var selectedChannel: Channel?
@@ -13,6 +14,7 @@ struct ChannelListView: View {
     @State private var searchText = ""
     @State private var isRefreshing = false
     @State private var errorMessage: String?
+    @State private var nowPlaying: [String: EPGEntry] = [:]   // channelID → current entry
 
     private var groupedChannels: [(group: String, channels: [ChannelRecord])] {
         let filtered: [ChannelRecord]
@@ -40,9 +42,13 @@ struct ChannelListView: View {
                 Section(section.group) {
                     ForEach(section.channels) { record in
                         if let channel = record.toChannel() {
-                            ChannelRow(channel: channel, isPlaying: player.currentChannel == channel)
-                                .tag(channel)
-                                .onTapGesture { selectAndPlay(channel) }
+                            ChannelRow(
+                                channel: channel,
+                                isPlaying: player.currentChannel == channel,
+                                epgEntry: nowPlaying[record.epgId ?? record.name]
+                            )
+                            .tag(channel)
+                            .onTapGesture { selectAndPlay(channel) }
                         }
                     }
                 }
@@ -65,6 +71,7 @@ struct ChannelListView: View {
         }
         .task {
             if playlist.channels.isEmpty { await refresh() }
+            await refreshEPG()
         }
     }
 
@@ -87,7 +94,6 @@ struct ChannelListView: View {
             let service = PlaylistService()
             let channels = try await service.fetchChannels(from: url, forceRefresh: true)
 
-            // Replace channels in SwiftData
             for old in playlist.channels { modelContext.delete(old) }
             playlist.channels = channels.enumerated().map { idx, ch in
                 ChannelRecord(
@@ -105,32 +111,91 @@ struct ChannelListView: View {
             errorMessage = error.localizedDescription
         }
     }
+
+    @MainActor
+    private func refreshEPG() async {
+        var entries: [String: EPGEntry] = [:]
+        let now = Date()
+        for record in playlist.channels {
+            let cid = record.epgId ?? record.name
+            if let entry = await epgStore.service.nowPlaying(for: cid, at: now) {
+                entries[cid] = entry
+            }
+        }
+        nowPlaying = entries
+    }
 }
 
+// MARK: - ChannelRow
+
 /// A single row in the channel list.
-private struct ChannelRow: View {
+struct ChannelRow: View {
     let channel: Channel
     let isPlaying: Bool
+    let epgEntry: EPGEntry?
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: isPlaying ? "waveform" : "play.tv")
-                .foregroundStyle(isPlaying ? Color.aetherPrimary : .secondary)
-                .frame(width: 20)
+        HStack(spacing: 10) {
+            ChannelLogoView(url: channel.logoURL, size: 36)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(channel.name)
                     .font(.aetherBody)
                     .foregroundStyle(isPlaying ? Color.aetherPrimary : Color.aetherText)
-                if let group = channel.groupTitle.isEmpty ? nil : channel.groupTitle {
-                    Text(group)
+                    .lineLimit(1)
+
+                if let entry = epgEntry {
+                    EPGProgressRow(entry: entry)
+                } else if !channel.groupTitle.isEmpty {
+                    Text(channel.groupTitle)
                         .font(.aetherCaption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
+
             Spacer()
+
+            if isPlaying {
+                Image(systemName: "waveform")
+                    .foregroundStyle(Color.aetherPrimary)
+                    .symbolEffect(.variableColor.cumulative)
+            }
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - EPGProgressRow
+
+/// Compact EPG now-playing row with progress bar.
+struct EPGProgressRow: View {
+    let entry: EPGEntry
+    @State private var progress: Double = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(entry.title)
+                .font(.aetherCaption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.aetherSurface)
+                        .frame(height: 3)
+                    Capsule()
+                        .fill(Color.aetherPrimary.opacity(0.7))
+                        .frame(width: geo.size.width * progress, height: 3)
+                }
+            }
+            .frame(height: 3)
+        }
+        .onAppear { progress = entry.progress() }
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
+            progress = entry.progress()
+        }
     }
 }

@@ -4,6 +4,7 @@ import AetherCore
 
 /// Root view: NavigationSplitView with playlist sidebar, channel list, and player.
 struct ContentView: View {
+    @EnvironmentObject private var epgStore: EPGStore
     @StateObject private var player = PlayerCore()
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var selectedChannel: Channel?
