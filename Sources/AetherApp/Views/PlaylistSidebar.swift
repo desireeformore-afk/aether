@@ -103,7 +103,7 @@ private struct RecentChannelRow: View {
     var body: some View {
         HStack(spacing: 8) {
             ChannelLogoView(
-                logoURL: record.logoURLString.flatMap { URL(string: $0) },
+                url: record.logoURLString.flatMap { URL(string: $0) },
                 size: 28
             )
 
