@@ -1,0 +1,686 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		/* ---- AetherApp sources ---- */
+		AA0001000000000000000001 /* AetherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000001 /* AetherApp.swift */; };
+		AA0001000000000000000002 /* EPGStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000002 /* EPGStore.swift */; };
+		AA0001000000000000000003 /* SubtitleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000003 /* SubtitleStore.swift */; };
+		AA0001000000000000000004 /* KeyboardShortcutHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000004 /* KeyboardShortcutHandler.swift */; };
+		/* Views */
+		AA0001000000000000000010 /* AddPlaylistSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000010 /* AddPlaylistSheet.swift */; };
+		AA0001000000000000000011 /* ChannelListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000011 /* ChannelListView.swift */; };
+		AA0001000000000000000012 /* ChannelLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000012 /* ChannelLogoView.swift */; };
+		AA0001000000000000000013 /* CommandPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000013 /* CommandPaletteView.swift */; };
+		AA0001000000000000000014 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000014 /* ContentView.swift */; };
+		AA0001000000000000000015 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000015 /* PlayerView.swift */; };
+		AA0001000000000000000016 /* PlaylistHealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000016 /* PlaylistHealthView.swift */; };
+		AA0001000000000000000017 /* PlaylistSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000017 /* PlaylistSidebar.swift */; };
+		AA0001000000000000000018 /* SeriesBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000018 /* SeriesBrowserView.swift */; };
+		AA0001000000000000000019 /* SeriesDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000019 /* SeriesDetailView.swift */; };
+		AA000100000000000000001A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000100000000000000001A /* SettingsView.swift */; };
+		AA000100000000000000001B /* StreamStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000100000000000000001B /* StreamStatsView.swift */; };
+		AA000100000000000000001C /* SubtitleOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000100000000000000001C /* SubtitleOverlayView.swift */; };
+		AA000100000000000000001D /* SubtitleSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000100000000000000001D /* SubtitleSettingsView.swift */; };
+		AA000100000000000000001E /* VODBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000100000000000000001E /* VODBrowserView.swift */; };
+		AA000100000000000000001F /* WatchHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000100000000000000001F /* WatchHistoryView.swift */; };
+		/* Resources */
+		AA0001000000000000000030 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000030 /* Assets.xcassets */; };
+
+		/* ---- AetherCore sources ---- */
+		/* Design */
+		AA0002000000000000000001 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000001 /* Colors.swift */; };
+		AA0002000000000000000002 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000002 /* Typography.swift */; };
+		/* Models */
+		AA0002000000000000000010 /* AppearanceMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000010 /* AppearanceMode.swift */; };
+		AA0002000000000000000011 /* Channel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000011 /* Channel.swift */; };
+		AA0002000000000000000012 /* EPGEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000012 /* EPGEntry.swift */; };
+		AA0002000000000000000013 /* Playlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000013 /* Playlist.swift */; };
+		AA0002000000000000000014 /* SubtitleTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000014 /* SubtitleTrack.swift */; };
+		AA0002000000000000000015 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000015 /* Theme.swift */; };
+		/* Parsers */
+		AA0002000000000000000020 /* M3UParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000020 /* M3UParser.swift */; };
+		AA0002000000000000000021 /* SRTParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000021 /* SRTParser.swift */; };
+		AA0002000000000000000022 /* XMLTVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000022 /* XMLTVParser.swift */; };
+		/* Player */
+		AA0002000000000000000030 /* BufferingConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000030 /* BufferingConfig.swift */; };
+		AA0002000000000000000031 /* PlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000031 /* PlayerCore.swift */; };
+		/* Services */
+		AA0002000000000000000040 /* ChannelFilterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000040 /* ChannelFilterService.swift */; };
+		AA0002000000000000000041 /* EPGService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000041 /* EPGService.swift */; };
+		AA0002000000000000000042 /* EPGStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000042 /* EPGStore.swift */; };
+		AA0002000000000000000043 /* PlaylistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000043 /* PlaylistService.swift */; };
+		AA0002000000000000000044 /* PlaylistValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000044 /* PlaylistValidator.swift */; };
+		AA0002000000000000000045 /* SleepTimerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000045 /* SleepTimerService.swift */; };
+		AA0002000000000000000046 /* StreamQualityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000046 /* StreamQualityService.swift */; };
+		AA0002000000000000000047 /* SubtitleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000047 /* SubtitleService.swift */; };
+		AA0002000000000000000048 /* ThemeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000048 /* ThemeService.swift */; };
+		AA0002000000000000000049 /* XstreamService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000049 /* XstreamService.swift */; };
+		/* Storage */
+		AA0002000000000000000050 /* ChannelRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000050 /* ChannelRecord.swift */; };
+		AA0002000000000000000051 /* FavoriteRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000051 /* FavoriteRecord.swift */; };
+		AA0002000000000000000052 /* LastChannelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000052 /* LastChannelStore.swift */; };
+		AA0002000000000000000053 /* PlaylistRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000053 /* PlaylistRecord.swift */; };
+		AA0002000000000000000054 /* WatchHistoryRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000054 /* WatchHistoryRecord.swift */; };
+
+		/* ---- AetherUI sources ---- */
+		AA0003000000000000000001 /* AetherUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000001 /* AetherUI.swift */; };
+		AA0003000000000000000010 /* AppearancePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000010 /* AppearancePickerView.swift */; };
+		AA0003000000000000000011 /* ChannelRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000011 /* ChannelRowView.swift */; };
+		AA0003000000000000000012 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000012 /* EmptyStateView.swift */; };
+		AA0003000000000000000013 /* EPGTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000013 /* EPGTimelineView.swift */; };
+		AA0003000000000000000014 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000014 /* OnboardingView.swift */; };
+		AA0003000000000000000015 /* PlayerControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000015 /* PlayerControlsView.swift */; };
+		AA0003000000000000000016 /* ThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000016 /* ThemePickerView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		/* AetherApp */
+		FA0001000000000000000001 /* AetherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AetherApp.swift; path = Sources/AetherApp/AetherApp.swift; sourceTree = "<group>"; };
+		FA0001000000000000000002 /* EPGStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EPGStore.swift; path = Sources/AetherApp/EPGStore.swift; sourceTree = "<group>"; };
+		FA0001000000000000000003 /* SubtitleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubtitleStore.swift; path = Sources/AetherApp/SubtitleStore.swift; sourceTree = "<group>"; };
+		FA0001000000000000000004 /* KeyboardShortcutHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KeyboardShortcutHandler.swift; path = Sources/AetherApp/KeyboardShortcutHandler.swift; sourceTree = "<group>"; };
+		/* Views */
+		FA0001000000000000000010 /* AddPlaylistSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AddPlaylistSheet.swift; path = Sources/AetherApp/Views/AddPlaylistSheet.swift; sourceTree = "<group>"; };
+		FA0001000000000000000011 /* ChannelListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelListView.swift; path = Sources/AetherApp/Views/ChannelListView.swift; sourceTree = "<group>"; };
+		FA0001000000000000000012 /* ChannelLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelLogoView.swift; path = Sources/AetherApp/Views/ChannelLogoView.swift; sourceTree = "<group>"; };
+		FA0001000000000000000013 /* CommandPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CommandPaletteView.swift; path = Sources/AetherApp/Views/CommandPaletteView.swift; sourceTree = "<group>"; };
+		FA0001000000000000000014 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = Sources/AetherApp/Views/ContentView.swift; sourceTree = "<group>"; };
+		FA0001000000000000000015 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlayerView.swift; path = Sources/AetherApp/Views/PlayerView.swift; sourceTree = "<group>"; };
+		FA0001000000000000000016 /* PlaylistHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlaylistHealthView.swift; path = Sources/AetherApp/Views/PlaylistHealthView.swift; sourceTree = "<group>"; };
+		FA0001000000000000000017 /* PlaylistSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlaylistSidebar.swift; path = Sources/AetherApp/Views/PlaylistSidebar.swift; sourceTree = "<group>"; };
+		FA0001000000000000000018 /* SeriesBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeriesBrowserView.swift; path = Sources/AetherApp/Views/SeriesBrowserView.swift; sourceTree = "<group>"; };
+		FA0001000000000000000019 /* SeriesDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SeriesDetailView.swift; path = Sources/AetherApp/Views/SeriesDetailView.swift; sourceTree = "<group>"; };
+		FA000100000000000000001A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsView.swift; path = Sources/AetherApp/Views/SettingsView.swift; sourceTree = "<group>"; };
+		FA000100000000000000001B /* StreamStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StreamStatsView.swift; path = Sources/AetherApp/Views/StreamStatsView.swift; sourceTree = "<group>"; };
+		FA000100000000000000001C /* SubtitleOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubtitleOverlayView.swift; path = Sources/AetherApp/Views/SubtitleOverlayView.swift; sourceTree = "<group>"; };
+		FA000100000000000000001D /* SubtitleSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubtitleSettingsView.swift; path = Sources/AetherApp/Views/SubtitleSettingsView.swift; sourceTree = "<group>"; };
+		FA000100000000000000001E /* VODBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VODBrowserView.swift; path = Sources/AetherApp/Views/VODBrowserView.swift; sourceTree = "<group>"; };
+		FA000100000000000000001F /* WatchHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WatchHistoryView.swift; path = Sources/AetherApp/Views/WatchHistoryView.swift; sourceTree = "<group>"; };
+		/* Resources */
+		FA0001000000000000000030 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Sources/AetherApp/Resources/Assets.xcassets; sourceTree = "<group>"; };
+		FA0001000000000000000031 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Sources/AetherApp/Resources/Info.plist; sourceTree = "<group>"; };
+		FA0001000000000000000032 /* AetherApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AetherApp.entitlements; path = Sources/AetherApp/Resources/AetherApp.entitlements; sourceTree = "<group>"; };
+
+		/* AetherCore */
+		FA0002000000000000000001 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Colors.swift; path = Sources/AetherCore/Design/Colors.swift; sourceTree = "<group>"; };
+		FA0002000000000000000002 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Typography.swift; path = Sources/AetherCore/Design/Typography.swift; sourceTree = "<group>"; };
+		FA0002000000000000000010 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppearanceMode.swift; path = Sources/AetherCore/Models/AppearanceMode.swift; sourceTree = "<group>"; };
+		FA0002000000000000000011 /* Channel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Channel.swift; path = Sources/AetherCore/Models/Channel.swift; sourceTree = "<group>"; };
+		FA0002000000000000000012 /* EPGEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EPGEntry.swift; path = Sources/AetherCore/Models/EPGEntry.swift; sourceTree = "<group>"; };
+		FA0002000000000000000013 /* Playlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Playlist.swift; path = Sources/AetherCore/Models/Playlist.swift; sourceTree = "<group>"; };
+		FA0002000000000000000014 /* SubtitleTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubtitleTrack.swift; path = Sources/AetherCore/Models/SubtitleTrack.swift; sourceTree = "<group>"; };
+		FA0002000000000000000015 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = Sources/AetherCore/Models/Theme.swift; sourceTree = "<group>"; };
+		FA0002000000000000000020 /* M3UParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = M3UParser.swift; path = Sources/AetherCore/Parsers/M3UParser.swift; sourceTree = "<group>"; };
+		FA0002000000000000000021 /* SRTParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SRTParser.swift; path = Sources/AetherCore/Parsers/SRTParser.swift; sourceTree = "<group>"; };
+		FA0002000000000000000022 /* XMLTVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = XMLTVParser.swift; path = Sources/AetherCore/Parsers/XMLTVParser.swift; sourceTree = "<group>"; };
+		FA0002000000000000000030 /* BufferingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BufferingConfig.swift; path = Sources/AetherCore/Player/BufferingConfig.swift; sourceTree = "<group>"; };
+		FA0002000000000000000031 /* PlayerCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlayerCore.swift; path = Sources/AetherCore/Player/PlayerCore.swift; sourceTree = "<group>"; };
+		FA0002000000000000000040 /* ChannelFilterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelFilterService.swift; path = Sources/AetherCore/Services/ChannelFilterService.swift; sourceTree = "<group>"; };
+		FA0002000000000000000041 /* EPGService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EPGService.swift; path = Sources/AetherCore/Services/EPGService.swift; sourceTree = "<group>"; };
+		FA0002000000000000000042 /* EPGStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EPGStore.swift; path = Sources/AetherCore/Services/EPGStore.swift; sourceTree = "<group>"; };
+		FA0002000000000000000043 /* PlaylistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlaylistService.swift; path = Sources/AetherCore/Services/PlaylistService.swift; sourceTree = "<group>"; };
+		FA0002000000000000000044 /* PlaylistValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlaylistValidator.swift; path = Sources/AetherCore/Services/PlaylistValidator.swift; sourceTree = "<group>"; };
+		FA0002000000000000000045 /* SleepTimerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SleepTimerService.swift; path = Sources/AetherCore/Services/SleepTimerService.swift; sourceTree = "<group>"; };
+		FA0002000000000000000046 /* StreamQualityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StreamQualityService.swift; path = Sources/AetherCore/Services/StreamQualityService.swift; sourceTree = "<group>"; };
+		FA0002000000000000000047 /* SubtitleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubtitleService.swift; path = Sources/AetherCore/Services/SubtitleService.swift; sourceTree = "<group>"; };
+		FA0002000000000000000048 /* ThemeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ThemeService.swift; path = Sources/AetherCore/Services/ThemeService.swift; sourceTree = "<group>"; };
+		FA0002000000000000000049 /* XstreamService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = XstreamService.swift; path = Sources/AetherCore/Services/XstreamService.swift; sourceTree = "<group>"; };
+		FA0002000000000000000050 /* ChannelRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelRecord.swift; path = Sources/AetherCore/Storage/ChannelRecord.swift; sourceTree = "<group>"; };
+		FA0002000000000000000051 /* FavoriteRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FavoriteRecord.swift; path = Sources/AetherCore/Storage/FavoriteRecord.swift; sourceTree = "<group>"; };
+		FA0002000000000000000052 /* LastChannelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LastChannelStore.swift; path = Sources/AetherCore/Storage/LastChannelStore.swift; sourceTree = "<group>"; };
+		FA0002000000000000000053 /* PlaylistRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlaylistRecord.swift; path = Sources/AetherCore/Storage/PlaylistRecord.swift; sourceTree = "<group>"; };
+		FA0002000000000000000054 /* WatchHistoryRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WatchHistoryRecord.swift; path = Sources/AetherCore/Storage/WatchHistoryRecord.swift; sourceTree = "<group>"; };
+
+		/* AetherUI */
+		FA0003000000000000000001 /* AetherUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AetherUI.swift; path = Sources/AetherUI/AetherUI.swift; sourceTree = "<group>"; };
+		FA0003000000000000000010 /* AppearancePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppearancePickerView.swift; path = Sources/AetherUI/Views/AppearancePickerView.swift; sourceTree = "<group>"; };
+		FA0003000000000000000011 /* ChannelRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelRowView.swift; path = Sources/AetherUI/Views/ChannelRowView.swift; sourceTree = "<group>"; };
+		FA0003000000000000000012 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EmptyStateView.swift; path = Sources/AetherUI/Views/EmptyStateView.swift; sourceTree = "<group>"; };
+		FA0003000000000000000013 /* EPGTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EPGTimelineView.swift; path = Sources/AetherUI/Views/EPGTimelineView.swift; sourceTree = "<group>"; };
+		FA0003000000000000000014 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OnboardingView.swift; path = Sources/AetherUI/Views/OnboardingView.swift; sourceTree = "<group>"; };
+		FA0003000000000000000015 /* PlayerControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlayerControlsView.swift; path = Sources/AetherUI/Views/PlayerControlsView.swift; sourceTree = "<group>"; };
+		FA0003000000000000000016 /* ThemePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ThemePickerView.swift; path = Sources/AetherUI/Views/ThemePickerView.swift; sourceTree = "<group>"; };
+
+		/* Product */
+		BB000000000000000000PROD /* AetherApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AetherApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BB000000000000000000FWBP /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		/* Root group */
+		BB000000000000000000ROOT /* Aether */ = {
+			isa = PBXGroup;
+			children = (
+				BB000000000000000000GRP1 /* AetherApp */,
+				BB000000000000000000GRP2 /* AetherCore */,
+				BB000000000000000000GRP3 /* AetherUI */,
+				BB000000000000000000GRPP /* Products */,
+			);
+			name = Aether;
+			sourceTree = "<group>";
+		};
+
+		BB000000000000000000GRPP /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BB000000000000000000PROD /* AetherApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+
+		/* AetherApp group */
+		BB000000000000000000GRP1 /* AetherApp */ = {
+			isa = PBXGroup;
+			children = (
+				FA0001000000000000000001 /* AetherApp.swift */,
+				FA0001000000000000000002 /* EPGStore.swift */,
+				FA0001000000000000000003 /* SubtitleStore.swift */,
+				FA0001000000000000000004 /* KeyboardShortcutHandler.swift */,
+				BB000000000000000000GRP1V /* Views */,
+				BB000000000000000000GRP1R /* Resources */,
+			);
+			name = AetherApp;
+			sourceTree = "<group>";
+		};
+
+		BB000000000000000000GRP1V /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				FA0001000000000000000010 /* AddPlaylistSheet.swift */,
+				FA0001000000000000000011 /* ChannelListView.swift */,
+				FA0001000000000000000012 /* ChannelLogoView.swift */,
+				FA0001000000000000000013 /* CommandPaletteView.swift */,
+				FA0001000000000000000014 /* ContentView.swift */,
+				FA0001000000000000000015 /* PlayerView.swift */,
+				FA0001000000000000000016 /* PlaylistHealthView.swift */,
+				FA0001000000000000000017 /* PlaylistSidebar.swift */,
+				FA0001000000000000000018 /* SeriesBrowserView.swift */,
+				FA0001000000000000000019 /* SeriesDetailView.swift */,
+				FA000100000000000000001A /* SettingsView.swift */,
+				FA000100000000000000001B /* StreamStatsView.swift */,
+				FA000100000000000000001C /* SubtitleOverlayView.swift */,
+				FA000100000000000000001D /* SubtitleSettingsView.swift */,
+				FA000100000000000000001E /* VODBrowserView.swift */,
+				FA000100000000000000001F /* WatchHistoryView.swift */,
+			);
+			name = Views;
+			sourceTree = "<group>";
+		};
+
+		BB000000000000000000GRP1R /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				FA0001000000000000000030 /* Assets.xcassets */,
+				FA0001000000000000000031 /* Info.plist */,
+				FA0001000000000000000032 /* AetherApp.entitlements */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+
+		/* AetherCore group */
+		BB000000000000000000GRP2 /* AetherCore */ = {
+			isa = PBXGroup;
+			children = (
+				BB000000000000000000GRP2D /* Design */,
+				BB000000000000000000GRP2M /* Models */,
+				BB000000000000000000GRP2P /* Parsers */,
+				BB000000000000000000GRP2PL /* Player */,
+				BB000000000000000000GRP2S /* Services */,
+				BB000000000000000000GRP2ST /* Storage */,
+			);
+			name = AetherCore;
+			sourceTree = "<group>";
+		};
+
+		BB000000000000000000GRP2D /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				FA0002000000000000000001 /* Colors.swift */,
+				FA0002000000000000000002 /* Typography.swift */,
+			);
+			name = Design;
+			sourceTree = "<group>";
+		};
+
+		BB000000000000000000GRP2M /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				FA0002000000000000000010 /* AppearanceMode.swift */,
+				FA0002000000000000000011 /* Channel.swift */,
+				FA0002000000000000000012 /* EPGEntry.swift */,
+				FA0002000000000000000013 /* Playlist.swift */,
+				FA0002000000000000000014 /* SubtitleTrack.swift */,
+				FA0002000000000000000015 /* Theme.swift */,
+			);
+			name = Models;
+			sourceTree = "<group>";
+		};
+
+		BB000000000000000000GRP2P /* Parsers */ = {
+			isa = PBXGroup;
+			children = (
+				FA0002000000000000000020 /* M3UParser.swift */,
+				FA0002000000000000000021 /* SRTParser.swift */,
+				FA0002000000000000000022 /* XMLTVParser.swift */,
+			);
+			name = Parsers;
+			sourceTree = "<group>";
+		};
+
+		BB000000000000000000GRP2PL /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				FA0002000000000000000030 /* BufferingConfig.swift */,
+				FA0002000000000000000031 /* PlayerCore.swift */,
+			);
+			name = Player;
+			sourceTree = "<group>";
+		};
+
+		BB000000000000000000GRP2S /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				FA0002000000000000000040 /* ChannelFilterService.swift */,
+				FA0002000000000000000041 /* EPGService.swift */,
+				FA0002000000000000000042 /* EPGStore.swift */,
+				FA0002000000000000000043 /* PlaylistService.swift */,
+				FA0002000000000000000044 /* PlaylistValidator.swift */,
+				FA0002000000000000000045 /* SleepTimerService.swift */,
+				FA0002000000000000000046 /* StreamQualityService.swift */,
+				FA0002000000000000000047 /* SubtitleService.swift */,
+				FA0002000000000000000048 /* ThemeService.swift */,
+				FA0002000000000000000049 /* XstreamService.swift */,
+			);
+			name = Services;
+			sourceTree = "<group>";
+		};
+
+		BB000000000000000000GRP2ST /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				FA0002000000000000000050 /* ChannelRecord.swift */,
+				FA0002000000000000000051 /* FavoriteRecord.swift */,
+				FA0002000000000000000052 /* LastChannelStore.swift */,
+				FA0002000000000000000053 /* PlaylistRecord.swift */,
+				FA0002000000000000000054 /* WatchHistoryRecord.swift */,
+			);
+			name = Storage;
+			sourceTree = "<group>";
+		};
+
+		/* AetherUI group */
+		BB000000000000000000GRP3 /* AetherUI */ = {
+			isa = PBXGroup;
+			children = (
+				FA0003000000000000000001 /* AetherUI.swift */,
+				BB000000000000000000GRP3V /* Views */,
+			);
+			name = AetherUI;
+			sourceTree = "<group>";
+		};
+
+		BB000000000000000000GRP3V /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				FA0003000000000000000010 /* AppearancePickerView.swift */,
+				FA0003000000000000000011 /* ChannelRowView.swift */,
+				FA0003000000000000000012 /* EmptyStateView.swift */,
+				FA0003000000000000000013 /* EPGTimelineView.swift */,
+				FA0003000000000000000014 /* OnboardingView.swift */,
+				FA0003000000000000000015 /* PlayerControlsView.swift */,
+				FA0003000000000000000016 /* ThemePickerView.swift */,
+			);
+			name = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BB000000000000000000TARG /* AetherApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BB000000000000000000CFGL /* Build configuration list for PBXNativeTarget "AetherApp" */;
+			buildPhases = (
+				BB000000000000000000SRCBP /* Sources */,
+				BB000000000000000000FWBP /* Frameworks */,
+				BB000000000000000000RESBP /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AetherApp;
+			productName = AetherApp;
+			productReference = BB000000000000000000PROD /* AetherApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BB000000000000000000PROJ /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					BB000000000000000000TARG = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = BB000000000000000000CFGP /* Build configuration list for PBXProject "Aether" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = BB000000000000000000ROOT /* Aether */;
+			productRefGroup = BB000000000000000000GRPP /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BB000000000000000000TARG /* AetherApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BB000000000000000000RESBP /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0001000000000000000030 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BB000000000000000000SRCBP /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				/* AetherApp */
+				AA0001000000000000000001 /* AetherApp.swift in Sources */,
+				AA0001000000000000000002 /* EPGStore.swift in Sources */,
+				AA0001000000000000000003 /* SubtitleStore.swift in Sources */,
+				AA0001000000000000000004 /* KeyboardShortcutHandler.swift in Sources */,
+				AA0001000000000000000010 /* AddPlaylistSheet.swift in Sources */,
+				AA0001000000000000000011 /* ChannelListView.swift in Sources */,
+				AA0001000000000000000012 /* ChannelLogoView.swift in Sources */,
+				AA0001000000000000000013 /* CommandPaletteView.swift in Sources */,
+				AA0001000000000000000014 /* ContentView.swift in Sources */,
+				AA0001000000000000000015 /* PlayerView.swift in Sources */,
+				AA0001000000000000000016 /* PlaylistHealthView.swift in Sources */,
+				AA0001000000000000000017 /* PlaylistSidebar.swift in Sources */,
+				AA0001000000000000000018 /* SeriesBrowserView.swift in Sources */,
+				AA0001000000000000000019 /* SeriesDetailView.swift in Sources */,
+				AA000100000000000000001A /* SettingsView.swift in Sources */,
+				AA000100000000000000001B /* StreamStatsView.swift in Sources */,
+				AA000100000000000000001C /* SubtitleOverlayView.swift in Sources */,
+				AA000100000000000000001D /* SubtitleSettingsView.swift in Sources */,
+				AA000100000000000000001E /* VODBrowserView.swift in Sources */,
+				AA000100000000000000001F /* WatchHistoryView.swift in Sources */,
+				/* AetherCore */
+				AA0002000000000000000001 /* Colors.swift in Sources */,
+				AA0002000000000000000002 /* Typography.swift in Sources */,
+				AA0002000000000000000010 /* AppearanceMode.swift in Sources */,
+				AA0002000000000000000011 /* Channel.swift in Sources */,
+				AA0002000000000000000012 /* EPGEntry.swift in Sources */,
+				AA0002000000000000000013 /* Playlist.swift in Sources */,
+				AA0002000000000000000014 /* SubtitleTrack.swift in Sources */,
+				AA0002000000000000000015 /* Theme.swift in Sources */,
+				AA0002000000000000000020 /* M3UParser.swift in Sources */,
+				AA0002000000000000000021 /* SRTParser.swift in Sources */,
+				AA0002000000000000000022 /* XMLTVParser.swift in Sources */,
+				AA0002000000000000000030 /* BufferingConfig.swift in Sources */,
+				AA0002000000000000000031 /* PlayerCore.swift in Sources */,
+				AA0002000000000000000040 /* ChannelFilterService.swift in Sources */,
+				AA0002000000000000000041 /* EPGService.swift in Sources */,
+				AA0002000000000000000042 /* EPGStore.swift in Sources */,
+				AA0002000000000000000043 /* PlaylistService.swift in Sources */,
+				AA0002000000000000000044 /* PlaylistValidator.swift in Sources */,
+				AA0002000000000000000045 /* SleepTimerService.swift in Sources */,
+				AA0002000000000000000046 /* StreamQualityService.swift in Sources */,
+				AA0002000000000000000047 /* SubtitleService.swift in Sources */,
+				AA0002000000000000000048 /* ThemeService.swift in Sources */,
+				AA0002000000000000000049 /* XstreamService.swift in Sources */,
+				AA0002000000000000000050 /* ChannelRecord.swift in Sources */,
+				AA0002000000000000000051 /* FavoriteRecord.swift in Sources */,
+				AA0002000000000000000052 /* LastChannelStore.swift in Sources */,
+				AA0002000000000000000053 /* PlaylistRecord.swift in Sources */,
+				AA0002000000000000000054 /* WatchHistoryRecord.swift in Sources */,
+				/* AetherUI */
+				AA0003000000000000000001 /* AetherUI.swift in Sources */,
+				AA0003000000000000000010 /* AppearancePickerView.swift in Sources */,
+				AA0003000000000000000011 /* ChannelRowView.swift in Sources */,
+				AA0003000000000000000012 /* EmptyStateView.swift in Sources */,
+				AA0003000000000000000013 /* EPGTimelineView.swift in Sources */,
+				AA0003000000000000000014 /* OnboardingView.swift in Sources */,
+				AA0003000000000000000015 /* PlayerControlsView.swift in Sources */,
+				AA0003000000000000000016 /* ThemePickerView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		/* Project-level Debug */
+		BB000000000000000000CFGD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+
+		/* Project-level Release */
+		BB000000000000000000CFGR /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+
+		/* Target-level Debug */
+		BB000000000000000000TCFD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Sources/AetherApp/Resources/AetherApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 7;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Sources/AetherApp/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.7.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.aether.iptv";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+
+		/* Target-level Release */
+		BB000000000000000000TCFR /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Sources/AetherApp/Resources/AetherApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 7;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Sources/AetherApp/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.7.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.aether.iptv";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BB000000000000000000CFGP /* Build configuration list for PBXProject "Aether" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB000000000000000000CFGD /* Debug */,
+				BB000000000000000000CFGR /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BB000000000000000000CFGL /* Build configuration list for PBXNativeTarget "AetherApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB000000000000000000TCFD /* Debug */,
+				BB000000000000000000TCFR /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = BB000000000000000000PROJ /* Project object */;
+}
