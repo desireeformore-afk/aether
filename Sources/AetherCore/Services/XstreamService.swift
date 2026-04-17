@@ -79,8 +79,11 @@ public struct XstreamStream: Decodable, Sendable, Identifiable {
             .appendingPathComponent(credentials.password)
             .appendingPathComponent("\(id).\(ext)")
 
+        // Deterministic UUID from streamID so Favorites/navigation survive re-fetch.
+        let deterministicID = UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", id))") ?? UUID()
+
         return Channel(
-            id: UUID(),
+            id: deterministicID,
             name: name,
             streamURL: streamURL,
             logoURL: streamIcon.flatMap(URL.init(string:)),
@@ -117,8 +120,12 @@ public struct XstreamVOD: Decodable, Sendable, Identifiable {
             .appendingPathComponent(credentials.password)
             .appendingPathComponent("\(id).\(ext)")
 
+        // Deterministic UUID from stream_id (VOD namespace offset: 0x800000000000).
+        let vodID = id + 0x800000000000
+        let deterministicID = UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", vodID))") ?? UUID()
+
         return Channel(
-            id: UUID(),
+            id: deterministicID,
             name: name,
             streamURL: streamURL,
             logoURL: streamIcon.flatMap(URL.init(string:)),

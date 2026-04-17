@@ -62,6 +62,9 @@ public final class PlayerCore: ObservableObject {
     private var stallObserver: NSObjectProtocol?
     private var failedObserver: NSObjectProtocol?
     private var isRetrying: Bool = false
+    /// The AVPlayerItem that triggered the current pending retry (prevents duplicate retries
+    /// when both .status == .failed and AVPlayerItemFailedToPlayToEndTime fire for the same item).
+    private weak var retrySourceItem: AVPlayerItem?
 
     /// Tracks when the current channel started playing.
     private var watchStartTime: Date?
@@ -138,6 +141,7 @@ public final class PlayerCore: ObservableObject {
         currentChannel = nil
         retryCount = 0
         isRetrying = false
+        retrySourceItem = nil
         state = .idle
         statusObserver = nil
     }
@@ -184,13 +188,17 @@ public final class PlayerCore: ObservableObject {
     // MARK: - Auto-retry
 
     /// Schedules a retry with exponential backoff (2s, 4s, 6s).
-    private func scheduleRetry() {
+    /// `item` identifies the failing item — duplicate calls for the same item are ignored.
+    private func scheduleRetry(for item: AVPlayerItem) {
+        // De-duplicate: if we're already retrying because of this exact item, skip.
+        guard retrySourceItem !== item else { return }
         guard !isRetrying else { return }
         guard retryCount < maxRetries, let channel = currentChannel else {
             state = .error("Stream unavailable after \(maxRetries) retries")
             return
         }
         isRetrying = true
+        retrySourceItem = item
         retryCount += 1
         let delay = Double(retryCount) * 2.0
         state = .loading
@@ -199,9 +207,11 @@ public final class PlayerCore: ObservableObject {
             // Only retry if we're still on the same channel
             guard self.currentChannel?.id == channel.id else {
                 self.isRetrying = false
+                self.retrySourceItem = nil
                 return
             }
             self.isRetrying = false
+            self.retrySourceItem = nil
             self.removeRetryObservers()
             self.play(channel)
         }
@@ -215,9 +225,10 @@ public final class PlayerCore: ObservableObject {
             forName: .AVPlayerItemFailedToPlayToEndTime,
             object: item,
             queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.scheduleRetry()
+        ) { [weak self, weak item] _ in
+            Task { @MainActor [weak self, weak item] in
+                guard let self, let item else { return }
+                self.scheduleRetry(for: item)
             }
         }
 
@@ -226,9 +237,10 @@ public final class PlayerCore: ObservableObject {
             forName: .AVPlayerItemPlaybackStalled,
             object: item,
             queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.scheduleRetry()
+        ) { [weak self, weak item] _ in
+            Task { @MainActor [weak self, weak item] in
+                guard let self, let item else { return }
+                self.scheduleRetry(for: item)
             }
         }
     }
@@ -254,14 +266,15 @@ public final class PlayerCore: ObservableObject {
     private func observePlayerItem(_ item: AVPlayerItem) {
         statusObserver = item.publisher(for: \.status)
             .receive(on: RunLoop.main)
-            .sink { [weak self] status in
-                guard let self else { return }
+            .sink { [weak self, weak item] status in
+                guard let self, let item else { return }
                 switch status {
                 case .readyToPlay:
                     self.retryCount = 0
+                    self.retrySourceItem = nil
                     self.state = .playing
                 case .failed:
-                    self.scheduleRetry()
+                    self.scheduleRetry(for: item)
                 case .unknown:
                     break
                 @unknown default:

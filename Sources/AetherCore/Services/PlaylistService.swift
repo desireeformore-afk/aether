@@ -75,7 +75,11 @@ public actor PlaylistService {
     // MARK: - Private
 
     private func cacheURL(for url: URL) -> URL {
-        let hash = abs(url.absoluteString.hashValue)
+        // Use a stable FNV-1a hash (not Swift's hashValue, which is randomised per-run).
+        let key = url.absoluteString
+        let hash = key.utf8.reduce(UInt64(14695981039346656037)) { h, byte in
+            (h ^ UInt64(byte)) &* 16777619
+        }
         return cacheDirectory.appendingPathComponent("\(hash).m3u")
     }
 }

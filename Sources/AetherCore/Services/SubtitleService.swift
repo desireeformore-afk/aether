@@ -71,7 +71,12 @@ public actor SubtitleService {
         req.addValue("Aether v1.0", forHTTPHeaderField: "User-Agent")
         req.httpBody = try JSONEncoder().encode(["file_id": Int(fileID) ?? 0])
 
-        let (data, _) = try await session.data(for: req)
+        let (data, resp) = try await session.data(for: req)
+        guard let http = resp as? HTTPURLResponse else { throw SubtitleError.apiError(0) }
+        // 406 = daily download quota exceeded; 401 = bad API key
+        guard (200..<300).contains(http.statusCode) else {
+            throw SubtitleError.apiError(http.statusCode)
+        }
         let decoded = try JSONDecoder().decode(OSDownloadResponse.self, from: data)
         guard let url = URL(string: decoded.link) else { throw SubtitleError.invalidURL }
         return url

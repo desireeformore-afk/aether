@@ -30,16 +30,15 @@ public actor EPGService {
 
     // MARK: - Public API
 
-    /// Loads an XMLTV feed from `url`, caches it, and indexes entries by channelID.
-    ///
-    /// - Parameters:
-    ///   - url: Remote or local XMLTV URL.
-    ///   - forceRefresh: Ignore disk cache when `true`.
+    /// Cache TTL: 12 hours. After this, the cached file is treated as stale.
+    private let cacheTTL: TimeInterval = 12 * 3600
+
     public func loadGuide(from url: URL, forceRefresh: Bool = false) async throws {
         let cacheFile = cacheURL(for: url)
 
         let data: Data
-        if !forceRefresh, let cached = try? Data(contentsOf: cacheFile) {
+        let useCache = !forceRefresh && isCacheValid(at: cacheFile)
+        if useCache, let cached = try? Data(contentsOf: cacheFile) {
             data = cached
         } else if url.isFileURL {
             data = try Data(contentsOf: url)
@@ -57,6 +56,13 @@ public actor EPGService {
 
         let entries = try await parser.parse(data: data)
         index(entries)
+    }
+
+    /// Returns true if the cache file exists and was modified within the TTL window.
+    private func isCacheValid(at url: URL) -> Bool {
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let modified = attrs[.modificationDate] as? Date else { return false }
+        return Date().timeIntervalSince(modified) < cacheTTL
     }
 
     /// Returns all EPG entries for `channelID`.
@@ -109,7 +115,11 @@ public actor EPGService {
     }
 
     private func cacheURL(for url: URL) -> URL {
-        let hash = abs(url.absoluteString.hashValue)
+        // Use a stable FNV-1a hash (not Swift's hashValue, which is randomised per-run).
+        let key = url.absoluteString
+        let hash = key.utf8.reduce(UInt64(14695981039346656037)) { h, byte in
+            (h ^ UInt64(byte)) &* 16777619
+        }
         return cacheDirectory.appendingPathComponent("\(hash).xmltv")
     }
 }

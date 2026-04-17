@@ -18,6 +18,8 @@ struct PlayerView: View {
     @State private var allEPGEntries: [EPGEntry] = []
     @State private var showStats = false
     @State private var showTimeline = false
+    /// Cancellation token for in-flight EPG fetch (debounce for rapid channel changes).
+    @State private var epgFetchTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -70,7 +72,14 @@ struct PlayerView: View {
             }
         }
         .onChange(of: player.currentChannel) { _, newChannel in
-            Task { await loadEPG(for: newChannel) }
+            // Cancel any in-flight EPG fetch (debounce for rapid zap/prev/next)
+            epgFetchTask?.cancel()
+            epgFetchTask = Task {
+                // 250ms debounce — ignore if channel changes again quickly
+                try? await Task.sleep(for: .milliseconds(250))
+                guard !Task.isCancelled else { return }
+                await loadEPG(for: newChannel)
+            }
             // Auto-search subtitles: use channel name (EPG title loaded async)
             if let name = newChannel?.name {
                 subtitleStore.search(for: name)
