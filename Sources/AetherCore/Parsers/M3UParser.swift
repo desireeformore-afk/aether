@@ -33,6 +33,12 @@ public struct M3UParser: Sendable {
 
         var lines = text.components(separatedBy: "\n")
 
+        // Validate: must contain at least one #EXTINF or #EXTM3U line
+        let hasM3UContent = lines.contains { $0.hasPrefix("#EXTM3U") || $0.hasPrefix("#EXTINF:") }
+        guard hasM3UContent else {
+            throw M3UParserError.invalidContent
+        }
+
         // Remove optional #EXTM3U header
         if let first = lines.first, first.hasPrefix("#EXTM3U") {
             lines.removeFirst()

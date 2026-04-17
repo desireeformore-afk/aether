@@ -21,6 +21,8 @@ struct SeriesBrowserView: View {
         self.service = XstreamService(credentials: credentials)
     }
 
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationSplitView {
             categoryList
@@ -29,6 +31,12 @@ struct SeriesBrowserView: View {
         }
         .navigationTitle("Series")
         .frame(minWidth: 720, minHeight: 500)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Close") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
         .task { await loadCategories() }
         .sheet(item: $selectedSeries) { series in
             SeriesDetailView(series: series, credentials: credentials, player: player)

@@ -22,6 +22,8 @@ struct VODBrowserView: View {
         self.service = XstreamService(credentials: credentials)
     }
 
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationSplitView {
             categoryList
@@ -30,6 +32,12 @@ struct VODBrowserView: View {
         }
         .navigationTitle("VOD Browser")
         .frame(minWidth: 720, minHeight: 500)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Close") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
         .task { await loadCategories() }
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)

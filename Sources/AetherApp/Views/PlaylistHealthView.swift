@@ -144,10 +144,16 @@ struct PlaylistHealthView: View {
         .background(Color.aetherBackground)
     }
 
+    @Environment(\.dismiss) private var dismiss
+
     // MARK: - Toolbar
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Close") { dismiss() }
+                .keyboardShortcut(.cancelAction)
+        }
         ToolbarItem(placement: .primaryAction) {
             Button {
                 Task { await runCheck() }
