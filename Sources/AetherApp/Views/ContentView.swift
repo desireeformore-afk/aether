@@ -12,12 +12,16 @@ struct ContentView: View {
     @State private var showVODBrowser = false
     @State private var showSeriesBrowser = false
 
-    // Keyboard handler — retained for the lifetime of this view
+    // Keyboard handler — retained for the lifetime of this view (macOS only)
+    #if os(macOS)
     private let keyboardHandler: KeyboardShortcutHandler
+    #endif
 
     init(playerCore: PlayerCore) {
         self.playerCore = playerCore
+        #if os(macOS)
         self.keyboardHandler = KeyboardShortcutHandler(playerCore: playerCore)
+        #endif
     }
 
     var body: some View {
@@ -77,14 +81,18 @@ struct ContentView: View {
             Task { await epgStore.loadGuide(for: playlist) }
         }
         .onAppear {
+            #if os(macOS)
             keyboardHandler.startMonitoring()
+            #endif
             // Restore last-played channel on relaunch
             if let lastChannel = playerCore.restoreLastChannel() {
                 playerCore.play(lastChannel)
             }
         }
         .onDisappear {
+            #if os(macOS)
             keyboardHandler.stopMonitoring()
+            #endif
         }
     }
 }
