@@ -103,7 +103,7 @@ struct SeriesDetailView: View {
                 }
             }
         }
-        .frame(width: 560, minHeight: 420)
+        .frame(minWidth: 560, minHeight: 420)
         .background(Color.aetherBackground)
         .task { await loadInfo() }
     }
