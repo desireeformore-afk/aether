@@ -11,6 +11,9 @@ struct ContentView: View {
     @State private var selectedChannel: Channel?
     @State private var showVODBrowser = false
     @State private var showSeriesBrowser = false
+    #if os(macOS)
+    @State private var showCommandPalette = false
+    #endif
 
     // Keyboard handler — retained for the lifetime of this view (macOS only)
     #if os(macOS)
@@ -94,5 +97,33 @@ struct ContentView: View {
             keyboardHandler.stopMonitoring()
             #endif
         }
+        #if os(macOS)
+        .overlay {
+            if showCommandPalette {
+                ZStack {
+                    // Dismissal backdrop
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .ignoresSafeArea()
+                        .onTapGesture { showCommandPalette = false }
+
+                    CommandPaletteView(
+                        isPresented: $showCommandPalette,
+                        player: playerCore,
+                        channels: selectedPlaylist?.channels.compactMap { $0.toChannel() } ?? []
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.top, 60)
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+            }
+        }
+        .animation(.spring(duration: 0.2), value: showCommandPalette)
+        .onKeyPress(.init("k"), phases: .down) { event in
+            guard event.modifiers.contains(.command) else { return .ignored }
+            showCommandPalette.toggle()
+            return .handled
+        }
+        #endif
     }
 }
