@@ -107,7 +107,7 @@ struct ContentView: View {
                     CommandPaletteView(
                         isPresented: $showCommandPalette,
                         player: playerCore,
-                        channels: selectedPlaylist?.channels.compactMap { $0.toChannel() } ?? []
+                        channels: playerCore.channelList
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .padding(.top, 60)
