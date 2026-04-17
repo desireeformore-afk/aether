@@ -118,13 +118,15 @@ final class Sprint14Tests: XCTestCase {
 
     @MainActor
     func testThemeServiceDefaultIsFirstBuiltIn() {
-        let service = ThemeService()
+        let ud = UserDefaults(suiteName: "test.default.\(UUID().uuidString)")!
+        let service = ThemeService(defaults: ud)
         XCTAssertEqual(service.active.id, ThemeDefinition.allBuiltIn.first?.id)
     }
 
     @MainActor
     func testThemeServiceApply() {
-        let service = ThemeService()
+        let ud = UserDefaults(suiteName: "test.apply.\(UUID().uuidString)")!
+        let service = ThemeService(defaults: ud)
         let nord = ThemeDefinition.allBuiltIn.first { $0.id == "nord" }!
         service.select(nord)
         XCTAssertEqual(service.active.id, "nord")
@@ -132,7 +134,6 @@ final class Sprint14Tests: XCTestCase {
 
     @MainActor
     func testThemeServiceAllThemes() {
-        let service = ThemeService()
         XCTAssertEqual(ThemeDefinition.allBuiltIn.count, ThemeDefinition.allBuiltIn.count)
     }
 
