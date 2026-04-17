@@ -4,17 +4,56 @@ options:
   deploymentTarget:
     macOS: "14.0"
   xcodeVersion: "15.0"
-  generateEmptyDirectories: true
-  postGenCommand: echo "Xcode project generated ✅"
+  generateEmptyDirectories: false
 
 settings:
   base:
-    SWIFT_VERSION: 6.0
+    SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
     ENABLE_TESTABILITY: YES
-    DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
 
 targets:
+
+  # ── AetherCore (framework) ──────────────────────────────────────────────────
+  AetherCore:
+    type: framework
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/AetherCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aether.core
+        PRODUCT_NAME: AetherCore
+        DEFINES_MODULE: YES
+        SKIP_INSTALL: YES
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+
+  # ── AetherUI (framework) ────────────────────────────────────────────────────
+  AetherUI:
+    type: framework
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/AetherUI
+    dependencies:
+      - target: AetherCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aether.ui
+        PRODUCT_NAME: AetherUI
+        DEFINES_MODULE: YES
+        SKIP_INSTALL: YES
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
+
+  # ── AetherApp (macOS application) ──────────────────────────────────────────
   AetherApp:
     type: application
     platform: macOS
@@ -24,10 +63,14 @@ targets:
         excludes:
           - Resources/Info.plist
           - Resources/AetherApp.entitlements
-      - path: Sources/AetherCore
-      - path: Sources/AetherUI
+          - EPGStore.swift          # placeholder — real one is in AetherCore
     resources:
       - path: Sources/AetherApp/Resources/Assets.xcassets
+    dependencies:
+      - target: AetherCore
+        embed: true
+      - target: AetherUI
+        embed: true
     info:
       path: Sources/AetherApp/Resources/Info.plist
       properties:
@@ -43,7 +86,6 @@ targets:
         NSPrincipalClass: NSApplication
         NSHighResolutionCapable: true
         NSSupportsAutomaticTermination: false
-        NSPersistentStoreCoordinatorDescription: Aether IPTV Player for macOS
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     entitlements:
@@ -55,9 +97,6 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.aether.iptv
         PRODUCT_NAME: AetherApp
-        MACOSX_DEPLOYMENT_TARGET: "14.0"
-        SWIFT_VERSION: "6.0"
-        SWIFT_STRICT_CONCURRENCY: complete
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Sources/AetherApp/Resources/Info.plist
         CODE_SIGN_ENTITLEMENTS: Sources/AetherApp/Resources/AetherApp.entitlements
@@ -66,16 +105,14 @@ targets:
         CODE_SIGNING_ALLOWED: YES
         ENABLE_HARDENED_RUNTIME: NO
         LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
-        FRAMEWORK_SEARCH_PATHS: "$(inherited)"
-        OTHER_SWIFT_FLAGS: "$(inherited)"
       configs:
         Debug:
           SWIFT_OPTIMIZATION_LEVEL: "-Onone"
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
         Release:
           SWIFT_OPTIMIZATION_LEVEL: "-O"
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: RELEASE
 
+  # ── AetherTests ─────────────────────────────────────────────────────────────
   AetherTests:
     type: bundle.unit-test
     platform: macOS
@@ -83,23 +120,26 @@ targets:
     sources:
       - path: Sources/AetherTests
     dependencies:
+      - target: AetherCore
       - target: AetherApp
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.aether.iptv.tests
         SWIFT_VERSION: "6.0"
-        SWIFT_STRICT_CONCURRENCY: complete
         GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_REQUIRED: NO
 
 schemes:
   AetherApp:
     build:
       targets:
+        AetherCore: all
+        AetherUI: all
         AetherApp: all
+        AetherTests: [test]
     run:
       config: Debug
-      commandLineArguments: {}
-      environmentVariables: {}
     test:
       config: Debug
       targets:
