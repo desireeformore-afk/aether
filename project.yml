@@ -32,6 +32,7 @@ targets:
         SWIFT_STRICT_CONCURRENCY: complete
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: NO
+        GENERATE_INFOPLIST_FILE: YES
 
   # ── AetherUI (framework) ────────────────────────────────────────────────────
   AetherUI:
@@ -52,6 +53,7 @@ targets:
         SWIFT_STRICT_CONCURRENCY: complete
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: NO
+        GENERATE_INFOPLIST_FILE: YES
 
   # ── AetherApp (macOS application) ──────────────────────────────────────────
   AetherApp:
@@ -63,7 +65,6 @@ targets:
         excludes:
           - Resources/Info.plist
           - Resources/AetherApp.entitlements
-          - EPGStore.swift          # placeholder — real one is in AetherCore
     resources:
       - path: Sources/AetherApp/Resources/Assets.xcassets
     dependencies:
