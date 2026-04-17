@@ -21,7 +21,7 @@ struct PlayerView: View {
             VStack(spacing: 0) {
                 // Video layer
                 ZStack(alignment: .bottom) {
-                    VideoPlayerLayer(avPlayer: player.player)
+                    VideoPlayerLayer(avPlayer: player.player, playerCore: player)
                         .aspectRatio(16 / 9, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .overlay(alignment: .bottomLeading) {
@@ -219,6 +219,12 @@ struct EPGProgressBarView: View {
 
 struct VideoPlayerLayer: NSViewRepresentable {
     let avPlayer: AVPlayer
+    /// Weak reference so the coordinator can report PiP state changes back.
+    weak var playerCore: PlayerCore?
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(playerCore: playerCore)
+    }
 
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
@@ -227,11 +233,32 @@ struct VideoPlayerLayer: NSViewRepresentable {
         view.controlsStyle = .floating
         view.allowsPictureInPicturePlayback = true
         view.showsFullScreenToggleButton = true
+        view.pictureInPictureDelegate = context.coordinator
         return view
     }
 
     func updateNSView(_ nsView: AVPlayerView, context: Context) {
         if nsView.player !== avPlayer { nsView.player = avPlayer }
+        context.coordinator.playerCore = playerCore
+    }
+
+    // MARK: - Coordinator
+
+    @MainActor
+    final class Coordinator: NSObject, AVPlayerViewPictureInPictureDelegate {
+        weak var playerCore: PlayerCore?
+
+        init(playerCore: PlayerCore?) {
+            self.playerCore = playerCore
+        }
+
+        nonisolated func playerViewWillStartPictureInPicture(_ playerView: AVPlayerView) {
+            Task { @MainActor [weak self] in self?.playerCore?.setPiPActive(true) }
+        }
+
+        nonisolated func playerViewWillStopPictureInPicture(_ playerView: AVPlayerView) {
+            Task { @MainActor [weak self] in self?.playerCore?.setPiPActive(false) }
+        }
     }
 }
 
