@@ -141,9 +141,9 @@ final class BufferingConfigTests: XCTestCase {
         XCTAssertLessThanOrEqual(BufferingConfig.preferredForwardBufferDuration, 120)
     }
 
-    func testForwardBufferIs30Seconds() {
-        // Per Sprint 11 spec: preferred forward buffer is 30s
-        XCTAssertEqual(BufferingConfig.preferredForwardBufferDuration, 30, accuracy: 0.001)
+    func testForwardBufferIs10Seconds() {
+        // Updated: 10s for low latency on live IPTV streams
+        XCTAssertEqual(BufferingConfig.preferredForwardBufferDuration, 10, accuracy: 0.001)
     }
 
     func testApplyToItemDoesNotCrash() {
