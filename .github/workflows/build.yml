@@ -5,7 +5,7 @@ on:
     branches: ["*"]
     paths-ignore:
       - "**.md"
-  workflow_dispatch:  # manual trigger — Hermes może odpalić przez GitHub API
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,8 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build
-        run: swift build 2>&1
+      - name: Build (macOS)
+        run: swift build --target AetherCore --target AetherUI --target AetherApp 2>&1
 
       - name: Test
         run: swift test 2>&1
