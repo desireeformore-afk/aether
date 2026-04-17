@@ -2,17 +2,21 @@ import SwiftUI
 import SwiftData
 import AVKit
 import AetherCore
+import AetherUI
 
-/// Detail pane: AVPlayer video + transport controls + EPG info bar.
+/// Detail pane: AVPlayer video + transport controls + EPG info bar + timeline.
 struct PlayerView: View {
     @EnvironmentObject private var epgStore: EPGStore
     @EnvironmentObject private var sleepTimer: SleepTimerService
     @EnvironmentObject private var subtitleStore: SubtitleStore
+
     @ObservedObject var player: PlayerCore
 
     @State private var nowPlaying: EPGEntry?
     @State private var nextUp: EPGEntry?
+    @State private var todayEntries: [EPGEntry] = []
     @State private var showStats = false
+    @State private var showTimeline = false
 
     var body: some View {
         ZStack {
@@ -44,9 +48,16 @@ struct PlayerView: View {
 
                 // EPG info bar
                 if let entry = nowPlaying {
-                    EPGInfoBar(current: entry, next: nextUp)
+                    EPGInfoBar(current: entry, next: nextUp, showTimeline: $showTimeline)
                         .padding(.horizontal)
                         .padding(.top, 4)
+
+                    // EPG Timeline — collapsible
+                    if showTimeline && !todayEntries.isEmpty {
+                        EPGTimelineView(entries: todayEntries, channelID: player.currentChannel?.epgId ?? player.currentChannel?.name ?? "")
+                            .padding(.horizontal, 4)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
                 }
 
                 Spacer(minLength: 8)
@@ -117,12 +128,14 @@ struct PlayerView: View {
         guard let channel else {
             nowPlaying = nil
             nextUp = nil
+            todayEntries = []
             return
         }
         let cid = channel.epgId ?? channel.name
         let now = Date()
         nowPlaying = await epgStore.service.nowPlaying(for: cid, at: now)
         nextUp    = await epgStore.service.nextUp(for: cid, at: now)
+        todayEntries = await epgStore.service.todaySchedule(for: cid, at: now)
     }
 }
 
@@ -131,6 +144,7 @@ struct PlayerView: View {
 struct EPGInfoBar: View {
     let current: EPGEntry
     let next: EPGEntry?
+    @Binding var showTimeline: Bool
 
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -160,6 +174,17 @@ struct EPGInfoBar: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
+                // Timeline toggle button
+                Button {
+                    withAnimation(.spring(duration: 0.3)) { showTimeline.toggle() }
+                } label: {
+                    Image(systemName: showTimeline ? "calendar.badge.minus" : "calendar.badge.plus")
+                        .font(.system(size: 13))
+                        .foregroundStyle(showTimeline ? Color.aetherPrimary : Color.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(showTimeline ? "Hide EPG Timeline" : "Show EPG Timeline")
+
                 if let desc = current.description {
                     Text(desc)
                         .font(.aetherCaption)
