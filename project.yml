@@ -60,6 +60,13 @@ targets:
           - "**/*.md"
     resources:
       - path: Sources/AetherApp/Resources/Assets.xcassets
+    infoPlist:
+      path: Sources/AetherApp/Resources/Info.plist
+      properties:
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+          NSAllowsArbitraryLoadsForMedia: true
+        NSURLSessionHTTP3Disable: true
     dependencies:
       - target: AetherCore
       - target: AetherUI
@@ -69,7 +76,6 @@ targets:
         PRODUCT_NAME: Aether
         EXECUTABLE_NAME: AetherApp
         GENERATE_INFOPLIST_FILE: NO
-        INFOPLIST_FILE: Sources/AetherApp/Resources/Info.plist
         CODE_SIGN_ENTITLEMENTS: Sources/AetherApp/Resources/AetherApp.entitlements
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "-"
