@@ -32,10 +32,17 @@ let package = Package(
             path: "Sources/AetherApp",
             resources: [
                 .process("Resources/Assets.xcassets"),
-                .process("Resources/Info.plist"),
             ],
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"])
+            ],
+            linkerSettings: [
+                .unsafeFlags([
+                    "-Xlinker", "-sectcreate",
+                    "-Xlinker", "__TEXT",
+                    "-Xlinker", "__info_plist",
+                    "-Xlinker", "Sources/AetherApp/Resources/Info.plist"
+                ])
             ]
         ),
         // iOS app target — library (entry point via Xcode scheme, not SPM executable)
