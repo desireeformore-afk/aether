@@ -68,6 +68,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.aether.iptv
         PRODUCT_NAME: Aether
         EXECUTABLE_NAME: AetherApp
+        GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Sources/AetherApp/Resources/Info.plist
         CODE_SIGN_ENTITLEMENTS: Sources/AetherApp/Resources/AetherApp.entitlements
         CODE_SIGN_STYLE: Manual
