@@ -60,13 +60,7 @@ targets:
           - "**/*.md"
     resources:
       - path: Sources/AetherApp/Resources/Assets.xcassets
-    infoPlist:
-      path: Sources/AetherApp/Resources/Info.plist
-      properties:
-        NSAppTransportSecurity:
-          NSAllowsArbitraryLoads: true
-          NSAllowsArbitraryLoadsForMedia: true
-        NSURLSessionHTTP3Disable: true
+    infoPlist: Sources/AetherApp/Resources/Info.plist
     dependencies:
       - target: AetherCore
       - target: AetherUI

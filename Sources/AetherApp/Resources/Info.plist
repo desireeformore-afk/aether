@@ -28,14 +28,41 @@
     <false/>
     <key>NSPersistentStoreCoordinatorDescription</key>
     <string>Aether IPTV Player for macOS</string>
+    <key>NSURLSessionHTTP3Disable</key>
+    <true/>
     <key>NSAppTransportSecurity</key>
     <dict>
+        <!-- Global fallback for macOS 14/15 -->
         <key>NSAllowsArbitraryLoads</key>
         <true/>
         <key>NSAllowsArbitraryLoadsForMedia</key>
         <true/>
+        <!-- Explicit domain exceptions for macOS 26+ where global flag may be ignored -->
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>pro.0699906.xyz</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.0</string>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSThirdPartyExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSThirdPartyExceptionMinimumTLSVersion</key>
+                <string>TLSv1.0</string>
+            </dict>
+            <key>0699906.xyz</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSThirdPartyExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+            </dict>
+        </dict>
     </dict>
-    <key>NSURLSessionHTTP3Disable</key>
-    <true/>
 </dict>
 </plist>
