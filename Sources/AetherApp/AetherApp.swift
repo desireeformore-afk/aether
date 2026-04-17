@@ -3,8 +3,21 @@ import SwiftData
 import AetherCore
 import AetherUI
 
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        true
+    }
+}
+
 @main
 struct AetherApp: App {
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    #endif
+
     @StateObject private var epgStore = EPGStore()
     @StateObject private var playerCore = PlayerCore()
     @StateObject private var historyCoordinator = HistoryCoordinator()
