@@ -19,7 +19,7 @@ public struct OnboardingView: View {
                 addPlaylistPage.tag(1)
                 readyPage.tag(2)
             }
-            #if os(macOS) || os(iOS)
+            #if os(iOS) || os(tvOS)
             .tabViewStyle(.page(indexDisplayMode: .always))
             #endif
 
