@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AetherCore
+import AetherUI
 
 @main
 struct AetherApp: App {
@@ -9,6 +10,8 @@ struct AetherApp: App {
     @StateObject private var historyCoordinator = HistoryCoordinator()
     @StateObject private var sleepTimer = SleepTimerService()
     @StateObject private var subtitleStore = SubtitleStore()
+
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     var body: some Scene {
         WindowGroup {
@@ -24,6 +27,13 @@ struct AetherApp: App {
                     sleepTimer.onExpired = { [weak playerCore] in
                         playerCore?.stop()
                     }
+                }
+                .sheet(isPresented: .constant(!hasCompletedOnboarding)) {
+                    OnboardingView(isPresented: Binding(
+                        get: { !hasCompletedOnboarding },
+                        set: { hasCompletedOnboarding = !$0 }
+                    ))
+                    .interactiveDismissDisabled()
                 }
         }
         .modelContainer(for: [

@@ -19,7 +19,7 @@ let package = Package(
             name: "AetherCore",
             path: "Sources/AetherCore"
         ),
-        // Shared UI components (macOS, iOS, tvOS)
+        // Shared SwiftUI components — all platforms
         .target(
             name: "AetherUI",
             dependencies: ["AetherCore"],
@@ -38,18 +38,28 @@ let package = Package(
             ]
         ),
         // iOS app target
-        .target(
+        .executableTarget(
             name: "AetherAppIOS",
             dependencies: ["AetherCore", "AetherUI"],
             path: "Sources/AetherAppIOS",
-            resources: [.process("Resources/Assets.xcassets")]
+            resources: [
+                .process("Resources/Assets.xcassets"),
+            ],
+            swiftSettings: [
+                .unsafeFlags(["-parse-as-library"])
+            ]
         ),
         // tvOS app target
-        .target(
+        .executableTarget(
             name: "AetherAppTV",
             dependencies: ["AetherCore", "AetherUI"],
             path: "Sources/AetherAppTV",
-            resources: [.process("Resources/Assets.xcassets")]
+            resources: [
+                .process("Resources/Assets.xcassets"),
+            ],
+            swiftSettings: [
+                .unsafeFlags(["-parse-as-library"])
+            ]
         ),
         // Unit tests
         .testTarget(
