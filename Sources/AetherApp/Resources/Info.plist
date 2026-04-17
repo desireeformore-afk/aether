@@ -53,6 +53,15 @@
                 <key>NSThirdPartyExceptionMinimumTLSVersion</key>
                 <string>TLSv1.0</string>
             </dict>
+            <key>photo-tmdb.com</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSThirdPartyExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+            </dict>
             <key>0699906.xyz</key>
             <dict>
                 <key>NSExceptionAllowsInsecureHTTPLoads</key>
