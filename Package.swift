@@ -37,29 +37,17 @@ let package = Package(
                 .unsafeFlags(["-parse-as-library"])
             ]
         ),
-        // iOS app target
-        .executableTarget(
+        // iOS app target — library (entry point via Xcode scheme, not SPM executable)
+        .target(
             name: "AetherAppIOS",
             dependencies: ["AetherCore", "AetherUI"],
-            path: "Sources/AetherAppIOS",
-            resources: [
-                .process("Resources/Assets.xcassets"),
-            ],
-            swiftSettings: [
-                .unsafeFlags(["-parse-as-library"])
-            ]
+            path: "Sources/AetherAppIOS"
         ),
-        // tvOS app target
-        .executableTarget(
+        // tvOS app target — library (entry point via Xcode scheme, not SPM executable)
+        .target(
             name: "AetherAppTV",
             dependencies: ["AetherCore", "AetherUI"],
-            path: "Sources/AetherAppTV",
-            resources: [
-                .process("Resources/Assets.xcassets"),
-            ],
-            swiftSettings: [
-                .unsafeFlags(["-parse-as-library"])
-            ]
+            path: "Sources/AetherAppTV"
         ),
         // Unit tests
         .testTarget(

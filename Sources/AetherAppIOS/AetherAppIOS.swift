@@ -4,7 +4,7 @@ import AetherCore
 import AetherUI
 
 #if os(iOS)
-@main
+// @main is defined in the Xcode scheme entry point, not in SPM library target
 struct AetherAppIOS: App {
     @StateObject private var playerCore = PlayerCore()
     @StateObject private var epgStore = EPGStore()
