@@ -32,6 +32,10 @@
     <dict>
         <key>NSAllowsArbitraryLoads</key>
         <true/>
+        <key>NSAllowsArbitraryLoadsForMedia</key>
+        <true/>
     </dict>
+    <key>NSURLSessionHTTP3Disable</key>
+    <true/>
 </dict>
 </plist>

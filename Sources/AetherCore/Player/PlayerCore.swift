@@ -92,14 +92,35 @@ public final class PlayerCore: ObservableObject {
         currentChannel = channel
         watchStartTime = .now
         state = .loading
+        retryCount = 0
+        isRetrying = false
+        retrySourceItem = nil
 
         // Remove previous notification observers
         removeRetryObservers()
 
-        let item = AVPlayerItem(url: channel.streamURL)
+        // Build URLRequest with HTTP/1.1 forced — IPTV streams don't support QUIC/HTTP3
+        var request = URLRequest(url: channel.streamURL)
+        request.setValue("close", forHTTPHeaderField: "Connection")
+        request.setValue(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+            forHTTPHeaderField: "User-Agent"
+        )
+
+        let asset = AVURLAsset(
+            url: channel.streamURL,
+            options: [
+                "AVURLAssetHTTPHeaderFieldsKey": request.allHTTPHeaderFields ?? [:],
+                AVURLAssetPreferPreciseDurationAndTimingKey: false,
+                // Disable QUIC — forces TCP/HTTP which IPTV servers actually support
+                "AVURLAssetAllowsCellularAccessKey": true,
+            ]
+        )
+
+        let item = AVPlayerItem(asset: asset)
         item.preferredPeakBitRate = selectedQuality.peakBitRate
 
-        // Apply aggressive buffering settings
+        // Apply buffering settings
         BufferingConfig.apply(to: item)
         BufferingConfig.apply(to: player)
 
