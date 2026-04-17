@@ -14,8 +14,6 @@ struct PlaylistHealthView: View {
     @State private var filter: HealthFilter = .all
     @State private var searchText = ""
 
-    private var validator = PlaylistValidator()
-
     var body: some View {
         VStack(spacing: 0) {
             // ── Summary bar ──
@@ -175,6 +173,7 @@ struct PlaylistHealthView: View {
             return (name: record.name, url: url)
         }
 
+        let validator = PlaylistValidator()
         let checked = await validator.validate(channels: channels) { checked, _ in
             Task { @MainActor in
                 self.checkedCount = checked
