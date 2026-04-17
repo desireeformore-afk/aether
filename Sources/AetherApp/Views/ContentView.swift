@@ -87,10 +87,7 @@ struct ContentView: View {
             #if os(macOS)
             keyboardHandler.startMonitoring()
             #endif
-            // Restore last-played channel on relaunch
-            if let lastChannel = playerCore.restoreLastChannel() {
-                playerCore.play(lastChannel)
-            }
+            // Do not auto-restore last channel on launch — user picks manually
         }
         .onDisappear {
             #if os(macOS)
