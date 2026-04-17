@@ -255,7 +255,7 @@ private struct ThemeCard: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color(hex: theme.accentHex))
+                    .fill(Color(hex: theme.accentHex) ?? .accentColor)
                     .frame(width: 24, height: 24)
             }
 
