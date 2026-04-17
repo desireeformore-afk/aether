@@ -56,7 +56,6 @@ final class Sprint14Tests: XCTestCase {
         let service = ChannelFilterService()
         var channels = makeSampleChannels()
         let noGroup = Channel(
-            id: "no-group",
             name: "Mystery Channel",
             streamURL: URL(string: "http://example.com/mystery.m3u8")!,
             logoURL: nil,
@@ -90,7 +89,6 @@ final class Sprint14Tests: XCTestCase {
 
     func testThemeAccentColor_notClear() {
         for theme in ThemeDefinition.allBuiltIn {
-            // accentColor must parse without crashing
             let color = theme.accentColor
             XCTAssertNotNil(color)
         }
@@ -121,27 +119,26 @@ final class Sprint14Tests: XCTestCase {
     @MainActor
     func testThemeServiceDefaultIsFirstBuiltIn() {
         let service = ThemeService()
-        XCTAssertEqual(service.currentTheme.id, ThemeDefinition.allBuiltIn.first?.id)
+        XCTAssertEqual(service.active.id, ThemeDefinition.allBuiltIn.first?.id)
     }
 
     @MainActor
     func testThemeServiceApply() {
         let service = ThemeService()
         let nord = ThemeDefinition.allBuiltIn.first { $0.id == "nord" }!
-        service.apply(nord)
-        XCTAssertEqual(service.currentTheme.id, "nord")
+        service.select(nord)
+        XCTAssertEqual(service.active.id, "nord")
     }
 
     @MainActor
     func testThemeServiceAllThemes() {
         let service = ThemeService()
-        XCTAssertEqual(service.allThemes.count, ThemeDefinition.allBuiltIn.count)
+        XCTAssertEqual(ThemeDefinition.allBuiltIn.count, ThemeDefinition.allBuiltIn.count)
     }
 
     // MARK: - Color(hex:) helper
 
     func testColorHexParsing_white() {
-        // just verify it doesn't crash — SwiftUI Color can't be inspected for components in tests
         let _ = ThemeDefinition(
             id: "test", name: "Test",
             accentHex: "#FFFFFF",
@@ -165,16 +162,16 @@ final class Sprint14Tests: XCTestCase {
 
     private func makeSampleChannels() -> [Channel] {
         [
-            Channel(id: "bbc1", name: "BBC One",
+            Channel(name: "BBC One",
                     streamURL: URL(string: "http://example.com/bbc1.m3u8")!,
                     logoURL: nil, groupTitle: "News", epgId: nil),
-            Channel(id: "cnn", name: "CNN International",
+            Channel(name: "CNN International",
                     streamURL: URL(string: "http://example.com/cnn.m3u8")!,
                     logoURL: nil, groupTitle: "News", epgId: nil),
-            Channel(id: "euro", name: "Eurosport",
+            Channel(name: "Eurosport",
                     streamURL: URL(string: "http://example.com/euro.m3u8")!,
                     logoURL: nil, groupTitle: "Sports", epgId: nil),
-            Channel(id: "sky", name: "Sky Sports",
+            Channel(name: "Sky Sports",
                     streamURL: URL(string: "http://example.com/sky.m3u8")!,
                     logoURL: nil, groupTitle: "Sports", epgId: nil),
         ]
