@@ -252,11 +252,11 @@ struct VideoPlayerLayer: NSViewRepresentable {
             self.playerCore = playerCore
         }
 
-        nonisolated func playerViewWillStartPictureInPicture(_ playerView: AVPlayerView) {
+        nonisolated func playerViewWillStartPicture(inPicture playerView: AVPlayerView) {
             Task { @MainActor [weak self] in self?.playerCore?.setPiPActive(true) }
         }
 
-        nonisolated func playerViewWillStopPictureInPicture(_ playerView: AVPlayerView) {
+        nonisolated func playerViewWillStopPicture(inPicture playerView: AVPlayerView) {
             Task { @MainActor [weak self] in self?.playerCore?.setPiPActive(false) }
         }
     }
