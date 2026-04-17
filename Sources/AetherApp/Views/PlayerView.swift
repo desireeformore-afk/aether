@@ -129,7 +129,7 @@ struct PlayerView: View {
         guard let channel else {
             nowPlaying = nil
             nextUp = nil
-            todayEntries = []
+            allEPGEntries = []
             return
         }
         let cid = channel.epgId ?? channel.name
