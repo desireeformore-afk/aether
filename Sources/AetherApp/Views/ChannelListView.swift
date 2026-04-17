@@ -90,11 +90,15 @@ struct ChannelListView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         FilterChip(label: "All", isSelected: selectedGroup == nil) {
-                            selectedGroup = nil
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedGroup = nil
+                            }
                         }
                         ForEach(allGroups, id: \.self) { group in
                             FilterChip(label: group, isSelected: selectedGroup == group) {
-                                selectedGroup = (selectedGroup == group) ? nil : group
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedGroup = (selectedGroup == group) ? nil : group
+                                }
                             }
                         }
                     }
@@ -283,7 +287,7 @@ private struct FilterChip: View {
     var body: some View {
         Button(action: action) {
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
                 .foregroundStyle(isSelected ? .white : Color.aetherText)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
@@ -300,8 +304,14 @@ private struct FilterChip: View {
                             lineWidth: 1
                         )
                 )
+                .scaleEffect(isSelected ? 1.05 : 1.0)
+                .shadow(
+                    color: isSelected ? Color.aetherPrimary.opacity(0.35) : .clear,
+                    radius: 4, y: 2
+                )
         }
         .buttonStyle(.plain)
+        .animation(.spring(response: 0.3, dampingFraction: 0.65), value: isSelected)
     }
 }
 

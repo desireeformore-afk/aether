@@ -14,7 +14,8 @@ struct PlayerView: View {
 
     @State private var nowPlaying: EPGEntry?
     @State private var nextUp: EPGEntry?
-    @State private var todayEntries: [EPGEntry] = []
+    /// All EPG entries for the current channel (may span multiple days).
+    @State private var allEPGEntries: [EPGEntry] = []
     @State private var showStats = false
     @State private var showTimeline = false
 
@@ -53,8 +54,8 @@ struct PlayerView: View {
                         .padding(.top, 4)
 
                     // EPG Timeline — collapsible
-                    if showTimeline && !todayEntries.isEmpty {
-                        EPGTimelineView(entries: todayEntries, channelID: player.currentChannel?.epgId ?? player.currentChannel?.name ?? "")
+                    if showTimeline && !allEPGEntries.isEmpty {
+                        EPGTimelineView(entries: allEPGEntries, channelID: player.currentChannel?.epgId ?? player.currentChannel?.name ?? "")
                             .padding(.horizontal, 4)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
@@ -135,7 +136,7 @@ struct PlayerView: View {
         let now = Date()
         nowPlaying = await epgStore.service.nowPlaying(for: cid, at: now)
         nextUp    = await epgStore.service.nextUp(for: cid, at: now)
-        todayEntries = await epgStore.service.todaySchedule(for: cid, at: now)
+        allEPGEntries = await epgStore.service.entries(for: cid)
     }
 }
 
@@ -176,11 +177,27 @@ struct EPGInfoBar: View {
                 Spacer()
                 // Timeline toggle button
                 Button {
-                    withAnimation(.spring(duration: 0.3)) { showTimeline.toggle() }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                        showTimeline.toggle()
+                    }
                 } label: {
-                    Image(systemName: showTimeline ? "calendar.badge.minus" : "calendar.badge.plus")
-                        .font(.system(size: 13))
-                        .foregroundStyle(showTimeline ? Color.aetherPrimary : Color.secondary)
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 11, weight: .medium))
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9, weight: .semibold))
+                            .rotationEffect(.degrees(showTimeline ? 180 : 0))
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showTimeline)
+                    }
+                    .foregroundStyle(showTimeline ? Color.accentColor : Color.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(
+                        showTimeline
+                            ? Color.accentColor.opacity(0.15)
+                            : Color.secondary.opacity(0.1),
+                        in: Capsule()
+                    )
                 }
                 .buttonStyle(.plain)
                 .help(showTimeline ? "Hide EPG Timeline" : "Show EPG Timeline")

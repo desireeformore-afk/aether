@@ -1,11 +1,15 @@
 import SwiftUI
 import AetherCore
 
-/// Horizontal scrollable EPG timeline for a single channel's today schedule.
-/// Programme blocks are proportional to their duration (1 hour = 120 pt).
-/// Auto-scrolls to the current time on appear; shows a red "now" indicator.
+/// Horizontal scrollable EPG timeline for a channel's schedule.
+/// - Programme blocks are proportional to duration (1 hour = 120 pt).
+/// - Auto-scrolls to the current time on appear.
+/// - Shows a red "now" indicator line.
+/// - Includes a day-selector (Today / Tomorrow) in the header.
+/// - Shows an empty state when no EPG data is available.
 public struct EPGTimelineView: View {
-    let entries: [EPGEntry]
+    /// All entries for this channel (can span multiple days; view filters by selectedDay).
+    let allEntries: [EPGEntry]
     let channelID: String
 
     public static let pointsPerHour: CGFloat = 120
@@ -14,13 +18,51 @@ public struct EPGTimelineView: View {
 
     @State private var selectedEntry: EPGEntry?
     @State private var showPopover = false
+    @State private var selectedDay: DayOffset = .today
 
     public init(entries: [EPGEntry], channelID: String) {
-        self.entries = entries
+        self.allEntries = entries
         self.channelID = channelID
     }
 
-    // Offset (in points) of `date` from the first entry's start
+    // MARK: - Day filtering
+
+    private enum DayOffset: Int, CaseIterable {
+        case yesterday = -1, today = 0, tomorrow = 1
+
+        var label: String {
+            switch self {
+            case .yesterday: return "Yesterday"
+            case .today:     return "Today"
+            case .tomorrow:  return "Tomorrow"
+            }
+        }
+
+        var referenceDate: Date {
+            Calendar.current.date(byAdding: .day, value: rawValue, to: Date()) ?? Date()
+        }
+    }
+
+    private var entries: [EPGEntry] {
+        let cal = Calendar.current
+        let ref = selectedDay.referenceDate
+        return allEntries.filter { cal.isDate($0.start, inSameDayAs: ref) }
+    }
+
+    private var hasTomorrow: Bool {
+        let cal = Calendar.current
+        let tomorrow = DayOffset.tomorrow.referenceDate
+        return allEntries.contains { cal.isDate($0.start, inSameDayAs: tomorrow) }
+    }
+
+    private var hasYesterday: Bool {
+        let cal = Calendar.current
+        let yesterday = DayOffset.yesterday.referenceDate
+        return allEntries.contains { cal.isDate($0.start, inSameDayAs: yesterday) }
+    }
+
+    // MARK: - Geometry helpers
+
     private func xOffset(for date: Date) -> CGFloat {
         guard let first = entries.first else { return 0 }
         let seconds = date.timeIntervalSince(first.start)
@@ -29,7 +71,82 @@ public struct EPGTimelineView: View {
 
     private var nowOffset: CGFloat { xOffset(for: Date()) }
 
+    // MARK: - Body
+
     public var body: some View {
+        VStack(spacing: 0) {
+            // Day selector row
+            daySelector
+
+            if entries.isEmpty {
+                emptyState
+            } else {
+                timelineContent
+            }
+        }
+        .background(Color.aetherSurface.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    // MARK: - Day selector
+
+    private var daySelector: some View {
+        HStack(spacing: 0) {
+            Image(systemName: "calendar")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 12)
+
+            Spacer()
+
+            HStack(spacing: 4) {
+                ForEach(DayOffset.allCases, id: \.rawValue) { day in
+                    let available: Bool = {
+                        switch day {
+                        case .yesterday: return hasYesterday
+                        case .today:     return true
+                        case .tomorrow:  return hasTomorrow
+                        }
+                    }()
+                    if available {
+                        DayChip(
+                            label: day.label,
+                            isSelected: selectedDay == day
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedDay = day
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 6)
+
+            Spacer()
+        }
+        .padding(.horizontal, 8)
+        .background(Color.aetherSurface)
+    }
+
+    // MARK: - Empty state
+
+    private var emptyState: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "tv.slash")
+                .font(.system(size: 16))
+                .foregroundStyle(.tertiary)
+            Text("No EPG data for \(selectedDay.label.lowercased())")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.blockHeight + Self.timelineOffset)
+        .transition(.opacity.combined(with: .scale(scale: 0.97)))
+    }
+
+    // MARK: - Timeline content
+
+    private var timelineContent: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 ZStack(alignment: .topLeading) {
@@ -46,18 +163,32 @@ public struct EPGTimelineView: View {
                     // Hour ruler
                     hourRuler
 
-                    // "Now" red indicator line
-                    nowIndicator
+                    // "Now" red indicator line (only for today)
+                    if selectedDay == .today {
+                        nowIndicator
+                    }
                 }
             }
-            .frame(height: Self.blockHeight + Self.timelineOffset + 24)
+            .frame(height: Self.blockHeight + Self.timelineOffset + 8)
             .onAppear {
                 scrollToNow(proxy: proxy)
             }
             .onChange(of: channelID) { _, _ in
                 scrollToNow(proxy: proxy)
             }
+            .onChange(of: selectedDay) { _, _ in
+                if selectedDay == .today {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        scrollToNow(proxy: proxy)
+                    }
+                } else {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        proxy.scrollTo(0, anchor: .leading)
+                    }
+                }
+            }
         }
+        .transition(.opacity.combined(with: .move(edge: .bottom)))
     }
 
     // MARK: - Now indicator
@@ -87,13 +218,11 @@ public struct EPGTimelineView: View {
         return ZStack(alignment: .topLeading) {
             ForEach(hours, id: \.self) { date in
                 let x = xOffset(for: date) + 8
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(date, style: .time)
-                        .font(.system(size: 9, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .fixedSize()
-                }
-                .offset(x: x)
+                Text(date, style: .time)
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .fixedSize()
+                    .offset(x: x)
             }
         }
         .frame(height: Self.timelineOffset)
@@ -115,7 +244,6 @@ public struct EPGTimelineView: View {
     // MARK: - Scroll to now
 
     private func scrollToNow(proxy: ScrollViewProxy) {
-        // find index of currently-airing entry
         if let idx = entries.firstIndex(where: { $0.isOnAir() }) {
             withAnimation(.easeInOut(duration: 0.4)) {
                 proxy.scrollTo(idx, anchor: .leading)
@@ -134,10 +262,10 @@ public struct EPGTimelineView: View {
 
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: 6)
-                .fill(isNow ? Color.accentColor.opacity(0.25) : Color.secondary.opacity(0.15))
+                .fill(isNow ? Color.accentColor.opacity(0.25) : Color.secondary.opacity(0.12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)
-                        .stroke(isNow ? Color.accentColor : Color.secondary.opacity(0.3),
+                        .stroke(isNow ? Color.accentColor : Color.secondary.opacity(0.25),
                                 lineWidth: isNow ? 1.5 : 0.5)
                 )
 
@@ -178,6 +306,31 @@ public struct EPGTimelineView: View {
             }
         }
         #endif
+    }
+}
+
+// MARK: - Day chip
+
+private struct DayChip: View {
+    let label: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? Color.white : Color.secondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(
+                    isSelected
+                        ? Color.accentColor
+                        : Color.secondary.opacity(0.15),
+                    in: Capsule()
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 
