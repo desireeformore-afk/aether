@@ -69,7 +69,8 @@ struct PlayerView: View {
             let t = player.player.currentTime().seconds
             if t.isFinite { subtitleStore.updateCurrentCue(time: t) }
         }
-        // Keyboard shortcuts (6c)
+        // Keyboard shortcuts (macOS only — iOS/tvOS use focus-based controls)
+        #if os(macOS)
         .onKeyPress(.space) {
             player.togglePlayPause()
             return .handled
@@ -82,6 +83,7 @@ struct PlayerView: View {
             player.playNext()
             return .handled
         }
+        #endif
     }
 
     @ViewBuilder

@@ -68,11 +68,13 @@ struct ChannelListView: View {
                 .help("Check Playlist Health")
             }
         }
+        #if os(macOS)
         .onKeyPress(.init("f"), phases: .down) { event in
             guard event.modifiers.contains(.command) else { return .ignored }
             isSearchFocused = true
             return .handled
         }
+        #endif
         .task {
             if playlist.channels.isEmpty { await refresh() }
             await refreshEPG()

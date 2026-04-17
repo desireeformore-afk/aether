@@ -33,10 +33,12 @@ struct AetherApp: App {
             WatchHistoryRecord.self,
         ])
 
+        #if os(macOS)
         Settings {
             SettingsView()
                 .environmentObject(epgStore)
         }
+        #endif
     }
 }
 
