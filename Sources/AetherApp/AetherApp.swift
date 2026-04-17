@@ -53,7 +53,6 @@ struct AetherApp: App {
         }
         .modelContainer(for: [
             PlaylistRecord.self,
-            ChannelRecord.self,
             FavoriteRecord.self,
             WatchHistoryRecord.self,
         ])
@@ -83,7 +82,6 @@ final class HistoryCoordinator: ObservableObject {
         // Build a background ModelContext using the shared container
         guard let container = try? ModelContainer(for:
             PlaylistRecord.self,
-            ChannelRecord.self,
             FavoriteRecord.self,
             WatchHistoryRecord.self
         ) else { return }

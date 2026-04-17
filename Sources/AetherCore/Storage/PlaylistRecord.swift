@@ -8,6 +8,7 @@ public enum PlaylistType: String, Codable, Sendable, CaseIterable {
 }
 
 /// Persistent SwiftData model for a stored playlist.
+/// NOTE: Channel data is NOT stored in SwiftData — use `ChannelCache` instead.
 @Model
 public final class PlaylistRecord {
     public var id: UUID
@@ -26,9 +27,6 @@ public final class PlaylistRecord {
     /// Optional XMLTV EPG URL override for this playlist.
     public var epgURLString: String?
 
-    @Relationship(deleteRule: .cascade, inverse: \ChannelRecord.playlist)
-    public var channels: [ChannelRecord]
-
     public init(
         id: UUID = UUID(),
         name: String,
@@ -39,8 +37,7 @@ public final class PlaylistRecord {
         xstreamHost: String? = nil,
         xstreamUsername: String? = nil,
         xstreamPassword: String? = nil,
-        epgURLString: String? = nil,
-        channels: [ChannelRecord] = []
+        epgURLString: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -52,7 +49,6 @@ public final class PlaylistRecord {
         self.xstreamUsername = xstreamUsername
         self.xstreamPassword = xstreamPassword
         self.epgURLString = epgURLString
-        self.channels = channels
     }
 
     public var playlistType: PlaylistType {
@@ -98,7 +94,6 @@ public final class PlaylistRecord {
     public var effectiveEPGURL: URL? {
         if let epg = epgURL { return epg }
         guard let creds = xstreamCredentials else { return nil }
-        // Xtream panels expose XMLTV at /xmltv.php
         return creds.baseURL
             .appendingPathComponent("xmltv.php")
             .appending(queryItems: [

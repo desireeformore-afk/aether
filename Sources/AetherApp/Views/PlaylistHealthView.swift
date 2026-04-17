@@ -6,6 +6,7 @@ import AetherCore
 /// Dashboard showing per-channel stream health after HEAD-ping validation.
 struct PlaylistHealthView: View {
     let playlist: PlaylistRecord
+    let channels: [Channel]
 
     @State private var results: [ChannelCheckResult] = []
     @State private var isChecking = false
@@ -87,7 +88,7 @@ struct PlaylistHealthView: View {
             Text("Run a health check")
                 .font(.aetherBody.bold())
                 .foregroundStyle(Color.aetherText)
-            Text("Ping all \(playlist.channels.count) streams to check availability and latency.")
+            Text("Ping all \(channels.count) streams to check availability and latency.")
                 .font(.aetherCaption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -130,12 +131,12 @@ struct PlaylistHealthView: View {
         VStack(spacing: 4) {
             ProgressView(
                 value: Double(checkedCount),
-                total: Double(max(playlist.channels.count, 1))
+                total: Double(max(channels.count, 1))
             )
             .progressViewStyle(.linear)
             .tint(Color.aetherPrimary)
 
-            Text("Checking \(checkedCount) / \(playlist.channels.count)…")
+            Text("Checking \(checkedCount) / \(channels.count)…")
                 .font(.aetherCaption)
                 .foregroundStyle(.secondary)
         }
@@ -174,13 +175,12 @@ struct PlaylistHealthView: View {
         results = []
         summary = nil
 
-        let channels: [(name: String, url: URL)] = playlist.channels.compactMap { record in
-            guard let url = URL(string: record.streamURLString) else { return nil }
-            return (name: record.name, url: url)
+        let channelPairs: [(name: String, url: URL)] = channels.compactMap { ch in
+            return (name: ch.name, url: ch.streamURL)
         }
 
         let validator = PlaylistValidator()
-        let checked = await validator.validate(channels: channels) { checked, _ in
+        let checked = await validator.validate(channels: channelPairs) { checked, _ in
             Task { @MainActor in
                 self.checkedCount = checked
             }

@@ -4,6 +4,9 @@ import AetherCore
 
 /// Middle column: channels grouped by `groupTitle`, with search, genre filter chips,
 /// collapsible DisclosureGroup sections, and Favorites tab.
+///
+/// Channel data lives in-memory only — persisted to JSON via `ChannelCache`,
+/// never in SwiftData (which can't handle 50k+ records efficiently).
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var epgStore: EPGStore
@@ -12,13 +15,13 @@ struct ChannelListView: View {
     @Binding var selectedChannel: Channel?
     @ObservedObject var player: PlayerCore
 
+    @State private var channels: [Channel] = []
     @State private var searchText = ""
     @State private var selectedGroup: String? = nil
     @State private var isRefreshing = false
     @State private var errorMessage: String?
     @State private var nowPlaying: [String: EPGEntry] = [:]
     @State private var activeTab: ListTab = .all
-    /// Tracks which group sections are expanded (key: group name, value: isExpanded).
     @State private var expandedGroups: [String: Bool] = [:]
     @FocusState private var isSearchFocused: Bool
 
@@ -61,7 +64,7 @@ struct ChannelListView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 NavigationLink {
-                    PlaylistHealthView(playlist: playlist)
+                    PlaylistHealthView(playlist: playlist, channels: channels)
                 } label: {
                     Image(systemName: "waveform.badge.magnifyingglass")
                 }
@@ -76,8 +79,25 @@ struct ChannelListView: View {
         }
         #endif
         .task {
-            if playlist.channels.isEmpty { await refresh() }
+            // 1. Load from cache instantly (no network)
+            await loadFromCache()
+            // 2. Refresh from network in background if cache is stale (>1h) or empty
+            let cacheAge = await ChannelCache.shared.lastModified(playlistID: playlist.id)
+                .map { Date().timeIntervalSince($0) } ?? .infinity
+            if channels.isEmpty || cacheAge > 3600 {
+                await refresh()
+            }
             await refreshEPG()
+        }
+    }
+
+    // MARK: - Load from cache
+
+    @MainActor
+    private func loadFromCache() async {
+        let cached = await ChannelCache.shared.load(playlistID: playlist.id)
+        if !cached.isEmpty {
+            channels = cached
         }
     }
 
@@ -109,194 +129,202 @@ struct ChannelListView: View {
                 Divider()
             }
 
-            if let error = errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
-                    .font(.aetherCaption)
-                    .padding()
+            if let err = errorMessage {
+                errorBanner(err)
             }
 
-            // When a single group filter is active or searching, show a flat list.
-            // Otherwise show collapsible DisclosureGroup sections.
-            if selectedGroup != nil || !searchText.isEmpty || groupedChannels.count == 1 {
-                flatChannelList
+            if channels.isEmpty && !isRefreshing {
+                emptyState
             } else {
-                collapsibleChannelList
+                channelList
             }
         }
     }
 
-    // MARK: - Flat list (search / single-group mode)
+    // MARK: - Derived data
 
-    private var flatChannelList: some View {
+    private var allGroups: [String] {
+        var seen = Set<String>()
+        return channels.compactMap { ch in
+            seen.insert(ch.groupTitle).inserted ? ch.groupTitle : nil
+        }
+    }
+
+    private var filteredChannels: [Channel] {
+        var result = channels
+        if let group = selectedGroup {
+            result = result.filter { $0.groupTitle == group }
+        }
+        if !searchText.isEmpty {
+            let q = searchText.lowercased()
+            result = result.filter { $0.name.lowercased().contains(q) }
+        }
+        return result
+    }
+
+    private var groupedChannels: [(group: String, channels: [Channel])] {
+        var order: [String] = []
+        var dict: [String: [Channel]] = [:]
+        for ch in filteredChannels {
+            if dict[ch.groupTitle] == nil {
+                order.append(ch.groupTitle)
+                dict[ch.groupTitle] = []
+            }
+            dict[ch.groupTitle]!.append(ch)
+        }
+        return order.map { (group: $0, channels: dict[$0]!) }
+    }
+
+    // MARK: - Channel list
+
+    private var channelList: some View {
         List(selection: $selectedChannel) {
-            ForEach(groupedChannels, id: \.group) { section in
-                Section(section.group) {
-                    ForEach(section.channels) { record in
-                        if let channel = record.toChannel() {
-                            ChannelRow(
-                                channel: channel,
-                                isPlaying: player.currentChannel == channel,
-                                epgEntry: nowPlaying[record.epgId ?? record.name]
-                            )
-                            .tag(channel)
-                            .onTapGesture { selectAndPlay(channel) }
-                        }
-                    }
+            if !searchText.isEmpty {
+                // Flat list when searching
+                ForEach(filteredChannels) { ch in
+                    channelRow(ch)
+                        .tag(ch)
                 }
-            }
-        }
-    }
-
-    // MARK: - Collapsible DisclosureGroup list
-
-    private var collapsibleChannelList: some View {
-        List(selection: $selectedChannel) {
-            ForEach(groupedChannels, id: \.group) { section in
-                DisclosureGroup(
-                    isExpanded: Binding(
+            } else {
+                // Grouped with DisclosureGroup
+                ForEach(groupedChannels, id: \.group) { section in
+                    let isExpanded = Binding<Bool>(
                         get: { expandedGroups[section.group] ?? true },
                         set: { expandedGroups[section.group] = $0 }
                     )
-                ) {
-                    ForEach(section.channels) { record in
-                        if let channel = record.toChannel() {
-                            ChannelRow(
-                                channel: channel,
-                                isPlaying: player.currentChannel == channel,
-                                epgEntry: nowPlaying[record.epgId ?? record.name]
-                            )
-                            .tag(channel)
-                            .onTapGesture { selectAndPlay(channel) }
+                    DisclosureGroup(isExpanded: isExpanded) {
+                        ForEach(section.channels) { ch in
+                            channelRow(ch)
+                                .tag(ch)
                         }
-                    }
-                } label: {
-                    HStack {
-                        Text(section.group)
-                            .font(.aetherBody.bold())
-                            .foregroundStyle(Color.aetherText)
-                        Spacer()
-                        Text("\(section.channels.count)")
-                            .font(.aetherCaption)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 2)
-                            .background(.secondary.opacity(0.15), in: Capsule())
+                    } label: {
+                        HStack {
+                            Text(section.group)
+                                .font(.aetherCaption.bold())
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(section.channels.count)")
+                                .font(.aetherCaption)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
                 }
             }
         }
+        .listStyle(.inset)
+        .overlay(alignment: .top) {
+            if isRefreshing {
+                ProgressView()
+                    .scaleEffect(0.8)
+                    .padding(8)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(.top, 8)
+            }
+        }
     }
 
-    // MARK: - Groups (via ChannelFilterService)
-
-    private let filterService = ChannelFilterService()
-
-    private var allGroups: [String] {
-        let channels = playlist.channels.compactMap { $0.toChannel() }
-        return filterService.groups(from: channels)
-    }
-
-    // MARK: - Grouped channels (via ChannelFilterService)
-
-    private var groupedChannels: [(group: String, channels: [ChannelRecord])] {
-        let allRecords = playlist.channels
-        let allChannels = allRecords.compactMap { $0.toChannel() }
-
-        let filteredChannels = filterService.filter(
-            channels: allChannels,
-            group: selectedGroup,
-            searchQuery: searchText
+    private func channelRow(_ ch: Channel) -> some View {
+        let epgKey = ch.epgId ?? ch.name
+        return ChannelRow(
+            channel: ch,
+            isPlaying: player.currentChannel == ch,
+            epgEntry: nowPlaying[epgKey]
         )
-
-        let filteredIDs = Set(filteredChannels.map(\.id))
-        let filteredRecords = allRecords
-            .filter { filteredIDs.contains($0.id) }
-            .sorted { $0.sortIndex < $1.sortIndex }
-            .prefix(2000) // cap at 2000 rows — search/filter to narrow down
-
-        let grouped = Dictionary(grouping: filteredRecords) { $0.groupTitle }
-        return grouped
-            .sorted { $0.key < $1.key }
-            .map { (group: $0.key, channels: $0.value) }
+        .onTapGesture { play(ch) }
     }
 
-    // MARK: - Actions
+    // MARK: - Empty / error states
 
-    private func selectAndPlay(_ channel: Channel) {
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label("No Channels", systemImage: "tv.slash")
+        } description: {
+            Text("Pull to refresh or tap ↻ to load channels.")
+        } actions: {
+            Button("Refresh") { Task { await refresh() } }
+                .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private func errorBanner(_ msg: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            Text(msg)
+                .font(.aetherCaption)
+                .foregroundStyle(Color.aetherText)
+            Spacer()
+            Button { errorMessage = nil } label: {
+                Image(systemName: "xmark")
+                    .font(.caption2)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.orange.opacity(0.12))
+    }
+
+    // MARK: - Playback
+
+    private func play(_ channel: Channel) {
         selectedChannel = channel
-        let flat = groupedChannels.flatMap(\.channels).compactMap { $0.toChannel() }
-        player.channelList = flat
+        player.channelList = filteredChannels
         player.play(channel)
     }
 
+    // MARK: - Refresh (network fetch → cache → in-memory)
+
     @MainActor
     private func refresh() async {
+        guard !isRefreshing else { return }
         isRefreshing = true
         errorMessage = nil
         defer { isRefreshing = false }
 
         do {
-            let channels: [Channel]
+            let fetched: [Channel]
 
             if playlist.playlistType == .xtream, let creds = playlist.xstreamCredentials {
-                // Use Xtream API — more reliable than M3U get.php
                 let config = URLSessionConfiguration.default
                 config.timeoutIntervalForRequest = 30
-                config.timeoutIntervalForResource = 60
+                config.timeoutIntervalForResource = 120
                 let session = URLSession(configuration: config)
                 let service = XstreamService(credentials: creds, session: session)
-                channels = try await service.channels()
+                fetched = try await service.channels()
             } else {
                 guard let url = playlist.effectiveURL else {
                     errorMessage = "Invalid playlist URL"
                     return
                 }
-                let service = PlaylistService()
-                channels = try await service.fetchChannels(from: url, forceRefresh: true)
+                fetched = try await PlaylistService().fetchChannels(from: url, forceRefresh: true)
             }
 
-            // Delete old records
-            for old in playlist.channels { modelContext.delete(old) }
-            playlist.channels = []
+            // Update in-memory first (instant UI update)
+            channels = fetched
 
-            // Insert in chunks to avoid blocking main thread with 50k+ records
-            let chunkSize = 500
-            var allRecords: [ChannelRecord] = []
-            allRecords.reserveCapacity(min(channels.count, 5000))
-
-            for (idx, ch) in channels.enumerated() {
-                let record = ChannelRecord(
-                    id: ch.id,
-                    name: ch.name,
-                    streamURLString: ch.streamURL.absoluteString,
-                    logoURLString: ch.logoURL?.absoluteString,
-                    groupTitle: ch.groupTitle,
-                    epgId: ch.epgId,
-                    sortIndex: idx
-                )
-                allRecords.append(record)
-
-                // Yield every chunkSize to keep UI responsive
-                if idx % chunkSize == 0 && idx > 0 {
-                    await Task.yield()
-                }
+            // Persist to JSON cache in background (non-blocking)
+            let playlistID = playlist.id
+            Task.detached(priority: .background) {
+                try? await ChannelCache.shared.save(channels: fetched, playlistID: playlistID)
             }
 
-            playlist.channels = allRecords
             playlist.lastRefreshed = Date()
             expandedGroups = [:]
+
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
+    // MARK: - EPG
+
     @MainActor
     private func refreshEPG() async {
         var entries: [String: EPGEntry] = [:]
         let now = Date()
-        for record in playlist.channels {
-            let cid = record.epgId ?? record.name
+        for ch in channels.prefix(500) { // limit EPG lookups
+            let cid = ch.epgId ?? ch.name
             if let entry = await epgStore.service.nowPlaying(for: cid, at: now) {
                 entries[cid] = entry
             }
@@ -406,7 +434,6 @@ private struct FavoritesListView: View {
 
 // MARK: - ChannelRow
 
-/// A single row in the channel list.
 struct ChannelRow: View {
     let channel: Channel
     let isPlaying: Bool
