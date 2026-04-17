@@ -10,6 +10,7 @@ struct AetherApp: App {
     @StateObject private var historyCoordinator = HistoryCoordinator()
     @StateObject private var sleepTimer = SleepTimerService()
     @StateObject private var subtitleStore = SubtitleStore()
+    @StateObject private var themeService = ThemeService()
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -20,6 +21,7 @@ struct AetherApp: App {
                 .environmentObject(playerCore)
                 .environmentObject(sleepTimer)
                 .environmentObject(subtitleStore)
+                .environmentObject(themeService)
                 .task {
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)
@@ -47,6 +49,7 @@ struct AetherApp: App {
         Settings {
             SettingsView()
                 .environmentObject(epgStore)
+                .environmentObject(themeService)
         }
         #endif
     }

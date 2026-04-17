@@ -4,6 +4,7 @@ import AetherCore
 /// App Settings panel — accessible via ⌘, / Aether > Settings…
 struct SettingsView: View {
     @EnvironmentObject private var epgStore: EPGStore
+    @EnvironmentObject private var themeService: ThemeService
 
     // MARK: - UserDefaults-backed preferences
 
@@ -30,6 +31,10 @@ struct SettingsView: View {
             SubtitleSettingsView()
                 .tabItem { Label("Subtitles", systemImage: "captions.bubble") }
                 .tag("subtitles")
+
+            appearanceTab
+                .tabItem { Label("Appearance", systemImage: "paintbrush") }
+                .tag("appearance")
         }
         .padding(20)
         .frame(width: 480)
@@ -171,6 +176,24 @@ struct SettingsView: View {
         }
         guard bytes > 0 else { return "Empty" }
         return String(format: "%.1f MB", Double(bytes) / 1_048_576)
+    }
+
+    // MARK: - Appearance Tab
+
+    private var appearanceTab: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                AppearancePickerView()
+                    .padding(.bottom, 4)
+
+                Divider()
+
+                ThemePickerView()
+                    .environmentObject(themeService)
+            }
+            .padding()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

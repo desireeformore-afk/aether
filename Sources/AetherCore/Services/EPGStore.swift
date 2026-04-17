@@ -12,6 +12,8 @@ public final class EPGStore: ObservableObject {
     @Published public private(set) var isLoading = false
     /// Last error message (nil = no error).
     @Published public private(set) var lastError: String?
+    /// Cached now-playing entries keyed by channelID. Refresh via `refreshNowPlayingCache`.
+    @Published public var nowPlayingCache: [String: EPGEntry] = [:]
 
     public init() {}
 
@@ -42,9 +44,23 @@ public final class EPGStore: ObservableObject {
         }
     }
 
+    /// Refreshes the `nowPlayingCache` for the given channel IDs.
+    /// Call this after loading a guide or when the channel list changes.
+    public func refreshNowPlayingCache(channelIDs: [String]) async {
+        var cache: [String: EPGEntry] = [:]
+        let now = Date()
+        for id in channelIDs {
+            if let entry = await service.nowPlaying(for: id, at: now) {
+                cache[id] = entry
+            }
+        }
+        nowPlayingCache = cache
+    }
+
     /// Clears EPG cache (in-memory + disk).
     public func clearCache() async {
         await service.clearCache()
+        nowPlayingCache = [:]
         currentEPGURL = nil
         objectWillChange.send()
     }

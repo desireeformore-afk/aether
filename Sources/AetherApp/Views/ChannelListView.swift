@@ -184,32 +184,33 @@ struct ChannelListView: View {
         }
     }
 
-    // MARK: - Groups
+    // MARK: - Groups (via ChannelFilterService)
+
+    private let filterService = ChannelFilterService()
 
     private var allGroups: [String] {
-        let groups = Set(playlist.channels.map { $0.groupTitle })
-        return groups.sorted()
+        let channels = playlist.channels.compactMap { $0.toChannel() }
+        return filterService.groups(from: channels)
     }
 
-    // MARK: - Grouped channels
+    // MARK: - Grouped channels (via ChannelFilterService)
 
     private var groupedChannels: [(group: String, channels: [ChannelRecord])] {
-        var filtered = playlist.channels
+        let allRecords = playlist.channels
+        let allChannels = allRecords.compactMap { $0.toChannel() }
 
-        // Group filter
-        if let group = selectedGroup {
-            filtered = filtered.filter { $0.groupTitle == group }
-        }
+        let filteredChannels = filterService.filter(
+            channels: allChannels,
+            group: selectedGroup,
+            searchQuery: searchText
+        )
 
-        // Search filter
-        if !searchText.isEmpty {
-            filtered = filtered.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText)
-            }
-        }
+        let filteredIDs = Set(filteredChannels.map(\.id))
+        let filteredRecords = allRecords
+            .filter { filteredIDs.contains($0.id) }
+            .sorted { $0.sortIndex < $1.sortIndex }
 
-        let sorted = filtered.sorted { $0.sortIndex < $1.sortIndex }
-        let grouped = Dictionary(grouping: sorted) { $0.groupTitle }
+        let grouped = Dictionary(grouping: filteredRecords) { $0.groupTitle }
         return grouped
             .sorted { $0.key < $1.key }
             .map { (group: $0.key, channels: $0.value) }
