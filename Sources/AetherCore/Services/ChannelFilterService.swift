@@ -1,5 +1,4 @@
 import Foundation
-import AetherCore
 
 /// Pure, stateless service for filtering and grouping channel lists.
 public struct ChannelFilterService: Sendable {

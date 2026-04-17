@@ -1,5 +1,4 @@
 import Foundation
-import AetherCore
 
 /// Manages the active UI theme and persists selection to UserDefaults.
 @MainActor
