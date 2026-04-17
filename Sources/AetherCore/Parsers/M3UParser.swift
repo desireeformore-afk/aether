@@ -34,8 +34,12 @@ public struct M3UParser: Sendable {
         var lines = text.components(separatedBy: "\n")
 
         // Validate: must contain at least one #EXTINF or #EXTM3U line
+        // Empty content is valid and returns an empty channel list.
         let hasM3UContent = lines.contains { $0.hasPrefix("#EXTM3U") || $0.hasPrefix("#EXTINF:") }
         guard hasM3UContent else {
+            // Empty or whitespace-only input → empty playlist (not an error)
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty { return [] }
             throw M3UParserError.invalidContent
         }
 
