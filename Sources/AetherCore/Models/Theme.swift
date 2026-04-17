@@ -83,21 +83,21 @@ public struct ThemeDefinition: Identifiable, Sendable {
 
 extension ThemeDefinition {
     /// Converts `accentHex` to a SwiftUI Color.
-    public var accentColor: Color { Color(hex: accentHex) }
+    public var accentColor: Color { Color(hex: accentHex) ?? .accentColor }
     /// Converts `surfaceHex` to a SwiftUI Color.
-    public var surfaceColor: Color { Color(hex: surfaceHex) }
+    public var surfaceColor: Color { Color(hex: surfaceHex) ?? .gray }
     /// Converts `textHex` to a SwiftUI Color.
-    public var textColor: Color { Color(hex: textHex) }
+    public var textColor: Color { Color(hex: textHex) ?? .primary }
 
     /// Returns a `View` that renders the background (solid or gradient).
     @ViewBuilder
     public func backgroundView() -> some View {
         switch background {
         case .solid(let hex):
-            Color(hex: hex)
+            Color(hex: hex) ?? .black
         case .gradient(let hexes, let start, let end):
             LinearGradient(
-                colors: hexes.map { Color(hex: $0) },
+                colors: hexes.compactMap { Color(hex: $0) },
                 startPoint: unitPoint(from: start),
                 endPoint: unitPoint(from: end)
             )
@@ -118,25 +118,4 @@ extension ThemeDefinition {
     }
 }
 
-// MARK: - Color(hex:) helper
-
-extension Color {
-    /// Creates a Color from a hex string like "#RRGGBB" or "RRGGBB".
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let r, g, b: UInt64
-        switch hex.count {
-        case 6:
-            (r, g, b) = (int >> 16, (int >> 8) & 0xFF, int & 0xFF)
-        default:
-            (r, g, b) = (0, 0, 0)
-        }
-        self.init(
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255
-        )
-    }
-}
+// Color(hex:) is defined in AetherCore/Design/Colors.swift — no redeclaration needed.
