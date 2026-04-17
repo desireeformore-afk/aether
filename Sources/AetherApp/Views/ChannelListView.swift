@@ -213,6 +213,7 @@ struct ChannelListView: View {
         let filteredRecords = allRecords
             .filter { filteredIDs.contains($0.id) }
             .sorted { $0.sortIndex < $1.sortIndex }
+            .prefix(2000) // cap at 2000 rows — search/filter to narrow down
 
         let grouped = Dictionary(grouping: filteredRecords) { $0.groupTitle }
         return grouped
@@ -240,7 +241,11 @@ struct ChannelListView: View {
 
             if playlist.playlistType == .xtream, let creds = playlist.xstreamCredentials {
                 // Use Xtream API — more reliable than M3U get.php
-                let service = XstreamService(credentials: creds)
+                let config = URLSessionConfiguration.default
+                config.timeoutIntervalForRequest = 30
+                config.timeoutIntervalForResource = 60
+                let session = URLSession(configuration: config)
+                let service = XstreamService(credentials: creds, session: session)
                 channels = try await service.channels()
             } else {
                 guard let url = playlist.effectiveURL else {
@@ -251,9 +256,17 @@ struct ChannelListView: View {
                 channels = try await service.fetchChannels(from: url, forceRefresh: true)
             }
 
+            // Delete old records
             for old in playlist.channels { modelContext.delete(old) }
-            playlist.channels = channels.enumerated().map { idx, ch in
-                ChannelRecord(
+            playlist.channels = []
+
+            // Insert in chunks to avoid blocking main thread with 50k+ records
+            let chunkSize = 500
+            var allRecords: [ChannelRecord] = []
+            allRecords.reserveCapacity(min(channels.count, 5000))
+
+            for (idx, ch) in channels.enumerated() {
+                let record = ChannelRecord(
                     id: ch.id,
                     name: ch.name,
                     streamURLString: ch.streamURL.absoluteString,
@@ -262,9 +275,16 @@ struct ChannelListView: View {
                     epgId: ch.epgId,
                     sortIndex: idx
                 )
+                allRecords.append(record)
+
+                // Yield every chunkSize to keep UI responsive
+                if idx % chunkSize == 0 && idx > 0 {
+                    await Task.yield()
+                }
             }
+
+            playlist.channels = allRecords
             playlist.lastRefreshed = Date()
-            // Reset expanded state for new groups
             expandedGroups = [:]
         } catch {
             errorMessage = error.localizedDescription
