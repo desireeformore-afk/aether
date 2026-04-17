@@ -81,7 +81,19 @@ public actor PlaylistService {
 }
 
 /// Errors thrown by `PlaylistService`.
-public enum PlaylistServiceError: Error, Sendable {
+public enum PlaylistServiceError: Error, LocalizedError, Sendable {
     case httpError(Int)
     case decodingFailed
+    case invalidURL
+
+    public var errorDescription: String? {
+        switch self {
+        case .httpError(let code):
+            return "Server returned HTTP \(code). Check the playlist URL."
+        case .decodingFailed:
+            return "Could not decode playlist — invalid encoding or empty response."
+        case .invalidURL:
+            return "Invalid playlist URL."
+        }
+    }
 }

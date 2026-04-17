@@ -1,9 +1,18 @@
 import Foundation
 
 /// Errors thrown by `M3UParser`.
-public enum M3UParserError: Error, Sendable {
+public enum M3UParserError: Error, LocalizedError, Sendable {
     case invalidContent
     case invalidURL(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidContent:
+            return "File does not look like a valid M3U playlist (missing #EXTM3U header)."
+        case .invalidURL(let s):
+            return "Invalid stream URL in playlist: \(s)"
+        }
+    }
 }
 
 /// Parser for M3U/M3U8 playlist files.
