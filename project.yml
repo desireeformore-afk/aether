@@ -3,19 +3,22 @@ options:
   bundleIdPrefix: com.aether
   deploymentTarget:
     macOS: "14.0"
-  xcodeVersion: "15.0"
-  generateEmptyDirectories: false
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+  createIntermediateGroups: true
 
 settings:
   base:
-    SWIFT_VERSION: "6.0"
-    SWIFT_STRICT_CONCURRENCY: complete
-    MACOSX_DEPLOYMENT_TARGET: "14.0"
-    ENABLE_TESTABILITY: YES
+    SWIFT_VERSION: 6.0
+    ENABLE_HARDENED_RUNTIME: YES
+    DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+
+packages:
+  # No external deps — all code is local
 
 targets:
 
-  # ── AetherCore (framework) ──────────────────────────────────────────────────
+  # ── AetherCore (framework) ─────────────────────────────────────────────
   AetherCore:
     type: framework
     platform: macOS
@@ -24,17 +27,11 @@ targets:
       - path: Sources/AetherCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.aether.core
         PRODUCT_NAME: AetherCore
         DEFINES_MODULE: YES
-        SKIP_INSTALL: YES
-        SWIFT_VERSION: "6.0"
-        SWIFT_STRICT_CONCURRENCY: complete
-        CODE_SIGN_IDENTITY: "-"
-        CODE_SIGNING_REQUIRED: NO
-        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 6.0
 
-  # ── AetherUI (framework) ────────────────────────────────────────────────────
+  # ── AetherUI (framework) ───────────────────────────────────────────────
   AetherUI:
     type: framework
     platform: macOS
@@ -45,75 +42,37 @@ targets:
       - target: AetherCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.aether.ui
         PRODUCT_NAME: AetherUI
         DEFINES_MODULE: YES
-        SKIP_INSTALL: YES
-        SWIFT_VERSION: "6.0"
-        SWIFT_STRICT_CONCURRENCY: complete
-        CODE_SIGN_IDENTITY: "-"
-        CODE_SIGNING_REQUIRED: NO
-        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 6.0
 
-  # ── AetherApp (macOS application) ──────────────────────────────────────────
+  # ── AetherApp (macOS Application) ─────────────────────────────────────
   AetherApp:
     type: application
     platform: macOS
     deploymentTarget: "14.0"
     sources:
       - path: Sources/AetherApp
-        excludes:
-          - Resources/Info.plist
-          - Resources/AetherApp.entitlements
     resources:
       - path: Sources/AetherApp/Resources/Assets.xcassets
     dependencies:
       - target: AetherCore
-        embed: true
       - target: AetherUI
-        embed: true
     info:
       path: Sources/AetherApp/Resources/Info.plist
-      properties:
-        CFBundleName: Aether
-        CFBundleDisplayName: Aether
-        CFBundleIdentifier: com.aether.iptv
-        CFBundleVersion: "7"
-        CFBundleShortVersionString: "0.7.0"
-        CFBundlePackageType: APPL
-        CFBundleExecutable: AetherApp
-        CFBundleIconName: AppIcon
-        LSMinimumSystemVersion: "14.0"
-        NSPrincipalClass: NSApplication
-        NSHighResolutionCapable: true
-        NSSupportsAutomaticTermination: false
-        NSAppTransportSecurity:
-          NSAllowsArbitraryLoads: true
-    entitlements:
-      path: Sources/AetherApp/Resources/AetherApp.entitlements
-      properties:
-        com.apple.security.app-sandbox: false
-        com.apple.security.network.client: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.aether.iptv
-        PRODUCT_NAME: AetherApp
-        GENERATE_INFOPLIST_FILE: NO
+        PRODUCT_NAME: Aether
         INFOPLIST_FILE: Sources/AetherApp/Resources/Info.plist
-        CODE_SIGN_ENTITLEMENTS: Sources/AetherApp/Resources/AetherApp.entitlements
-        CODE_SIGN_IDENTITY: "-"
-        CODE_SIGNING_REQUIRED: NO
-        CODE_SIGNING_ALLOWED: YES
-        ENABLE_HARDENED_RUNTIME: NO
-        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
-      configs:
-        Debug:
-          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
-        Release:
-          SWIFT_OPTIMIZATION_LEVEL: "-O"
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: 6.0
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Required for AVFoundation/network access
+        ENABLE_APP_SANDBOX: NO
 
-  # ── AetherTests ─────────────────────────────────────────────────────────────
+  # ── AetherTests ────────────────────────────────────────────────────────
   AetherTests:
     type: bundle.unit-test
     platform: macOS
@@ -122,32 +81,23 @@ targets:
       - path: Sources/AetherTests
     dependencies:
       - target: AetherCore
-      - target: AetherApp
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.aether.iptv.tests
-        SWIFT_VERSION: "6.0"
-        GENERATE_INFOPLIST_FILE: YES
-        CODE_SIGN_IDENTITY: "-"
-        CODE_SIGNING_REQUIRED: NO
 
 schemes:
-  AetherApp:
+  Aether:
     build:
       targets:
+        AetherApp: all
         AetherCore: all
         AetherUI: all
-        AetherApp: all
-        AetherTests: [test]
     run:
       config: Debug
+      executable: AetherApp
     test:
       config: Debug
       targets:
         - AetherTests
     profile:
       config: Release
-    analyze:
-      config: Debug
+      executable: AetherApp
     archive:
       config: Release
