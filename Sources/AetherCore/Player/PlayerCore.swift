@@ -44,6 +44,10 @@ public final class PlayerCore: ObservableObject {
     /// Set by `ChannelListView` when a playlist is loaded.
     public var channelList: [Channel] = []
 
+    /// Set by the playlist sidebar when an Xtream playlist is loaded.
+    /// Used to show Series and VOD browser buttons.
+    public var currentXstreamCredentials: XstreamCredentials?
+
     // MARK: - Watch history callback
 
     /// Called when a watch session ends (channel switched or stopped).

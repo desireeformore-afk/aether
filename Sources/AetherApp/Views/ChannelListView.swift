@@ -20,6 +20,7 @@ struct ChannelListView: View {
     @State private var activeTab: ListTab = .all
     /// Tracks which group sections are expanded (key: group name, value: isExpanded).
     @State private var expandedGroups: [String: Bool] = [:]
+    @FocusState private var isSearchFocused: Bool
 
     // MARK: - Body
 
@@ -58,6 +59,19 @@ struct ChannelListView: View {
                 .disabled(isRefreshing)
                 .help("Refresh Playlist")
             }
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink {
+                    PlaylistHealthView(playlist: playlist)
+                } label: {
+                    Image(systemName: "waveform.badge.magnifyingglass")
+                }
+                .help("Check Playlist Health")
+            }
+        }
+        .onKeyPress(.init("f"), phases: .down) { event in
+            guard event.modifiers.contains(.command) else { return .ignored }
+            isSearchFocused = true
+            return .handled
         }
         .task {
             if playlist.channels.isEmpty { await refresh() }

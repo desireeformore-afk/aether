@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var selectedChannel: Channel?
     @State private var showVODBrowser = false
+    @State private var showSeriesBrowser = false
 
     // Keyboard handler — retained for the lifetime of this view
     private let keyboardHandler: KeyboardShortcutHandler
@@ -42,6 +43,15 @@ struct ContentView: View {
                                 VODBrowserView(credentials: creds, player: playerCore)
                             }
                         }
+                        ToolbarItem {
+                            Button(action: { showSeriesBrowser = true }) {
+                                Label("Series", systemImage: "tv.and.mediabox")
+                            }
+                            .help("Browse Series")
+                            .sheet(isPresented: $showSeriesBrowser) {
+                                SeriesBrowserView(credentials: creds, player: playerCore)
+                            }
+                        }
                     }
                 }
             } else {
@@ -59,7 +69,11 @@ struct ContentView: View {
         .navigationSplitViewStyle(.balanced)
         .background(Color.aetherBackground)
         .onChange(of: selectedPlaylist) { _, newPlaylist in
-            guard let playlist = newPlaylist else { return }
+            guard let playlist = newPlaylist else {
+                playerCore.currentXstreamCredentials = nil
+                return
+            }
+            playerCore.currentXstreamCredentials = playlist.xstreamCredentials
             Task { await epgStore.loadGuide(for: playlist) }
         }
         .onAppear {

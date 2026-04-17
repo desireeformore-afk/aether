@@ -128,6 +128,80 @@ public struct XstreamVOD: Decodable, Sendable, Identifiable {
     }
 }
 
+/// A series category from Xtream Codes.
+public struct XstreamSeriesCategory: Decodable, Sendable, Identifiable, Hashable, Equatable {
+    public let id: String
+    public let name: String
+
+    enum CodingKeys: String, CodingKey {
+        case id = "category_id"
+        case name = "category_name"
+    }
+}
+
+/// Top-level series entry (list view).
+public struct XstreamSeries: Decodable, Sendable, Identifiable, Hashable {
+    public let id: Int
+    public let name: String
+    public let cover: String?
+    public let plot: String?
+    public let cast: String?
+    public let director: String?
+    public let genre: String?
+    public let releaseDate: String?
+    public let rating: String?
+    public let categoryID: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id = "series_id"
+        case name, cover, plot, cast, director, genre, rating
+        case releaseDate = "releaseDate"
+        case categoryID = "category_id"
+    }
+}
+
+/// Episode within a series season.
+public struct XstreamEpisode: Decodable, Sendable, Identifiable {
+    public let id: Int
+    public let title: String
+    public let season: Int
+    public let episodeNum: Int
+    public let containerExtension: String?
+    public let info: EpisodeInfo?
+
+    public struct EpisodeInfo: Decodable, Sendable {
+        public let plot: String?
+        public let durationSecs: Int?
+        public let rating: String?
+        enum CodingKeys: String, CodingKey {
+            case plot
+            case durationSecs = "duration_secs"
+            case rating
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title = "title"
+        case season
+        case episodeNum = "episode_num"
+        case containerExtension = "container_extension"
+        case info
+    }
+}
+
+/// Detailed series info with episodes grouped by season.
+public struct XstreamSeriesInfo: Decodable, Sendable {
+    public let series: XstreamSeries
+    /// Key = season number string ("1", "2", …)
+    public let episodes: [String: [XstreamEpisode]]
+
+    enum CodingKeys: String, CodingKey {
+        case series = "info"
+        case episodes
+    }
+}
+
 // MARK: - XstreamService
 
 /// Communicates with an Xtream Codes IPTV panel.
@@ -193,6 +267,32 @@ public actor XstreamService {
             items.append(URLQueryItem(name: "category_id", value: cid))
         }
         return try await get(queryItems: items)
+    }
+
+    // MARK: - Series
+
+    /// Fetches all series categories.
+    public func seriesCategories() async throws -> [XstreamSeriesCategory] {
+        try await get(queryItems: [
+            URLQueryItem(name: "action", value: "get_series_categories")
+        ])
+    }
+
+    /// Fetches series list, optionally filtered by category.
+    public func seriesList(categoryID: String? = nil) async throws -> [XstreamSeries] {
+        var items = [URLQueryItem(name: "action", value: "get_series")]
+        if let cid = categoryID {
+            items.append(URLQueryItem(name: "category_id", value: cid))
+        }
+        return try await get(queryItems: items)
+    }
+
+    /// Fetches full info + episode list for a series.
+    public func seriesInfo(seriesID: Int) async throws -> XstreamSeriesInfo {
+        try await get(queryItems: [
+            URLQueryItem(name: "action", value: "get_series_info"),
+            URLQueryItem(name: "series_id", value: "\(seriesID)")
+        ])
     }
 
     // MARK: - EPG
