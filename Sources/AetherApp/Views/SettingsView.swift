@@ -1,5 +1,6 @@
 import SwiftUI
 import AetherCore
+import AetherUI
 
 /// App Settings panel — accessible via ⌘, / Aether > Settings…
 struct SettingsView: View {
