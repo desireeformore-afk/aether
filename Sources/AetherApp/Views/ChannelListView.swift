@@ -231,17 +231,25 @@ struct ChannelListView: View {
 
     @MainActor
     private func refresh() async {
-        guard let url = playlist.effectiveURL else {
-            errorMessage = "Invalid playlist URL"
-            return
-        }
         isRefreshing = true
         errorMessage = nil
         defer { isRefreshing = false }
 
         do {
-            let service = PlaylistService()
-            let channels = try await service.fetchChannels(from: url, forceRefresh: true)
+            let channels: [Channel]
+
+            if playlist.playlistType == .xtream, let creds = playlist.xstreamCredentials {
+                // Use Xtream API — more reliable than M3U get.php
+                let service = XstreamService(credentials: creds)
+                channels = try await service.channels()
+            } else {
+                guard let url = playlist.effectiveURL else {
+                    errorMessage = "Invalid playlist URL"
+                    return
+                }
+                let service = PlaylistService()
+                channels = try await service.fetchChannels(from: url, forceRefresh: true)
+            }
 
             for old in playlist.channels { modelContext.delete(old) }
             playlist.channels = channels.enumerated().map { idx, ch in
