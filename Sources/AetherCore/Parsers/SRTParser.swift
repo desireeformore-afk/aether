@@ -4,12 +4,6 @@ public struct SubtitleCue: Sendable {
     public let start: TimeInterval   // seconds
     public let end: TimeInterval
     public let text: String
-
-    public init(start: TimeInterval, end: TimeInterval, text: String) {
-        self.start = start
-        self.end = end
-        self.text = text
-    }
 }
 
 public enum SRTParser {

@@ -6,6 +6,12 @@ public actor SubtitleService {
 
     // MARK: - Config
 
+    /// Free-tier API key — get from https://www.opensubtitles.com/consumers
+    /// Store in UserDefaults under "opensubtitles_api_key"
+    nonisolated public static var apiKey: String {
+        UserDefaults.standard.string(forKey: "opensubtitles_api_key") ?? ""
+    }
+
     private let baseURL = URL(string: "https://api.opensubtitles.com/api/v1")!
     private let session: URLSession
 
@@ -18,8 +24,9 @@ public actor SubtitleService {
     // MARK: - Search
 
     /// Search subtitles by query string (EPG title or channel name).
-    public func search(query: String, languages: [String] = ["pl", "en"], apiKey: String) async throws -> [SubtitleTrack] {
-        guard !apiKey.isEmpty else { throw SubtitleError.noAPIKey }
+    /// Returns up to 10 results sorted by rating desc.
+    public func search(query: String, languages: [String] = ["pl", "en"]) async throws -> [SubtitleTrack] {
+        guard !Self.apiKey.isEmpty else { throw SubtitleError.noAPIKey }
 
         var comps = URLComponents(url: baseURL.appendingPathComponent("subtitles"), resolvingAgainstBaseURL: false)!
         comps.queryItems = [
@@ -30,7 +37,7 @@ public actor SubtitleService {
         ]
 
         var req = URLRequest(url: comps.url!)
-        req.addValue(apiKey, forHTTPHeaderField: "Api-Key")
+        req.addValue(Self.apiKey, forHTTPHeaderField: "Api-Key")
         req.addValue("Aether v1.0", forHTTPHeaderField: "User-Agent")
 
         let (data, resp) = try await session.data(for: req)
@@ -39,28 +46,28 @@ public actor SubtitleService {
         }
 
         let decoded = try JSONDecoder().decode(OSSearchResponse.self, from: data)
-        return decoded.data.compactMap { item in
-            guard let file = item.attributes.files.first else { return nil }
-            return SubtitleTrack(
-                id: String(file.fileID),
+        return decoded.data.map { item in
+            SubtitleTrack(
+                id: String(item.attributes.files.first?.fileID ?? 0),
                 language: item.attributes.language,
                 languageName: item.attributes.languageName,
                 rating: item.attributes.ratings,
-                fileSize: file.fileSize
+                fileSize: item.attributes.files.first?.fileSize ?? 0
             )
         }
     }
 
-    // MARK: - Download URL
+    // MARK: - Download
 
     /// Fetches the actual download URL for a subtitle file_id.
-    public func downloadURL(for fileID: String, apiKey: String) async throws -> URL {
-        guard !apiKey.isEmpty else { throw SubtitleError.noAPIKey }
+    /// Free tier: 5 downloads/day per IP without login.
+    public func downloadURL(for fileID: String) async throws -> URL {
+        guard !Self.apiKey.isEmpty else { throw SubtitleError.noAPIKey }
 
         var req = URLRequest(url: baseURL.appendingPathComponent("download"))
         req.httpMethod = "POST"
         req.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.addValue(apiKey, forHTTPHeaderField: "Api-Key")
+        req.addValue(Self.apiKey, forHTTPHeaderField: "Api-Key")
         req.addValue("Aether v1.0", forHTTPHeaderField: "User-Agent")
         req.httpBody = try JSONEncoder().encode(["file_id": Int(fileID) ?? 0])
 
@@ -93,10 +100,10 @@ public enum SubtitleError: LocalizedError, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .noAPIKey:      return "OpenSubtitles API key not configured (Settings → Subtitles)"
+        case .noAPIKey: return "OpenSubtitles API key not configured (Settings → Subtitles)"
         case .apiError(let code): return "OpenSubtitles API error \(code)"
-        case .invalidURL:    return "Invalid subtitle download URL"
-        case .decodeError:   return "Could not decode subtitle file"
+        case .invalidURL: return "Invalid subtitle download URL"
+        case .decodeError: return "Could not decode subtitle file"
         }
     }
 }
@@ -128,7 +135,7 @@ private struct OSFile: Decodable {
     let fileSize: Int
 
     enum CodingKeys: String, CodingKey {
-        case fileID   = "file_id"
+        case fileID = "file_id"
         case fileSize = "file_size"
     }
 }

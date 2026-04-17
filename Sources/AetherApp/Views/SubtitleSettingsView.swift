@@ -1,5 +1,4 @@
 import SwiftUI
-import AetherCore
 
 struct SubtitleSettingsView: View {
     @AppStorage("subtitle_fontSize")   private var fontSize: Double = 22
@@ -48,13 +47,13 @@ struct SubtitleSettingsView: View {
                         .monospacedDigit()
                 }
 
-                // Color picker — simple presets + custom
+                // Color picker — simple presets
                 HStack {
                     Text("Text color")
                     Spacer()
                     ForEach(["#FFFFFF", "#FFFF00", "#00FF00", "#FF6B6B"], id: \.self) { hex in
                         Circle()
-                            .fill(Color(hex: hex) ?? Color.white)
+                            .fill(Color(hex: hex) ?? .white)
                             .frame(width: 22, height: 22)
                             .overlay(Circle().stroke(
                                 textColorHex == hex ? Color.aetherAccent : Color.clear, lineWidth: 2))
@@ -68,7 +67,7 @@ struct SubtitleSettingsView: View {
                     Color.black
                     Text("Przykładowy napis")
                         .font(.system(size: fontSize, weight: .semibold))
-                        .foregroundStyle(Color(hex: textColorHex) ?? Color.white)
+                        .foregroundStyle(Color(hex: textColorHex) ?? .white)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                         .background(Color.black.opacity(bgOpacity),
@@ -81,4 +80,3 @@ struct SubtitleSettingsView: View {
         .formStyle(.grouped)
     }
 }
-// Color(hex:) is defined in AetherCore/Design/Colors.swift (public extension Color)

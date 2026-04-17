@@ -18,7 +18,7 @@ struct SubtitleOverlayView: View {
                     Spacer()
                     Text(cue.text)
                         .font(.system(size: fontSize, weight: .semibold))
-                        .foregroundStyle(Color(hex: textColorHex) ?? Color.white)
+                        .foregroundStyle(Color(hex: textColorHex) ?? .white)
                         .multilineTextAlignment(.center)
                         .lineLimit(4)
                         .padding(.horizontal, 12)
@@ -38,4 +38,17 @@ struct SubtitleOverlayView: View {
         .allowsHitTesting(false)  // don't block player interaction
     }
 }
-// Color(hex:) is defined in AetherCore/Design/Colors.swift (public extension Color)
+
+// MARK: - Color from hex
+
+extension Color {
+    init?(hex: String) {
+        let h = hex.trimmingCharacters(in: .init(charactersIn: "#"))
+        guard h.count == 6, let val = UInt64(h, radix: 16) else { return nil }
+        self.init(
+            red:   Double((val >> 16) & 0xFF) / 255,
+            green: Double((val >>  8) & 0xFF) / 255,
+            blue:  Double( val        & 0xFF) / 255
+        )
+    }
+}

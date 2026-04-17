@@ -12,20 +12,15 @@ final class SubtitleStore: ObservableObject {
     @Published private(set) var isSearching: Bool = false
     @Published private(set) var lastError: String? = nil
 
-    private var apiKey: String {
-        UserDefaults.standard.string(forKey: "opensubtitles_api_key") ?? ""
-    }
-
     // MARK: - Search & load
 
     func search(for query: String) {
         guard !query.isEmpty else { return }
         isSearching = true
         lastError = nil
-        let key = apiKey
         Task {
             do {
-                tracks = try await service.search(query: query, apiKey: key)
+                tracks = try await service.search(query: query)
             } catch {
                 lastError = error.localizedDescription
             }
@@ -34,10 +29,9 @@ final class SubtitleStore: ObservableObject {
     }
 
     func load(track: SubtitleTrack) {
-        let key = apiKey
         Task {
             do {
-                let url = try await service.downloadURL(for: track.id, apiKey: key)
+                let url = try await service.downloadURL(for: track.id)
                 let content = try await service.fetchContent(url: url)
                 cues = SRTParser.parse(content)
             } catch {
