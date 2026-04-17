@@ -69,7 +69,10 @@ public final class PlayerCore: ObservableObject {
     /// Tracks when the current channel started playing.
     private var watchStartTime: Date?
 
-    public init() {}
+    public init() {
+        // Register HTTP bypass protocol to allow arbitrary HTTP streams (bypasses ATS)
+        URLProtocol.registerClass(HTTPBypassProtocol.self)
+    }
 
     // MARK: - Last-channel persistence
 
@@ -114,6 +117,8 @@ public final class PlayerCore: ObservableObject {
                 AVURLAssetPreferPreciseDurationAndTimingKey: false,
                 // Disable QUIC — forces TCP/HTTP which IPTV servers actually support
                 "AVURLAssetAllowsCellularAccessKey": true,
+                // Use our custom URLProtocol for HTTP bypass
+                "AVURLAssetURLSessionClientKey": URLProtocol.self,
             ]
         )
 
