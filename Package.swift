@@ -32,7 +32,6 @@ let package = Package(
             path: "Sources/AetherApp",
             resources: [
                 .process("Resources/Assets.xcassets"),
-                .copy("Resources/Info.plist"),
             ],
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"])
