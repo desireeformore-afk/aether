@@ -28,6 +28,7 @@ targets:
         PRODUCT_NAME: AetherCore
         DEFINES_MODULE: YES
         SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: YES
 
   # ── AetherUI ───────────────────────────────────────────────────────────
   AetherUI:
@@ -45,6 +46,7 @@ targets:
         PRODUCT_NAME: AetherUI
         DEFINES_MODULE: YES
         SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: YES
 
   # ── AetherApp ──────────────────────────────────────────────────────────
   AetherApp:
