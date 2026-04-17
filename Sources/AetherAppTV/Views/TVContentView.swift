@@ -6,7 +6,6 @@ import AetherUI
 
 #if os(tvOS)
 /// Root view for tvOS — full-screen player with channel list overlay.
-/// Press Menu/Back to reveal the channel picker.
 struct TVContentView: View {
     @ObservedObject var playerCore: PlayerCore
     @EnvironmentObject private var epgStore: EPGStore
@@ -18,11 +17,9 @@ struct TVContentView: View {
 
     var body: some View {
         ZStack {
-            // Full-screen video player background
             TVVideoPlayer(avPlayer: playerCore.player)
                 .ignoresSafeArea()
 
-            // Channel picker overlay — shown on demand
             if showChannelList {
                 TVChannelPickerOverlay(
                     playlists: playlists,
@@ -33,7 +30,6 @@ struct TVContentView: View {
                 .transition(.move(edge: .leading))
             }
 
-            // Controls at bottom
             if !showChannelList {
                 VStack {
                     Spacer()
@@ -43,9 +39,7 @@ struct TVContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: showChannelList)
-        .onPlayPauseCommand {
-            playerCore.togglePlayPause()
-        }
+        .onPlayPauseCommand { playerCore.togglePlayPause() }
         .onMoveCommand { direction in
             if direction == .left { showChannelList = true }
         }
@@ -53,11 +47,8 @@ struct TVContentView: View {
             if showChannelList { showChannelList = false }
         }
         .task {
-            // Auto-select first playlist and restore last channel
             if selectedPlaylist == nil { selectedPlaylist = playlists.first }
-            if let last = playerCore.restoreLastChannel() {
-                playerCore.play(last)
-            }
+            if let last = playerCore.restoreLastChannel() { playerCore.play(last) }
         }
         .onChange(of: selectedPlaylist) { _, newPlaylist in
             guard let playlist = newPlaylist else { return }
@@ -75,13 +66,13 @@ private struct TVChannelPickerOverlay: View {
     @ObservedObject var player: PlayerCore
     @Binding var isVisible: Bool
 
+    @State private var channels: [Channel] = []
     @State private var searchText = ""
+    @State private var isLoading = false
 
-    private var channels: [ChannelRecord] {
-        guard let playlist = selectedPlaylist else { return [] }
-        let all = playlist.channels.sorted { $0.sortIndex < $1.sortIndex }
-        guard !searchText.isEmpty else { return all }
-        return all.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    private var filteredChannels: [Channel] {
+        guard !searchText.isEmpty else { return channels }
+        return channels.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
 
     var body: some View {
@@ -95,9 +86,7 @@ private struct TVChannelPickerOverlay: View {
                     .padding(.bottom, 8)
 
                 List(playlists, selection: $selectedPlaylist) { playlist in
-                    Text(playlist.name)
-                        .font(.body)
-                        .tag(playlist)
+                    Text(playlist.name).font(.body).tag(playlist)
                 }
                 .listStyle(.grouped)
             }
@@ -116,27 +105,25 @@ private struct TVChannelPickerOverlay: View {
                         .padding(.bottom, 8)
                 }
 
-                if channels.isEmpty {
+                if filteredChannels.isEmpty && !isLoading {
                     EmptyStateView(
                         title: "No Channels",
                         systemImage: "antenna.radiowaves.left.and.right",
                         message: selectedPlaylist == nil ? "Select a playlist." : "No channels found."
                     )
                 } else {
-                    List(channels, id: \.id) { record in
-                        if let channel = record.toChannel() {
-                            Button {
-                                player.channelList = channels.compactMap { $0.toChannel() }
-                                player.play(channel)
-                                isVisible = false
-                            } label: {
-                                ChannelRowView(
-                                    channel: channel,
-                                    isSelected: player.currentChannel == channel
-                                )
-                            }
-                            .buttonStyle(.plain)
+                    List(filteredChannels, id: \.id) { channel in
+                        Button {
+                            player.channelList = filteredChannels
+                            player.play(channel)
+                            isVisible = false
+                        } label: {
+                            ChannelRowView(
+                                channel: channel,
+                                isSelected: player.currentChannel == channel
+                            )
                         }
+                        .buttonStyle(.plain)
                     }
                     .listStyle(.grouped)
                 }
@@ -148,12 +135,41 @@ private struct TVChannelPickerOverlay: View {
         }
         .frame(maxWidth: 780, maxHeight: .infinity, alignment: .leading)
         .background(.ultraThinMaterial.opacity(0.95))
+        .task(id: selectedPlaylist?.id) {
+            await loadChannels()
+        }
+    }
+
+    @MainActor
+    private func loadChannels() async {
+        guard let playlist = selectedPlaylist else { channels = []; return }
+        isLoading = true
+        defer { isLoading = false }
+
+        // Load from cache first
+        let cached = await ChannelCache.shared.load(playlistID: playlist.id)
+        if !cached.isEmpty { channels = cached; return }
+
+        // Fetch from network
+        do {
+            if playlist.playlistType == .xtream, let creds = playlist.xstreamCredentials {
+                channels = try await XstreamService(credentials: creds).channels()
+            } else if let url = playlist.effectiveURL {
+                channels = try await PlaylistService().fetchChannels(from: url, forceRefresh: true)
+            }
+            let fetched = channels
+            let id = playlist.id
+            Task.detached(priority: .background) {
+                try? await ChannelCache.shared.save(channels: fetched, playlistID: id)
+            }
+        } catch {
+            channels = []
+        }
     }
 }
 
 // MARK: - TVVideoPlayer
 
-/// Bridges AVPlayer to SwiftUI on tvOS via AVPlayerViewController.
 private struct TVVideoPlayer: UIViewControllerRepresentable {
     let avPlayer: AVPlayer
 
@@ -166,9 +182,7 @@ private struct TVVideoPlayer: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
-        if uiViewController.player !== avPlayer {
-            uiViewController.player = avPlayer
-        }
+        if uiViewController.player !== avPlayer { uiViewController.player = avPlayer }
     }
 }
 #endif

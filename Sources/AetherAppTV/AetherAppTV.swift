@@ -26,7 +26,6 @@ struct AetherAppTV: App {
         }
         .modelContainer(for: [
             PlaylistRecord.self,
-            ChannelRecord.self,
             FavoriteRecord.self,
             WatchHistoryRecord.self,
         ])

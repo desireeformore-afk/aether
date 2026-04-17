@@ -3,10 +3,10 @@ import SwiftData
 import AetherCore
 
 /// Middle column: channels grouped by `groupTitle`, with search, genre filter chips,
-/// collapsible DisclosureGroup sections, and Favorites tab.
+/// collapsible sections, and Favorites tab.
 ///
-/// Channel data lives in-memory only — persisted to JSON via `ChannelCache`,
-/// never in SwiftData (which can't handle 50k+ records efficiently).
+/// Channel data lives in-memory — persisted to JSON via `ChannelCache`.
+/// Uses virtualized List with lazy sections to handle 50k+ channels efficiently.
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var epgStore: EPGStore
@@ -22,14 +22,17 @@ struct ChannelListView: View {
     @State private var errorMessage: String?
     @State private var nowPlaying: [String: EPGEntry] = [:]
     @State private var activeTab: ListTab = .all
-    @State private var expandedGroups: [String: Bool] = [:]
+    @State private var collapsedGroups: Set<String> = []
     @FocusState private var isSearchFocused: Bool
+
+    // Memoized derived state — recomputed only when channels/search/group changes
+    @State private var cachedGrouped: [(group: String, channels: [Channel])] = []
+    @State private var cachedAllGroups: [String] = []
 
     // MARK: - Body
 
     var body: some View {
         VStack(spacing: 0) {
-            // Tab switcher
             Picker("", selection: $activeTab) {
                 ForEach(ListTab.allCases, id: \.self) { tab in
                     Label(tab.label, systemImage: tab.icon).tag(tab)
@@ -79,15 +82,54 @@ struct ChannelListView: View {
         }
         #endif
         .task {
-            // 1. Load from cache instantly (no network)
             await loadFromCache()
-            // 2. Refresh from network in background if cache is stale (>1h) or empty
             let cacheAge = await ChannelCache.shared.lastModified(playlistID: playlist.id)
                 .map { Date().timeIntervalSince($0) } ?? .infinity
             if channels.isEmpty || cacheAge > 3600 {
                 await refresh()
             }
             await refreshEPG()
+        }
+        // Recompute memoized lists whenever inputs change
+        .onChange(of: channels)      { _, _ in recomputeFiltered() }
+        .onChange(of: searchText)    { _, _ in recomputeFiltered() }
+        .onChange(of: selectedGroup) { _, _ in recomputeFiltered() }
+    }
+
+    // MARK: - Memoized filter (runs off main thread via Task)
+
+    private func recomputeFiltered() {
+        let snap = channels
+        let q = searchText.lowercased()
+        let grp = selectedGroup
+        Task.detached(priority: .userInitiated) {
+            // All groups (stable order, dedup)
+            var seenG = Set<String>()
+            let allG = snap.compactMap { ch -> String? in
+                seenG.insert(ch.groupTitle).inserted ? ch.groupTitle : nil
+            }
+
+            // Filtered
+            var result = snap
+            if let group = grp { result = result.filter { $0.groupTitle == group } }
+            if !q.isEmpty      { result = result.filter { $0.name.lowercased().contains(q) } }
+
+            // Group
+            var order: [String] = []
+            var dict: [String: [Channel]] = [:]
+            for ch in result {
+                if dict[ch.groupTitle] == nil {
+                    order.append(ch.groupTitle)
+                    dict[ch.groupTitle] = []
+                }
+                dict[ch.groupTitle]!.append(ch)
+            }
+            let grouped = order.map { (group: $0, channels: dict[$0]!) }
+
+            await MainActor.run {
+                cachedAllGroups = allG
+                cachedGrouped = grouped
+            }
         }
     }
 
@@ -106,7 +148,7 @@ struct ChannelListView: View {
     private var allChannelsList: some View {
         VStack(spacing: 0) {
             // Genre filter chips (only when not searching)
-            if allGroups.count > 1 && searchText.isEmpty {
+            if cachedAllGroups.count > 1 && searchText.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         FilterChip(label: "All", isSelected: selectedGroup == nil) {
@@ -114,7 +156,7 @@ struct ChannelListView: View {
                                 selectedGroup = nil
                             }
                         }
-                        ForEach(allGroups, id: \.self) { group in
+                        ForEach(cachedAllGroups, id: \.self) { group in
                             FilterChip(label: group, isSelected: selectedGroup == group) {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                     selectedGroup = (selectedGroup == group) ? nil : group
@@ -141,72 +183,26 @@ struct ChannelListView: View {
         }
     }
 
-    // MARK: - Derived data
-
-    private var allGroups: [String] {
-        var seen = Set<String>()
-        return channels.compactMap { ch in
-            seen.insert(ch.groupTitle).inserted ? ch.groupTitle : nil
-        }
-    }
-
-    private var filteredChannels: [Channel] {
-        var result = channels
-        if let group = selectedGroup {
-            result = result.filter { $0.groupTitle == group }
-        }
-        if !searchText.isEmpty {
-            let q = searchText.lowercased()
-            result = result.filter { $0.name.lowercased().contains(q) }
-        }
-        return result
-    }
-
-    private var groupedChannels: [(group: String, channels: [Channel])] {
-        var order: [String] = []
-        var dict: [String: [Channel]] = [:]
-        for ch in filteredChannels {
-            if dict[ch.groupTitle] == nil {
-                order.append(ch.groupTitle)
-                dict[ch.groupTitle] = []
-            }
-            dict[ch.groupTitle]!.append(ch)
-        }
-        return order.map { (group: $0, channels: dict[$0]!) }
-    }
-
-    // MARK: - Channel list
+    // MARK: - Channel list (virtualized)
 
     private var channelList: some View {
         List(selection: $selectedChannel) {
             if !searchText.isEmpty {
-                // Flat list when searching
-                ForEach(filteredChannels) { ch in
-                    channelRow(ch)
-                        .tag(ch)
+                // Flat list when searching — fully lazy, OS only renders visible rows
+                ForEach(cachedGrouped.flatMap(\.channels)) { ch in
+                    channelRow(ch).tag(ch)
                 }
             } else {
-                // Grouped with DisclosureGroup
-                ForEach(groupedChannels, id: \.group) { section in
-                    let isExpanded = Binding<Bool>(
-                        get: { expandedGroups[section.group] ?? true },
-                        set: { expandedGroups[section.group] = $0 }
-                    )
-                    DisclosureGroup(isExpanded: isExpanded) {
-                        ForEach(section.channels) { ch in
-                            channelRow(ch)
-                                .tag(ch)
+                // Grouped — collapsed sections keep row count low
+                ForEach(cachedGrouped, id: \.group) { section in
+                    Section {
+                        if !collapsedGroups.contains(section.group) {
+                            ForEach(section.channels) { ch in
+                                channelRow(ch).tag(ch)
+                            }
                         }
-                    } label: {
-                        HStack {
-                            Text(section.group)
-                                .font(.aetherCaption.bold())
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text("\(section.channels.count)")
-                                .font(.aetherCaption)
-                                .foregroundStyle(.tertiary)
-                        }
+                    } header: {
+                        sectionHeader(section)
                     }
                 }
             }
@@ -221,6 +217,34 @@ struct ChannelListView: View {
                     .padding(.top, 8)
             }
         }
+    }
+
+    private func sectionHeader(_ section: (group: String, channels: [Channel])) -> some View {
+        let collapsed = collapsedGroups.contains(section.group)
+        return Button {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                if collapsed {
+                    collapsedGroups.remove(section.group)
+                } else {
+                    collapsedGroups.insert(section.group)
+                }
+            }
+        } label: {
+            HStack {
+                Image(systemName: collapsed ? "chevron.right" : "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text(section.group)
+                    .font(.aetherCaption.bold())
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(section.channels.count)")
+                    .font(.aetherCaption)
+                    .foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func channelRow(_ ch: Channel) -> some View {
@@ -255,8 +279,7 @@ struct ChannelListView: View {
                 .foregroundStyle(Color.aetherText)
             Spacer()
             Button { errorMessage = nil } label: {
-                Image(systemName: "xmark")
-                    .font(.caption2)
+                Image(systemName: "xmark").font(.caption2)
             }
             .buttonStyle(.plain)
         }
@@ -269,11 +292,15 @@ struct ChannelListView: View {
 
     private func play(_ channel: Channel) {
         selectedChannel = channel
-        player.channelList = filteredChannels
+        // Pass only the current section's channels as navigation list (not all 50k)
+        let navList = cachedGrouped
+            .first(where: { $0.group == channel.groupTitle })?
+            .channels ?? cachedGrouped.flatMap(\.channels)
+        player.channelList = navList
         player.play(channel)
     }
 
-    // MARK: - Refresh (network fetch → cache → in-memory)
+    // MARK: - Refresh
 
     @MainActor
     private func refresh() async {
@@ -300,17 +327,14 @@ struct ChannelListView: View {
                 fetched = try await PlaylistService().fetchChannels(from: url, forceRefresh: true)
             }
 
-            // Update in-memory first (instant UI update)
             channels = fetched
+            playlist.lastRefreshed = Date()
+            collapsedGroups = []
 
-            // Persist to JSON cache in background (non-blocking)
             let playlistID = playlist.id
             Task.detached(priority: .background) {
                 try? await ChannelCache.shared.save(channels: fetched, playlistID: playlistID)
             }
-
-            playlist.lastRefreshed = Date()
-            expandedGroups = [:]
 
         } catch {
             errorMessage = error.localizedDescription
@@ -323,7 +347,7 @@ struct ChannelListView: View {
     private func refreshEPG() async {
         var entries: [String: EPGEntry] = [:]
         let now = Date()
-        for ch in channels.prefix(500) { // limit EPG lookups
+        for ch in channels.prefix(500) {
             let cid = ch.epgId ?? ch.name
             if let entry = await epgStore.service.nowPlaying(for: cid, at: now) {
                 entries[cid] = entry
@@ -348,22 +372,14 @@ private struct FilterChip: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background(
-                    isSelected
-                        ? Color.aetherPrimary
-                        : Color.aetherSurface,
+                    isSelected ? Color.aetherPrimary : Color.aetherSurface,
                     in: Capsule()
                 )
                 .overlay(
-                    Capsule()
-                        .strokeBorder(
-                            isSelected ? Color.clear : Color.aetherText.opacity(0.2),
-                            lineWidth: 1
-                        )
-                )
-                .scaleEffect(isSelected ? 1.05 : 1.0)
-                .shadow(
-                    color: isSelected ? Color.aetherPrimary.opacity(0.35) : .clear,
-                    radius: 4, y: 2
+                    Capsule().strokeBorder(
+                        isSelected ? Color.clear : Color.aetherText.opacity(0.2),
+                        lineWidth: 1
+                    )
                 )
         }
         .buttonStyle(.plain)
