@@ -48,8 +48,8 @@ public final class HTTPBypassProtocol: URLProtocol {
         return request
     }
     public override func startLoading() {
+        guard let client = self.client else { return }
         let request = self.request
-        nonisolated(unsafe) let client = self.client
         
         var mutableRequest = request
         
@@ -66,7 +66,7 @@ public final class HTTPBypassProtocol: URLProtocol {
         #endif
         
         dataTask = Self.bypassSession.dataTask(with: mutableRequest) { [weak self] data, response, error in
-            guard let self = self else { return }
+            guard let self = self, let client = self.client else { return }
             
             if let error = error {
                 #if DEBUG
