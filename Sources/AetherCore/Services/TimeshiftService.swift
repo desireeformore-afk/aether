@@ -7,10 +7,10 @@ import Foundation
 @MainActor
 @Observable
 public final class TimeshiftService {
-    @Published public private(set) var isBuffering: Bool = false
-    @Published public private(set) var bufferDuration: TimeInterval = 0
-    @Published public private(set) var bufferSize: Int64 = 0
-    @Published public var isPaused: Bool = false
+    public private(set) var isBuffering: Bool = false
+    public private(set) var bufferDuration: TimeInterval = 0
+    public private(set) var bufferSize: Int64 = 0
+    public var isPaused: Bool = false
 
     private var bufferURL: URL?
     private var assetWriter: AVAssetWriter?

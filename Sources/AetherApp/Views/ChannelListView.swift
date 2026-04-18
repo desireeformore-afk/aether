@@ -10,8 +10,8 @@ import AetherCore
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(EPGStore.self) private var epgStore
-    @EnvironmentObject private var parentalService: ParentalControlService
-    @EnvironmentObject private var analyticsService: AnalyticsService
+    @Environment(ParentalControlService.self) private var parentalService
+    @Environment(AnalyticsService.self) private var analyticsService
 
     let playlist: PlaylistRecord
     @Binding var selectedChannel: Channel?
@@ -28,7 +28,7 @@ struct ChannelListView: View {
     @State private var collapsedGroups: Set<String> = []
     @State private var viewMode: ChannelViewMode = .list
     @FocusState private var isSearchFocused: Bool
-    @StateObject private var recommendationService: RecommendationService
+    @State private var recommendationService: RecommendationService
 
     @AppStorage("channelViewMode") private var savedViewMode: String = ChannelViewMode.list.rawValue
     
@@ -49,9 +49,8 @@ struct ChannelListView: View {
         self.playlist = playlist
         self._selectedChannel = selectedChannel
         self.player = player
-        // Initialize recommendation service with analytics
-        let analytics = AnalyticsService()
-        _recommendationService = StateObject(wrappedValue: RecommendationService(analyticsService: analytics))
+        // Initialize recommendation service with analytics - will be set from environment
+        self.recommendationService = RecommendationService(analyticsService: AnalyticsService())
     }
 
     // Search debouncing

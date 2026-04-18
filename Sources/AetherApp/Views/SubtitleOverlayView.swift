@@ -4,7 +4,7 @@ import AetherCore
 /// Transparent overlay rendering the current subtitle cue.
 /// Place inside a ZStack over VideoPlayerLayer.
 struct SubtitleOverlayView: View {
-    @ObservedObject var store: SubtitleStore
+    @Bindable var store: SubtitleStore
 
     @AppStorage("subtitle_fontSize")   private var fontSize: Double = 22
     @AppStorage("subtitle_offsetY")    private var offsetY: Double = 32   // pts from bottom

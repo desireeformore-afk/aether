@@ -3,7 +3,7 @@ import AetherCore
 
 /// Network status indicator banner.
 struct NetworkStatusBanner: View {
-    @ObservedObject var networkMonitor: NetworkMonitorService
+    @Bindable var networkMonitor: NetworkMonitorService
 
     var body: some View {
         Group {

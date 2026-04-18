@@ -7,10 +7,10 @@ import Foundation
 @MainActor
 @Observable
 public final class RecordingService {
-    @Published public private(set) var activeRecordings: [UUID: Recording] = [:]
-    @Published public private(set) var completedRecordings: [Recording] = []
-    @Published public private(set) var scheduledRecordings: [RecordingSchedule] = []
-    @Published public var settings: RecordingSettings
+    public private(set) var activeRecordings: [UUID: Recording] = [:]
+    public private(set) var completedRecordings: [Recording] = []
+    public private(set) var scheduledRecordings: [RecordingSchedule] = []
+    public var settings: RecordingSettings
 
     private var assetWriters: [UUID: AVAssetWriter] = [:]
     private var writerInputs: [UUID: (video: AVAssetWriterInput, audio: AVAssetWriterInput)] = [:]

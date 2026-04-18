@@ -5,8 +5,8 @@ import AetherCore
 /// Root view: Fullscreen player with floating channel panel overlay.
 struct ContentView: View {
     @Environment(EPGStore.self) private var epgStore
-    @EnvironmentObject private var networkMonitor: NetworkMonitorService
-    @EnvironmentObject private var themeService: ThemeService
+    @Environment(NetworkMonitorService.self) private var networkMonitor
+    @Environment(ThemeService.self) private var themeService
     @Bindable var playerCore: PlayerCore
 
     @State private var selectedPlaylist: PlaylistRecord?

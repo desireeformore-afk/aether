@@ -5,9 +5,9 @@ import Combine
 @MainActor
 @Observable
 public final class AnalyticsService {
-    @Published public private(set) var viewingStats: ViewingStatistics
-    @Published public private(set) var channelStats: [ChannelStatistics] = []
-    @Published public private(set) var dailyStats: [DailyStatistics] = []
+    public private(set) var viewingStats: ViewingStatistics
+    public private(set) var channelStats: [ChannelStatistics] = []
+    public private(set) var dailyStats: [DailyStatistics] = []
 
     public struct ViewingStatistics: Codable {
         public var totalWatchTime: TimeInterval = 0

@@ -7,11 +7,11 @@ import Foundation
 @MainActor
 @Observable
 public final class TrackService {
-    @Published public private(set) var audioTracks: [AudioTrack] = []
-    @Published public private(set) var subtitleTracks: [SubtitleTrackInfo] = []
-    @Published public var selectedAudioTrack: AudioTrack?
-    @Published public var selectedSubtitleTrack: SubtitleTrackInfo?
-    @Published public var subtitlesEnabled: Bool = false
+    public private(set) var audioTracks: [AudioTrack] = []
+    public private(set) var subtitleTracks: [SubtitleTrackInfo] = []
+    public var selectedAudioTrack: AudioTrack?
+    public var selectedSubtitleTrack: SubtitleTrackInfo?
+    public var subtitlesEnabled: Bool = false
 
     private var trackPreferences: [UUID: TrackPreferences] = [:]
     private let userDefaults: UserDefaults

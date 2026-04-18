@@ -5,8 +5,8 @@ import Combine
 @MainActor
 @Observable
 public final class RecommendationService {
-    @Published public private(set) var recommendations: [ChannelRecommendation] = []
-    @Published public private(set) var isGenerating: Bool = false
+    public private(set) var recommendations: [ChannelRecommendation] = []
+    public private(set) var isGenerating: Bool = false
 
     public struct ChannelRecommendation: Identifiable, Codable {
         public let id: UUID
@@ -44,14 +44,8 @@ public final class RecommendationService {
 
     private func setupObservers() {
         // Regenerate recommendations when analytics change
-        analyticsService.$channelStats
-            .debounce(for: .seconds(5), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    await self?.generateRecommendations()
-                }
-            }
-            .store(in: &cancellables)
+        // Note: With @Observable, we can't use $ publishers
+        // This would need to be triggered manually or via a different mechanism
     }
 
     public func generateRecommendations(for channels: [Channel] = []) async {

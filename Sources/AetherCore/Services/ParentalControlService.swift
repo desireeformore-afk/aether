@@ -7,8 +7,8 @@ import CryptoKit
 @MainActor
 @Observable
 public final class ParentalControlService {
-    @Published public private(set) var settings: ParentalSettings
-    @Published public private(set) var isUnlocked: Bool = false
+    public private(set) var settings: ParentalSettings
+    public private(set) var isUnlocked: Bool = false
 
     private let userDefaults: UserDefaults
     private let settingsKey = "aether.parentalControls.settings"

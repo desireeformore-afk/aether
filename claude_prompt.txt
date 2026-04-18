@@ -1,0 +1,16 @@
+Fix all Swift compilation errors in the Aether project. Focus on:
+
+1. Complete @Observable migration - fix all @StateObject/@EnvironmentObject to @State/@Environment
+2. Fix Sendable conformance issues for Swift 6 concurrency
+3. Ensure PlayerView and PlaylistView are fully functional
+4. Fix any missing view components or broken references
+
+Build must pass: swift build --target Aether
+
+Work systematically:
+- Read build errors
+- Fix each file properly
+- Verify compilation after each major change
+- Ensure player and playlist functionality is intact
+
+Target: fully working app with player and playlists in under 1 hour.

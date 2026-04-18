@@ -7,7 +7,7 @@ public struct PINLockView: View {
     let onUnlock: () -> Void
     let onCancel: () -> Void
 
-    @ObservedObject var service: ParentalControlService
+    @Bindable var service: ParentalControlService
     @State private var showPINEntry = false
     @State private var attemptedPIN: String = ""
     @State private var showError = false
