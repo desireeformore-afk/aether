@@ -1,17 +1,17 @@
 # Aether Session Tracker
 
-## Current Status (2026-04-18 09:30 PM)
+## Current Status (2026-04-18 10:00 PM)
 
 **Last Session:** 01:32 - 02:15 (43 minutes)  
 **Status:** IDLE - No active autonomous session  
-**Process:** proc_333c30fb3f60 (completed - not found)  
-**Recent Activity:** 5 commits since 9:00 PM (@Observable migration fixes)  
-**Total Commits:** 49 (11 features + 38 refactoring/fixes)
+**Process:** proc_333c30fb3f60 (not found - completed)  
+**Recent Activity:** 3 commits since last check (URLProtocol concurrency fixes)  
+**Total Commits:** 52 (11 features + 41 refactoring/fixes)
 
 ### Latest Commits (Last 3)
-- b25a2e0: fix: use @Bindable instead of @State for passed @Observable services in child views
-- 46f55ac: test: trigger CI
-- 2311909: docs: add Phase 1 completion summary
+- 5751d33: fix: use MainActor.assumeIsolated and capture protocolInstance to avoid self capture issues
+- 7121862: fix: make startLoading nonisolated and capture client directly to fix Sendable issues
+- aad4709: fix: wrap URLProtocolClient calls in DispatchQueue.main.async for Swift 6 concurrency
 
 ### Completed Features (11 from autonomous session)
 1. Parental Controls (PIN, age ratings, time restrictions)
