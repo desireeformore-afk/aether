@@ -2,29 +2,88 @@ import AVFoundation
 import Combine
 import Foundation
 
-/// Playback state of `PlayerCore`.
+/// Playback state of ``PlayerCore``.
 public enum PlayerState: Sendable, Equatable {
+    /// No channel is loaded.
     case idle
+    /// Channel is loading.
     case loading
+    /// Channel is playing.
     case playing
+    /// Playback is paused.
     case paused
+    /// Playback failed with an error message.
     case error(String)
 }
 
 /// A `@MainActor` wrapper around `AVPlayer` for IPTV stream playback.
-/// Supports play/pause/stop/mute/volume, PiP delegation, channel navigation,
-/// auto-retry on stall/error (max 3x with exponential backoff),
-/// and watch session tracking via `onWatchSessionEnd` callback.
+///
+/// Manages IPTV channel playback with support for:
+/// - Play/pause/stop/mute/volume control
+/// - Picture-in-Picture (PiP) delegation
+/// - Channel navigation (next/previous)
+/// - Auto-retry on stall/error (max 3x with exponential backoff)
+/// - Watch session tracking
+/// - Stream quality selection
+///
+/// ## Topics
+///
+/// ### Creating a Player
+/// - ``init()``
+///
+/// ### Playback Control
+/// - ``play(_:)``
+/// - ``stop()``
+/// - ``togglePlayPause()``
+/// - ``playNext()``
+/// - ``playPrevious()``
+///
+/// ### Audio Control
+/// - ``toggleMute()``
+/// - ``setVolume(_:)``
+///
+/// ### State
+/// - ``state``
+/// - ``currentChannel``
+/// - ``isMuted``
+/// - ``volume``
+/// - ``isPiPActive``
+///
+/// ### Quality Selection
+/// - ``selectedQuality``
+/// - ``qualityPresets``
+///
+/// ### Channel Navigation
+/// - ``channelList``
+///
+/// ## Example
+///
+/// ```swift
+/// let player = PlayerCore()
+/// let channel = Channel(name: "BBC One", streamURL: URL(string: "http://...")!)
+/// player.play(channel)
+/// ```
 @MainActor
 public final class PlayerCore: ObservableObject {
 
     // MARK: - Published state
 
+    /// Current playback state.
     @Published public private(set) var state: PlayerState = .idle
+
+    /// Currently playing channel, if any.
     @Published public private(set) var currentChannel: Channel?
+
+    /// Whether audio is muted.
     @Published public private(set) var isMuted: Bool = false
+
+    /// Audio volume (0.0 to 1.0).
     @Published public private(set) var volume: Float = 1.0
+
+    /// Whether Picture-in-Picture is active.
     @Published public private(set) var isPiPActive: Bool = false
+
+    /// Selected stream quality preset.
     @Published public var selectedQuality: StreamQuality = StreamQuality.auto {
         didSet { StreamQualityService().apply(selectedQuality, to: player) }
     }
@@ -56,6 +115,7 @@ public final class PlayerCore: ObservableObject {
 
     // MARK: - Internal
 
+    /// The underlying AVPlayer instance.
     public let player: AVPlayer = AVPlayer()
 
     private var statusObserver: AnyCancellable?
@@ -69,6 +129,7 @@ public final class PlayerCore: ObservableObject {
     /// Tracks when the current channel started playing.
     private var watchStartTime: Date?
 
+    /// Creates a new player instance.
     public init() {
         // Register HTTP bypass protocol to allow arbitrary HTTP streams (bypasses ATS)
         URLProtocol.registerClass(HTTPBypassProtocol.self)

@@ -1,6 +1,32 @@
 import Foundation
 
 /// Downloads, caches, and queries EPG data from XMLTV sources.
+///
+/// Manages electronic program guide (EPG) data by downloading XMLTV files,
+/// caching them locally, and providing efficient queries for current and upcoming programs.
+///
+/// ## Topics
+///
+/// ### Loading EPG Data
+/// - ``loadGuide(from:forceRefresh:)``
+/// - ``clearCache()``
+///
+/// ### Querying Programs
+/// - ``nowPlaying(for:at:)``
+/// - ``schedule(for:on:)``
+///
+/// ### Errors
+/// - ``EPGServiceError``
+///
+/// ## Example
+///
+/// ```swift
+/// let service = EPGService()
+/// try await service.loadGuide(from: epgURL)
+/// if let current = await service.nowPlaying(for: "bbc1", at: Date()) {
+///     print("Now playing: \(current.title)")
+/// }
+/// ```
 public actor EPGService {
 
     // MARK: - State
@@ -12,6 +38,9 @@ public actor EPGService {
 
     // MARK: - Init
 
+    /// Creates a new EPG service.
+    ///
+    /// - Parameter cacheDirectory: Optional custom cache directory. Defaults to app support directory.
     public init(cacheDirectory: URL? = nil) {
         if let dir = cacheDirectory {
             self.cacheDirectory = dir

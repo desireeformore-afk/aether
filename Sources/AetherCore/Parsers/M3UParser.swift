@@ -16,13 +16,40 @@ public enum M3UParserError: Error, LocalizedError, Sendable {
 }
 
 /// Parser for M3U/M3U8 playlist files.
+///
+/// Parses IPTV playlists in M3U format, extracting channel metadata including
+/// stream URLs, logos, EPG IDs, and group categories.
+///
+/// ## Topics
+///
+/// ### Parsing Playlists
+/// - ``parse(content:)``
+///
+/// ### Errors
+/// - ``M3UParserError``
+///
+/// ## Example
+///
+/// ```swift
+/// let m3uContent = """
+/// #EXTM3U
+/// #EXTINF:-1 tvg-id="bbc1" tvg-logo="http://example.com/logo.png" group-title="News",BBC One
+/// http://stream.example.com/bbc1
+/// """
+/// let channels = try M3UParser.parse(content: m3uContent)
+/// ```
 public struct M3UParser: Sendable {
 
     /// Parses M3U content from a `String` and returns an array of `Channel`.
     ///
+    /// Supports both M3U and M3U8 formats with extended metadata including:
+    /// - `tvg-id`: EPG identifier
+    /// - `tvg-logo`: Channel logo URL
+    /// - `group-title`: Channel category
+    ///
     /// - Parameter content: Raw M3U playlist text.
     /// - Returns: Parsed channels in order of appearance.
-    /// - Throws: `M3UParserError` on unrecoverable format errors.
+    /// - Throws: ``M3UParserError`` on unrecoverable format errors.
     public static func parse(content: String) throws -> [Channel] {
         // Strip UTF-8 BOM if present
         var text = content.hasPrefix("\u{FEFF}") ? String(content.dropFirst()) : content
