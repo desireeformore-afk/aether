@@ -149,8 +149,6 @@ public final class PlayerCore: ObservableObject {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
-        removeNotificationObservers()
-        removeRetryObservers()
         statusObserver?.cancel()
         statusObserver = nil
     }
@@ -161,14 +159,16 @@ public final class PlayerCore: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleMemoryPressure()
+            Task { @MainActor in
+                self?.handleMemoryPressure()
+            }
         }
     }
 
     private func handleMemoryPressure() {
         // Reduce quality to low on critical memory pressure
         if selectedQuality != .low {
-            selectedQuality = .low
+            selectedQuality = StreamQuality.low
         }
     }
 
@@ -419,11 +419,4 @@ public final class PlayerCore: ObservableObject {
             }
     }
 
-    deinit {
-        statusObserver?.cancel()
-        statusObserver = nil
-        if let obs = stalledObserver { NotificationCenter.default.removeObserver(obs) }
-        if let obs = failedObserver { NotificationCenter.default.removeObserver(obs) }
-        player.replaceCurrentItem(with: nil)
-    }
 }
