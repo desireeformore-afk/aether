@@ -99,7 +99,7 @@ struct SettingsView: View {
             }
 
             if let message = exportMessage {
-                Section {
+                Section("Export Status") {
                     Text(message)
                         .foregroundStyle(message.contains("Error") ? .red : .green)
                         .font(.aetherCaption)
@@ -107,7 +107,7 @@ struct SettingsView: View {
             }
 
             if let message = importMessage {
-                Section {
+                Section("Import Status") {
                     Text(message)
                         .foregroundStyle(message.contains("Error") ? .red : .green)
                         .font(.aetherCaption)

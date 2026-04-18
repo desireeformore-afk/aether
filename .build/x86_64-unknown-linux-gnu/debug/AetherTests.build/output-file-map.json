@@ -1,0 +1,89 @@
+{
+  "": {
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/master.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/AetherCoreTests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/AetherCoreTests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/AetherCoreTests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/AetherCoreTests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/AetherCoreTests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/CloudKitManagerTests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/CloudKitManagerTests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/CloudKitManagerTests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/CloudKitManagerTests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/CloudKitManagerTests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/CoreServicesTests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/CoreServicesTests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/CoreServicesTests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/CoreServicesTests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/CoreServicesTests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/EPGServiceTests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/EPGServiceTests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/EPGServiceTests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/EPGServiceTests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/EPGServiceTests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/M3UParserTests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/M3UParserTests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/M3UParserTests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/M3UParserTests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/M3UParserTests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/ParentalControlServiceTests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/ParentalControlServiceTests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/ParentalControlServiceTests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/ParentalControlServiceTests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/ParentalControlServiceTests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/PlayerCoreTests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/PlayerCoreTests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/PlayerCoreTests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/PlayerCoreTests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/PlayerCoreTests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/RecordingServiceTests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/RecordingServiceTests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/RecordingServiceTests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/RecordingServiceTests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/RecordingServiceTests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/Sprint12Tests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint12Tests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint12Tests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint12Tests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint12Tests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/Sprint13Tests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint13Tests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint13Tests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint13Tests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint13Tests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/Sprint14Tests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint14Tests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint14Tests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint14Tests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint14Tests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/Sprint15Tests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint15Tests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint15Tests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint15Tests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/Sprint15Tests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/XMLTVParserTests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/XMLTVParserTests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/XMLTVParserTests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/XMLTVParserTests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/XMLTVParserTests.swiftdeps"
+  },
+  "/workspace/Sources/AetherTests/iCloudSyncTests.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/iCloudSyncTests.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/iCloudSyncTests.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/iCloudSyncTests~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherTests.build/iCloudSyncTests.swiftdeps"
+  }
+}

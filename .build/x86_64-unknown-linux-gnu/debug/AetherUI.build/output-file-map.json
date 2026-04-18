@@ -1,0 +1,53 @@
+{
+  "": {
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/master.swiftdeps"
+  },
+  "/workspace/Sources/AetherUI/AetherUI.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.swiftdeps"
+  },
+  "/workspace/Sources/AetherUI/Views/AppearancePickerView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.swiftdeps"
+  },
+  "/workspace/Sources/AetherUI/Views/ChannelRowView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.swiftdeps"
+  },
+  "/workspace/Sources/AetherUI/Views/EPGTimelineView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.swiftdeps"
+  },
+  "/workspace/Sources/AetherUI/Views/EmptyStateView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView.swiftdeps"
+  },
+  "/workspace/Sources/AetherUI/Views/OnboardingView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView.swiftdeps"
+  },
+  "/workspace/Sources/AetherUI/Views/PlayerControlsView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView.swiftdeps"
+  },
+  "/workspace/Sources/AetherUI/Views/ThemePickerView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.swiftdeps"
+  }
+}

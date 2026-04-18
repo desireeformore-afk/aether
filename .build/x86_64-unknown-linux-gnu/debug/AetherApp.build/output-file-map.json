@@ -1,0 +1,263 @@
+{
+  "": {
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/master.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/AetherApp.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AetherApp.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AetherApp.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AetherApp~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AetherApp.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/KeyboardShortcutHandler.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/KeyboardShortcutHandler.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/KeyboardShortcutHandler.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/KeyboardShortcutHandler~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/KeyboardShortcutHandler.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/StatusBar/StatusBarController.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/StatusBarController.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/StatusBarController.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/StatusBarController~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/StatusBarController.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/SubtitleStore.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleStore.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleStore.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleStore~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleStore.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/AddPlaylistSheet.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AddPlaylistSheet.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AddPlaylistSheet.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AddPlaylistSheet~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AddPlaylistSheet.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/AnalyticsView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AnalyticsView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AnalyticsView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AnalyticsView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AnalyticsView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/ChannelGridView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelGridView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelGridView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelGridView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelGridView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/ChannelListView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelListView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelListView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelListView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelListView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/ChannelListView_ContentCategory.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelListView_ContentCategory.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelListView_ContentCategory.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelListView_ContentCategory~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelListView_ContentCategory.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/ChannelLogoView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelLogoView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelLogoView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelLogoView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ChannelLogoView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/CloudSyncView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CloudSyncView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CloudSyncView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CloudSyncView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CloudSyncView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/CommandPaletteView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CommandPaletteView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CommandPaletteView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CommandPaletteView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CommandPaletteView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/ContentView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ContentView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ContentView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ContentView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/CrashReportsView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CrashReportsView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CrashReportsView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CrashReportsView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/CrashReportsView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/FloatingChannelPanel.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/FloatingChannelPanel.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/FloatingChannelPanel.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/FloatingChannelPanel~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/FloatingChannelPanel.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/GlobalContentSearchView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/GlobalContentSearchView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/GlobalContentSearchView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/GlobalContentSearchView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/GlobalContentSearchView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/MemoryMonitorView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/MemoryMonitorView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/MemoryMonitorView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/MemoryMonitorView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/MemoryMonitorView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/MiniPlayerView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/MiniPlayerView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/MiniPlayerView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/MiniPlayerView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/MiniPlayerView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/NetworkStatusBanner.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/NetworkStatusBanner.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/NetworkStatusBanner.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/NetworkStatusBanner~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/NetworkStatusBanner.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/PINLockView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PINLockView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PINLockView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PINLockView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PINLockView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/ParentalControlsView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ParentalControlsView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ParentalControlsView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ParentalControlsView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/ParentalControlsView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/PlayerView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlayerView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlayerView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlayerView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlayerView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/PlaylistHealthView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistHealthView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistHealthView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistHealthView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistHealthView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/PlaylistSharingView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistSharingView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistSharingView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistSharingView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistSharingView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/PlaylistSidebar.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistSidebar.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistSidebar.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistSidebar~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/PlaylistSidebar.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/RecommendationsView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecommendationsView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecommendationsView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecommendationsView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecommendationsView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/RecordingControlsButton.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecordingControlsButton.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecordingControlsButton.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecordingControlsButton~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecordingControlsButton.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/RecordingManagerView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecordingManagerView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecordingManagerView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecordingManagerView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RecordingManagerView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/RemoteControlView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RemoteControlView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RemoteControlView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RemoteControlView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/RemoteControlView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/SeriesBrowserView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SeriesBrowserView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SeriesBrowserView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SeriesBrowserView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SeriesBrowserView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/SeriesDetailView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SeriesDetailView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SeriesDetailView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SeriesDetailView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SeriesDetailView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/SettingsView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SettingsView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SettingsView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SettingsView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SettingsView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/StreamStatsView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/StreamStatsView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/StreamStatsView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/StreamStatsView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/StreamStatsView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/SubtitleOverlayView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleOverlayView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleOverlayView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleOverlayView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleOverlayView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/SubtitleSettingsView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleSettingsView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleSettingsView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleSettingsView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleSettingsView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/SubtitleStylingView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleStylingView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleStylingView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleStylingView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/SubtitleStylingView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/TrackPickerButton.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/TrackPickerButton.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/TrackPickerButton.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/TrackPickerButton~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/TrackPickerButton.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/TrackPickerView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/TrackPickerView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/TrackPickerView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/TrackPickerView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/TrackPickerView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/VODBrowserView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/VODBrowserView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/VODBrowserView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/VODBrowserView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/VODBrowserView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/WatchHistoryView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/WatchHistoryView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/WatchHistoryView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/WatchHistoryView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/WatchHistoryView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/WatchPartyView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/WatchPartyView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/WatchPartyView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/WatchPartyView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/WatchPartyView.swiftdeps"
+  },
+  "/workspace/Sources/AetherApp/Views/iCloudSyncView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/iCloudSyncView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/iCloudSyncView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/iCloudSyncView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/iCloudSyncView.swiftdeps"
+  },
+  "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/DerivedSources/resource_bundle_accessor.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/resource_bundle_accessor.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/resource_bundle_accessor.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/resource_bundle_accessor~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/resource_bundle_accessor.swiftdeps"
+  }
+}

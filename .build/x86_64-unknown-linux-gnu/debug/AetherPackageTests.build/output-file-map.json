@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageTests.build/master.swiftdeps"
+  },
+  "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageTests.derived/runner.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageTests.build/runner.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageTests.build/runner.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageTests.build/runner.swiftdeps"
+  }
+}

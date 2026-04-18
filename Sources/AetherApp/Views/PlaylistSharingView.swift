@@ -40,7 +40,7 @@ struct PlaylistSharingView: View {
                     }
                 }
 
-                Section {
+                Section("Actions") {
                     Button(action: { showShareSheet = true }) {
                         Label("Share a Playlist", systemImage: "square.and.arrow.up")
                     }
@@ -255,7 +255,7 @@ struct ImportPlaylistSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
+                Section("Import") {
                     TextField("Share Code", text: $shareCode)
                         .textCase(.uppercase)
                         .font(.system(.body, design: .monospaced))

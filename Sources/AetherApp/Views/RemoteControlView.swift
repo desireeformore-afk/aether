@@ -97,7 +97,7 @@ struct RemoteControlView: View {
                     .font(.system(.caption, design: .monospaced))
             }
             
-            Section {
+            Section("Information") {
                 Text("Enable remote control to control Aether from other devices on your network.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -1,0 +1,17 @@
+{
+  "": {
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/master.swiftdeps"
+  },
+  "/workspace/Sources/AetherAppTV/AetherAppTV.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV.swiftdeps"
+  },
+  "/workspace/Sources/AetherAppTV/Views/TVContentView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView.swiftdeps"
+  }
+}

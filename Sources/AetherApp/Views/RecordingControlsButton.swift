@@ -73,7 +73,7 @@ struct RecordingControlsButton: View {
                     Label("Jump Forward 10s", systemImage: "goforward.10")
                 }
 
-                Section {
+                Section("Buffer Info") {
                     Text("Buffer: \(timeshiftService.bufferDurationFormatted)")
                     Text("Size: \(timeshiftService.bufferSizeFormatted)")
                 }

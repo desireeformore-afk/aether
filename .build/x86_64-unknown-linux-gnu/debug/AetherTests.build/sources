@@ -1,0 +1,14 @@
+/workspace/Sources/AetherTests/AetherCoreTests.swift
+/workspace/Sources/AetherTests/CloudKitManagerTests.swift
+/workspace/Sources/AetherTests/CoreServicesTests.swift
+/workspace/Sources/AetherTests/EPGServiceTests.swift
+/workspace/Sources/AetherTests/M3UParserTests.swift
+/workspace/Sources/AetherTests/ParentalControlServiceTests.swift
+/workspace/Sources/AetherTests/PlayerCoreTests.swift
+/workspace/Sources/AetherTests/RecordingServiceTests.swift
+/workspace/Sources/AetherTests/Sprint12Tests.swift
+/workspace/Sources/AetherTests/Sprint13Tests.swift
+/workspace/Sources/AetherTests/Sprint14Tests.swift
+/workspace/Sources/AetherTests/Sprint15Tests.swift
+/workspace/Sources/AetherTests/XMLTVParserTests.swift
+/workspace/Sources/AetherTests/iCloudSyncTests.swift

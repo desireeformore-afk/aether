@@ -7,7 +7,7 @@ struct iCloudSyncView: View {
 
     var body: some View {
         Form {
-            Section {
+            Section("Overview") {
                 HStack {
                     Image(systemName: syncService.isEnabled ? "icloud.fill" : "icloud.slash.fill")
                         .foregroundColor(syncService.isEnabled ? .blue : .gray)
@@ -78,7 +78,7 @@ struct iCloudSyncView: View {
                     SyncItemRow(icon: "gearshape.fill", title: "Settings", description: "App preferences and settings")
                 }
 
-                Section {
+                Section("Actions") {
                     Button {
                         Task {
                             await syncService.syncAll()
@@ -94,7 +94,7 @@ struct iCloudSyncView: View {
                     // Clear iCloud Data functionality removed - not implemented in service
                 }
             } else {
-                Section {
+                Section("Status") {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("iCloud Not Available")
                             .font(.headline)
@@ -161,7 +161,7 @@ struct ConflictResolutionView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
+                Section("Information") {
                     Text("Some items have conflicts between your local data and iCloud. Choose which version to keep.")
                         .font(.caption)
                         .foregroundColor(.secondary)

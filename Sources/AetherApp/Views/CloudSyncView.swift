@@ -48,7 +48,7 @@ struct CloudSyncView: View {
                 Label("Watch History", systemImage: "clock.fill")
             }
             
-            Section {
+            Section("Privacy") {
                 Text("Your data is encrypted and stored in your private iCloud account. Only you can access it.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

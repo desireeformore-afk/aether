@@ -1,0 +1,35 @@
+{
+  "": {
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/master.swiftdeps"
+  },
+  "/workspace/Sources/AetherAppIOS/AetherAppIOS.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/AetherAppIOS.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/AetherAppIOS.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/AetherAppIOS~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/AetherAppIOS.swiftdeps"
+  },
+  "/workspace/Sources/AetherAppIOS/Views/IOSChannelListView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSChannelListView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSChannelListView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSChannelListView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSChannelListView.swiftdeps"
+  },
+  "/workspace/Sources/AetherAppIOS/Views/IOSContentView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSContentView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSContentView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSContentView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSContentView.swiftdeps"
+  },
+  "/workspace/Sources/AetherAppIOS/Views/IOSPlayerView.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSPlayerView.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSPlayerView.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSPlayerView~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSPlayerView.swiftdeps"
+  },
+  "/workspace/Sources/AetherAppIOS/Views/IOSPlaylistSidebar.swift": {
+    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSPlaylistSidebar.d",
+    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSPlaylistSidebar.swift.o",
+    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSPlaylistSidebar~partial.swiftmodule",
+    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/IOSPlaylistSidebar.swiftdeps"
+  }
+}
