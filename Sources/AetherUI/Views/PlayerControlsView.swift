@@ -4,7 +4,7 @@ import AetherCore
 /// Transport controls: play/pause, prev, next, mute, volume.
 /// Shared across macOS, iOS, tvOS — layout adapts via environment.
 public struct PlayerControlsView: View {
-    @ObservedObject public var player: PlayerCore
+    @Bindable public var player: PlayerCore
 
     public init(player: PlayerCore) { self.player = player }
 

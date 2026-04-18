@@ -1,147 +1,148 @@
-import SwiftUI
-import AetherCore
-
-struct SeriesBrowserView: View {
-    let credentials: XstreamCredentials
-    @ObservedObject var player: PlayerCore
-
-    @State private var categories: [XstreamSeriesCategory] = []
-    @State private var seriesList: [XstreamSeries] = []
-    @State private var selectedCategory: XstreamSeriesCategory?
-    @State private var isLoadingCategories = false
-    @State private var isLoadingList = false
-    @State private var searchText = ""
-    @State private var selectedSeries: XstreamSeries?
-
-    private let service: XstreamService
-
-    init(credentials: XstreamCredentials, player: PlayerCore) {
-        self.credentials = credentials
-        self.player = player
-        self.service = XstreamService(credentials: credentials)
-    }
-
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationSplitView {
-            categoryList
-        } detail: {
-            seriesGrid
-        }
-        .navigationTitle("Series")
-        .frame(minWidth: 720, minHeight: 500)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Close") { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-            }
-        }
-        .task { await loadCategories() }
-        .sheet(item: $selectedSeries) { series in
-            SeriesDetailView(series: series, credentials: credentials, player: player)
-        }
-    }
-
-    private var categoryList: some View {
-        List(selection: $selectedCategory) {
-            if isLoadingCategories {
-                ProgressView("Loading categories…")
-            } else {
-                ForEach(categories) { cat in
-                    Text(cat.name)
-                        .font(.aetherBody)
-                        .tag(cat)
-                }
-            }
-        }
-        .navigationTitle("Categories")
-        .onChange(of: selectedCategory) { _, cat in
-            guard let cat else { return }
-            Task { await loadList(for: cat) }
-        }
-    }
-
-    private var seriesGrid: some View {
-        Group {
-            if isLoadingList {
-                ProgressView("Loading series…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if filteredList.isEmpty && selectedCategory != nil {
-                ContentUnavailableView("No Series", systemImage: "tv")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if selectedCategory == nil {
-                ContentUnavailableView(
-                    "Pick a Category",
-                    systemImage: "rectangle.stack.fill",
-                    description: Text("Select a category from the sidebar.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 16)], spacing: 16) {
-                        ForEach(filteredList) { series in
-                            SeriesCard(series: series)
-                                .onTapGesture { selectedSeries = series }
-                        }
-                    }
-                    .padding()
-                }
-                .searchable(text: $searchText, prompt: "Search series")
-            }
-        }
-        .background(Color.aetherBackground)
-    }
-
-    private var filteredList: [XstreamSeries] {
-        guard !searchText.isEmpty else { return seriesList }
-        return seriesList.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
-
-    private func loadCategories() async {
-        isLoadingCategories = true
-        defer { isLoadingCategories = false }
-        categories = (try? await service.seriesCategories()) ?? []
-    }
-
-    private func loadList(for category: XstreamSeriesCategory) async {
-        seriesList = []
-        isLoadingList = true
-        defer { isLoadingList = false }
-        seriesList = (try? await service.seriesList(categoryID: category.id)) ?? []
-    }
-}
-
-// MARK: - SeriesCard
-
-private struct SeriesCard: View {
-    let series: XstreamSeries
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            AsyncImage(url: series.cover.flatMap(URL.init(string:))) { phase in
-                switch phase {
-                case .success(let img):
-                    img.resizable().scaledToFill()
-                case .failure, .empty:
-                    ZStack {
-                        Color.aetherSurface
-                        Image(systemName: "tv")
-                            .font(.largeTitle)
-                            .foregroundStyle(.secondary)
-                    }
-                @unknown default:
-                    Color.aetherSurface
-                }
-            }
-            .frame(width: 140, height: 200)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-
-            Text(series.name)
-                .font(.aetherCaption)
-                .foregroundStyle(Color.aetherText)
-                .lineLimit(2)
-                .frame(width: 140, alignment: .leading)
-        }
-    }
-}
+     1|import SwiftUI
+     2|import AetherCore
+     3|
+     4|struct SeriesBrowserView: View {
+     5|    let credentials: XstreamCredentials
+     6|    @Bindable var player: PlayerCore
+     7|
+     8|    @State private var categories: [XstreamSeriesCategory] = []
+     9|    @State private var seriesList: [XstreamSeries] = []
+    10|    @State private var selectedCategory: XstreamSeriesCategory?
+    11|    @State private var isLoadingCategories = false
+    12|    @State private var isLoadingList = false
+    13|    @State private var searchText = ""
+    14|    @State private var selectedSeries: XstreamSeries?
+    15|
+    16|    private let service: XstreamService
+    17|
+    18|    init(credentials: XstreamCredentials, player: PlayerCore) {
+    19|        self.credentials = credentials
+    20|        self.player = player
+    21|        self.service = XstreamService(credentials: credentials)
+    22|    }
+    23|
+    24|    @Environment(\.dismiss) private var dismiss
+    25|
+    26|    var body: some View {
+    27|        NavigationSplitView {
+    28|            categoryList
+    29|        } detail: {
+    30|            seriesGrid
+    31|        }
+    32|        .navigationTitle("Series")
+    33|        .frame(minWidth: 720, minHeight: 500)
+    34|        .toolbar {
+    35|            ToolbarItem(placement: .cancellationAction) {
+    36|                Button("Close") { dismiss() }
+    37|                    .keyboardShortcut(.cancelAction)
+    38|            }
+    39|        }
+    40|        .task { await loadCategories() }
+    41|        .sheet(item: $selectedSeries) { series in
+    42|            SeriesDetailView(series: series, credentials: credentials, player: player)
+    43|        }
+    44|    }
+    45|
+    46|    private var categoryList: some View {
+    47|        List(selection: $selectedCategory) {
+    48|            if isLoadingCategories {
+    49|                ProgressView("Loading categories…")
+    50|            } else {
+    51|                ForEach(categories) { cat in
+    52|                    Text(cat.name)
+    53|                        .font(.aetherBody)
+    54|                        .tag(cat)
+    55|                }
+    56|            }
+    57|        }
+    58|        .navigationTitle("Categories")
+    59|        .onChange(of: selectedCategory) { _, cat in
+    60|            guard let cat else { return }
+    61|            Task { await loadList(for: cat) }
+    62|        }
+    63|    }
+    64|
+    65|    private var seriesGrid: some View {
+    66|        Group {
+    67|            if isLoadingList {
+    68|                ProgressView("Loading series…")
+    69|                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    70|            } else if filteredList.isEmpty && selectedCategory != nil {
+    71|                ContentUnavailableView("No Series", systemImage: "tv")
+    72|                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    73|            } else if selectedCategory == nil {
+    74|                ContentUnavailableView(
+    75|                    "Pick a Category",
+    76|                    systemImage: "rectangle.stack.fill",
+    77|                    description: Text("Select a category from the sidebar.")
+    78|                )
+    79|                .frame(maxWidth: .infinity, maxHeight: .infinity)
+    80|            } else {
+    81|                ScrollView {
+    82|                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 16)], spacing: 16) {
+    83|                        ForEach(filteredList) { series in
+    84|                            SeriesCard(series: series)
+    85|                                .onTapGesture { selectedSeries = series }
+    86|                        }
+    87|                    }
+    88|                    .padding()
+    89|                }
+    90|                .searchable(text: $searchText, prompt: "Search series")
+    91|            }
+    92|        }
+    93|        .background(Color.aetherBackground)
+    94|    }
+    95|
+    96|    private var filteredList: [XstreamSeries] {
+    97|        guard !searchText.isEmpty else { return seriesList }
+    98|        return seriesList.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    99|    }
+   100|
+   101|    private func loadCategories() async {
+   102|        isLoadingCategories = true
+   103|        defer { isLoadingCategories = false }
+   104|        categories = (try? await service.seriesCategories()) ?? []
+   105|    }
+   106|
+   107|    private func loadList(for category: XstreamSeriesCategory) async {
+   108|        seriesList = []
+   109|        isLoadingList = true
+   110|        defer { isLoadingList = false }
+   111|        seriesList = (try? await service.seriesList(categoryID: category.id)) ?? []
+   112|    }
+   113|}
+   114|
+   115|// MARK: - SeriesCard
+   116|
+   117|private struct SeriesCard: View {
+   118|    let series: XstreamSeries
+   119|
+   120|    var body: some View {
+   121|        VStack(alignment: .leading, spacing: 6) {
+   122|            AsyncImage(url: series.cover.flatMap(URL.init(string:))) { phase in
+   123|                switch phase {
+   124|                case .success(let img):
+   125|                    img.resizable().scaledToFill()
+   126|                case .failure, .empty:
+   127|                    ZStack {
+   128|                        Color.aetherSurface
+   129|                        Image(systemName: "tv")
+   130|                            .font(.largeTitle)
+   131|                            .foregroundStyle(.secondary)
+   132|                    }
+   133|                @unknown default:
+   134|                    Color.aetherSurface
+   135|                }
+   136|            }
+   137|            .frame(width: 140, height: 200)
+   138|            .clipShape(RoundedRectangle(cornerRadius: 8))
+   139|
+   140|            Text(series.name)
+   141|                .font(.aetherCaption)
+   142|                .foregroundStyle(Color.aetherText)
+   143|                .lineLimit(2)
+   144|                .frame(width: 140, alignment: .leading)
+   145|        }
+   146|    }
+   147|}
+   148|
