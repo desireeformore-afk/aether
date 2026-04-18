@@ -281,7 +281,7 @@ struct ChannelListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
-                    ForEach(recommendationService.recommendations) { recommendation in
+                    ForEach(recommendationService.recommendations, id: \.id) { recommendation in
                         if let channel = channels.first(where: { $0.name == recommendation.channelName }) {
                             ChannelRow(
                                 channel: channel,
