@@ -131,7 +131,7 @@ struct NumberButton: View {
 
 /// Parental controls settings view.
 public struct ParentalControlsView: View {
-    @ObservedObject var service: ParentalControlService
+    @State var service: ParentalControlService
     @Environment(\.dismiss) private var dismiss
 
     @State private var showPINSetup = false
@@ -335,7 +335,7 @@ struct TimeRestrictionRow: View {
 }
 
 struct PINSetupSheet: View {
-    @ObservedObject var service: ParentalControlService
+    @State var service: ParentalControlService
     @Environment(\.dismiss) private var dismiss
     @State private var showPINEntry = false
     @State private var firstPIN: String?
@@ -391,7 +391,7 @@ struct PINSetupSheet: View {
 }
 
 struct PINChangeSheet: View {
-    @ObservedObject var service: ParentalControlService
+    @State var service: ParentalControlService
     @Environment(\.dismiss) private var dismiss
     @State private var currentPIN: String?
     @State private var newPIN: String?
@@ -462,7 +462,7 @@ struct PINChangeSheet: View {
 }
 
 struct AddTimeRestrictionSheet: View {
-    @ObservedObject var service: ParentalControlService
+    @State var service: ParentalControlService
     @Environment(\.dismiss) private var dismiss
 
     @State private var startHour: Int = 22
