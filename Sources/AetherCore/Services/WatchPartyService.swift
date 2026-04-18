@@ -91,10 +91,12 @@ public final class WatchPartyService: ObservableObject {
     
     private func syncPlaybackState() {
         guard let playerCore = playerCore else { return }
-        
+
         if isHosting {
             // Broadcast current playback state
-            syncPlayback(position: playerCore.currentTime, isPlaying: playerCore.isPlaying)
+            let currentTime = playerCore.player.currentTime().seconds
+            let isPlaying = playerCore.state == .playing
+            syncPlayback(position: currentTime, isPlaying: isPlaying)
         } else if isJoined {
             // Receive and apply playback state from host
         }

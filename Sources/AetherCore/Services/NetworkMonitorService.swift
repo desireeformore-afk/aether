@@ -26,7 +26,9 @@ public final class NetworkMonitorService: ObservableObject {
     }
 
     deinit {
-        stopMonitoring()
+        Task { @MainActor in
+            await stopMonitoring()
+        }
     }
 
     // MARK: - Monitoring
@@ -58,7 +60,7 @@ public final class NetworkMonitorService: ObservableObject {
         monitor.start(queue: queue)
     }
 
-    private func stopMonitoring() {
+    private func stopMonitoring() async {
         monitor.cancel()
     }
 

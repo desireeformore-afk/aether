@@ -45,8 +45,8 @@ public enum PlaylistExporter {
                 m3uContent += " tvg-logo=\"\(logoURL.absoluteString)\""
             }
 
-            if !channel.epgId.isEmpty {
-                m3uContent += " tvg-id=\"\(channel.epgId)\""
+            if let epgId = channel.epgId, !epgId.isEmpty {
+                m3uContent += " tvg-id=\"\(epgId)\""
             }
 
             m3uContent += ",\(channel.name)\n"

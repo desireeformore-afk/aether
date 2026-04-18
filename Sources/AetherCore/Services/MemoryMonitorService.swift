@@ -216,12 +216,4 @@ public final class MemoryMonitorService: ObservableObject {
         return formatter.string(fromByteCount: Int64(bytes))
     }
 
-    deinit {
-        memoryCheckTimer?.invalidate()
-        NotificationCenter.default.removeObserver(self)
-    }
-}
-
-extension Notification.Name {
-    static let memoryPressureCritical = Notification.Name("memoryPressureCritical")
 }
