@@ -2,7 +2,7 @@ import SwiftUI
 import AetherCore
 
 struct MemoryMonitorView: View {
-    @ObservedObject var memoryMonitor: MemoryMonitorService
+    @State var memoryMonitor: MemoryMonitorService
     @State private var showingEvents = false
 
     var body: some View {
@@ -93,7 +93,7 @@ struct MemoryMonitorView: View {
 }
 
 struct MemoryEventsView: View {
-    @ObservedObject var memoryMonitor: MemoryMonitorService
+    @State var memoryMonitor: MemoryMonitorService
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {

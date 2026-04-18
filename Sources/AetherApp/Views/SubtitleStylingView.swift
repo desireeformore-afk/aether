@@ -9,7 +9,7 @@ import UIKit
 
 /// Subtitle styling settings view.
 public struct SubtitleStylingView: View {
-    @ObservedObject var settings: SubtitleStylingSettings
+    @State var settings: SubtitleStylingSettings
     @Environment(\.dismiss) private var dismiss
 
     public init(settings: SubtitleStylingSettings) {

@@ -3,7 +3,7 @@ import AetherCore
 
 /// Button to open track picker for audio and subtitles.
 struct TrackPickerButton: View {
-    @ObservedObject var trackService: TrackService
+    @State var trackService: TrackService
     @Bindable var player: PlayerCore
     @State private var showTrackPicker = false
 
