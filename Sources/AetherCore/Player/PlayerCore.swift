@@ -85,6 +85,16 @@ public final class PlayerCore: ObservableObject {
     /// Whether Picture-in-Picture is active.
     @Published public private(set) var isPiPActive: Bool = false
 
+    /// Current playback time in seconds.
+    public var currentTime: TimeInterval {
+        player.currentTime().seconds
+    }
+
+    /// Whether playback is currently active.
+    public var isPlaying: Bool {
+        state == .playing
+    }
+
     /// Selected stream quality preset.
     @Published public var selectedQuality: StreamQuality = StreamQuality.auto {
         didSet { StreamQualityService().apply(selectedQuality, to: player) }
