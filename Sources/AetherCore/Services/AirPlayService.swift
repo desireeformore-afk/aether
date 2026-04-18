@@ -99,8 +99,12 @@ public final class AirPlayService: ObservableObject {
         isAirPlaying = player.isExternalPlaybackActive
 
         if isAirPlaying {
+            #if os(iOS) || os(tvOS)
             let currentRoute = AVAudioSession.sharedInstance().currentRoute
             connectedDeviceName = currentRoute.outputs.first?.portName
+            #else
+            connectedDeviceName = "AirPlay Device"
+            #endif
         } else {
             connectedDeviceName = nil
         }

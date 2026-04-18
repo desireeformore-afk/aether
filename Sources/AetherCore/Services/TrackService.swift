@@ -40,7 +40,7 @@ public final class TrackService: ObservableObject {
 
         // Detect audio tracks
         do {
-            let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+            let characteristics = asset.availableMediaCharacteristicsWithMediaSelectionOptions
             if characteristics.contains(.audible),
                let audioOptions = try await asset.loadMediaSelectionGroup(for: .audible) {
                 audioTracks = []
@@ -54,7 +54,7 @@ public final class TrackService: ObservableObject {
 
         // Detect subtitle tracks
         do {
-            let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+            let characteristics = asset.availableMediaCharacteristicsWithMediaSelectionOptions
             if characteristics.contains(.legible),
                let subtitleOptions = try await asset.loadMediaSelectionGroup(for: .legible) {
                 subtitleTracks = []

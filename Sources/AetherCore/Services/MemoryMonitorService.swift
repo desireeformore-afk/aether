@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import Darwin
 
 extension Notification.Name {
     public static let memoryPressureCritical = Notification.Name("memoryPressureCritical")

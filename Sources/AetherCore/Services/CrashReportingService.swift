@@ -34,11 +34,17 @@ public struct CrashReport: Identifiable, Codable, Sendable {
 
     /// Format as text for export.
     public var formattedText: String {
+        #if os(iOS) || os(tvOS)
+        let formattedTimestamp = timestamp.formatted()
+        #else
+        let formattedTimestamp = timestamp.formatted()
+        #endif
+
         var text = """
         AETHER CRASH REPORT
         ===================
 
-        Timestamp: \(timestamp.formatted())
+        Timestamp: \(formattedTimestamp)
         App Version: \(appVersion)
         OS Version: \(osVersion)
         Device: \(deviceModel)
@@ -126,8 +132,14 @@ public final class CrashReportingService: ObservableObject {
         logger.error("\(message)")
 
         // Save to error log file
+        #if os(iOS) || os(tvOS)
+        let formattedDate = Date().formatted()
+        #else
+        let formattedDate = Date().formatted()
+        #endif
+
         let errorLog = """
-        [\(Date().formatted())] \(message)
+        [\(formattedDate)] \(message)
         \(error)
 
         """
