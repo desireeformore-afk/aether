@@ -280,14 +280,17 @@ struct ChannelListView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List {
-                    ForEach(Array(recommendationService.recommendations), id: \.id) { recommendation in
-                        if let channel = channels.first(where: { $0.name == recommendation.channelName }) {
-                            ChannelRow(
-                                channel: channel,
-                                nowPlaying: nowPlaying[channel.id],
-                                onPlay: { play(channel) }
-                            )
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(recommendationService.recommendations) { recommendation in
+                            if let channel = channels.first(where: { $0.name == recommendation.channelName }) {
+                                ChannelRow(
+                                    channel: channel,
+                                    nowPlaying: nowPlaying[channel.id],
+                                    onPlay: { play(channel) }
+                                )
+                                Divider()
+                            }
                         }
                     }
                 }
