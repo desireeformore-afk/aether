@@ -5,7 +5,7 @@ import AetherCore
 struct RecordingControlsButton: View {
     @Bindable var player: PlayerCore
     @State var recordingService: RecordingService
-    @ObservedObject var timeshiftService: TimeshiftService
+    @Bindable var timeshiftService: TimeshiftService
     @Binding var showRecordingManager: Bool
 
     @State private var activeRecordingId: UUID?

@@ -2,7 +2,7 @@ import SwiftUI
 import AetherCore
 
 struct RecommendationsView: View {
-    @ObservedObject var recommendationService: RecommendationService
+    @Bindable var recommendationService: RecommendationService
     @Environment(PlayerCore.self) var playerCore
 
     var channels: [Channel]

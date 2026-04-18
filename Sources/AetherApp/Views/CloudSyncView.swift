@@ -2,7 +2,7 @@ import SwiftUI
 import AetherCore
 
 struct CloudSyncView: View {
-    @StateObject private var cloudKit = CloudKitManager.shared
+    @State private var cloudKit = CloudKitManager.shared
     @State private var showError = false
     
     var body: some View {

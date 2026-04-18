@@ -2,7 +2,7 @@ import SwiftUI
 import AetherCore
 
 struct PlaylistSharingView: View {
-    @StateObject private var sharingService = PlaylistSharingService()
+    @State private var sharingService = PlaylistSharingService()
     @State private var selectedPlaylist: Playlist?
     @State private var showShareSheet = false
     @State private var showImportSheet = false
@@ -160,7 +160,7 @@ struct SharedPlaylistRow: View {
 
 struct SharePlaylistSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var sharingService: PlaylistSharingService
+    @Bindable var sharingService: PlaylistSharingService
     let onShare: (ShareablePlaylist) -> Void
 
     @State private var selectedPlaylist: Playlist?
@@ -245,7 +245,7 @@ struct SharePlaylistSheet: View {
 
 struct ImportPlaylistSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var sharingService: PlaylistSharingService
+    @Bindable var sharingService: PlaylistSharingService
 
     @State private var shareCode = ""
     @State private var isImporting = false
@@ -390,7 +390,7 @@ struct ShareDetailsView: View {
 
 struct PublicPlaylistDirectoryView: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var sharingService: PlaylistSharingService
+    @Bindable var sharingService: PlaylistSharingService
     @State private var searchQuery = ""
 
     var filteredPlaylists: [ShareablePlaylist] {
@@ -421,7 +421,7 @@ struct PublicPlaylistDirectoryView: View {
 
 struct PublicPlaylistRow: View {
     let playlist: ShareablePlaylist
-    @ObservedObject var sharingService: PlaylistSharingService
+    @Bindable var sharingService: PlaylistSharingService
     @State private var isImporting = false
 
     var body: some View {

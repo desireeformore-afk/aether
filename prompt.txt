@@ -1,33 +1,83 @@
-Fix Swift 6 compilation errors in Aether project.
+COMPREHENSIVE AETHER FIX - PHASE 1: COMPLETE SWIFT 6 AUDIT
 
-Context:
-- GitHub Actions CI is failing on macos-14 runner
-- All recent builds fail with "Process completed with exit code 1"
-- Cannot access CI logs without authentication
-- Local syntax check shows no obvious issues (all braces balanced, 139 Swift files)
+## Your Task
 
-Recent fixes attempted:
-1. Fixed duplicate closing brace in ChannelListView.swift (line 307)
-2. Fixed SortDescriptor keypath syntax (changed \property to \.property)
-3. Fixed #Predicate macros to use local variables instead of self.property
-4. Switched CI runner from macos-15 to macos-14
+You are fixing the Aether project to be 100% functional and Swift 6 compliant.
 
-Project structure:
-- Swift 6.0 + SwiftUI + SwiftData
-- Multi-platform: macOS 14+, iOS 17+, tvOS 17+
-- Package.swift with 3 targets: AetherCore (library), AetherUI (library), AetherApp (executable)
-- CI builds only macOS targets: swift build --target AetherCore --target AetherUI --target AetherApp
+## Context
 
-Task:
-1. Try to build the project locally: swift build --target AetherCore --target AetherUI --target AetherApp
-2. If build fails, identify and fix ALL compilation errors
-3. Focus on Swift 6 strict concurrency issues, SwiftData compatibility, and syntax errors
-4. Commit fixes with descriptive messages
-5. Push to main branch
+The project has been patched multiple times with @Observable/@ObservedObject fixes, but issues keep appearing. We need a COMPLETE, SYSTEMATIC fix.
 
-DO NOT:
-- Make cosmetic changes
-- Refactor working code
-- Add new features
+## Current State
 
-ONLY fix compilation errors that prevent the build from succeeding.
+- Project: /home/hermes/aether
+- Stack: Swift 6, SwiftUI, macOS 14+
+- Problem: Mixed @Observable/@ObservableObject usage causing compilation errors
+- Goal: ZERO errors, ZERO warnings, fully functional app
+
+## Phase 1 Tasks
+
+### 1. COMPLETE SCAN - Find ALL Issues
+
+Scan these directories systematically:
+- Sources/AetherApp/Views/*.swift
+- Sources/AetherApp/*.swift
+- Sources/AetherCore/Services/*.swift
+- Sources/AetherCore/Player/*.swift
+
+Find:
+- Any @ObservedObject usage (should be @State for @Observable)
+- Any @StateObject usage (should be @State for @Observable)
+- Any .environmentObject() usage (should be .environment() for @Observable)
+- Any @EnvironmentObject usage (should be @Environment for @Observable)
+- Any ObservableObject conformance on @Observable classes (conflict)
+- Any @Published in @Observable classes (conflict)
+- Non-Sendable captures in @Sendable closures
+- Missing @MainActor on UI-related services
+
+### 2. GENERATE COMPLETE ISSUE LIST
+
+Create a markdown file listing:
+- File path
+- Line number
+- Current code
+- Required fix
+- Priority (P0 = blocks build, P1 = warning)
+
+### 3. FIX SYSTEMATICALLY
+
+Fix ALL issues in order:
+1. Remove any ObservableObject conformance from @Observable classes
+2. Replace all @ObservedObject → @State
+3. Replace all @StateObject → @State
+4. Replace all .environmentObject() → .environment()
+5. Replace all @EnvironmentObject → @Environment
+6. Fix HTTPBypassProtocol Sendable issue
+7. Fix any other concurrency warnings
+
+### 4. VERIFY
+
+After fixes:
+- Read Package.swift and verify structure
+- Check for any remaining issues
+- Provide summary of all changes made
+
+## Requirements
+
+- Be thorough - scan EVERY file
+- Don't skip files or assume they're OK
+- Fix root causes, not symptoms
+- Use search_files to find patterns systematically
+- Use patch() for fixes, not execute_code
+- Commit after each logical group of fixes
+
+## Deliverables
+
+1. ISSUES.md - complete list of all problems found
+2. All fixes applied and committed
+3. Summary of changes
+4. Confirmation that no issues remain
+
+## Start Now
+
+Begin with systematic scan of all Views in Sources/AetherApp/Views/
