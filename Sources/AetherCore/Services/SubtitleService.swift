@@ -12,10 +12,14 @@ public actor SubtitleService {
         UserDefaults.standard.string(forKey: "opensubtitles_api_key") ?? ""
     }
 
-    private let baseURL = URL(string: "https://api.opensubtitles.com/api/v1")!
+    private let baseURL: URL
     private let session: URLSession
 
     public init() {
+        guard let url = URL(string: "https://api.opensubtitles.com/api/v1") else {
+            fatalError("Invalid OpenSubtitles API base URL")
+        }
+        self.baseURL = url
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10
         self.session = URLSession(configuration: config)
@@ -28,7 +32,9 @@ public actor SubtitleService {
     public func search(query: String, languages: [String] = ["pl", "en"]) async throws -> [SubtitleTrack] {
         guard !Self.apiKey.isEmpty else { throw SubtitleError.noAPIKey }
 
-        var comps = URLComponents(url: baseURL.appendingPathComponent("subtitles"), resolvingAgainstBaseURL: false)!
+        guard var comps = URLComponents(url: baseURL.appendingPathComponent("subtitles"), resolvingAgainstBaseURL: false) else {
+            throw SubtitleError.invalidURL
+        }
         comps.queryItems = [
             URLQueryItem(name: "query", value: query),
             URLQueryItem(name: "languages", value: languages.joined(separator: ",")),
@@ -36,7 +42,10 @@ public actor SubtitleService {
             URLQueryItem(name: "per_page", value: "10"),
         ]
 
-        var req = URLRequest(url: comps.url!)
+        guard let url = comps.url else {
+            throw SubtitleError.invalidURL
+        }
+        var req = URLRequest(url: url)
         req.addValue(Self.apiKey, forHTTPHeaderField: "Api-Key")
         req.addValue("Aether v1.0", forHTTPHeaderField: "User-Agent")
 

@@ -36,8 +36,12 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
     
     public override func startLoading() {
         guard let client = client else { return }
-        
-        var mutableRequest = (request as NSURLRequest).mutableCopy() as! URLRequest
+
+        guard let mutableRequest = (request as NSURLRequest).mutableCopy() as? URLRequest else {
+            client.urlProtocol(self, didFailWithError: URLError(.badURL))
+            return
+        }
+        var mutableRequest = mutableRequest
         
         // Add standard headers if missing
         if mutableRequest.value(forHTTPHeaderField: "User-Agent") == nil {

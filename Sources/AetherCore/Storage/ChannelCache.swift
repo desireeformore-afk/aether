@@ -12,10 +12,12 @@ public actor ChannelCache {
     private let cacheDir: URL
 
     private init() {
-        let appSupport = FileManager.default.urls(
+        guard let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
-        ).first!
+        ).first else {
+            fatalError("Could not locate Application Support directory")
+        }
         cacheDir = appSupport.appendingPathComponent("Aether/ChannelCache", isDirectory: true)
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
     }
@@ -78,10 +80,21 @@ private struct CachedChannel: Codable {
     }
 
     var channel: Channel {
-        Channel(
+        guard let streamURL = URL(string: streamURL) else {
+            // Fallback to a placeholder URL if parsing fails
+            return Channel(
+                id: id,
+                name: name,
+                streamURL: URL(string: "http://invalid.stream")!,
+                logoURL: logoURL.flatMap(URL.init(string:)),
+                groupTitle: groupTitle,
+                epgId: epgId
+            )
+        }
+        return Channel(
             id: id,
             name: name,
-            streamURL: URL(string: streamURL)!,
+            streamURL: streamURL,
             logoURL: logoURL.flatMap(URL.init(string:)),
             groupTitle: groupTitle,
             epgId: epgId
