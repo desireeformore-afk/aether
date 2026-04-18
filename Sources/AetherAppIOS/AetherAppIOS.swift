@@ -6,8 +6,8 @@ import AetherUI
 #if os(iOS)
 // @main is defined in the Xcode scheme entry point, not in SPM library target
 struct AetherAppIOS: App {
-    @StateObject private var playerCore = PlayerCore()
-    @StateObject private var epgStore = EPGStore()
+    @State private var playerCore = PlayerCore()
+    @State private var epgStore = EPGStore()
     @StateObject private var themeService = ThemeService()
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
@@ -15,8 +15,8 @@ struct AetherAppIOS: App {
     var body: some Scene {
         WindowGroup {
             IOSContentView(playerCore: playerCore)
-                .environmentObject(epgStore)
-                .environmentObject(playerCore)
+                .environment(epgStore)
+                .environment(playerCore)
                 .environmentObject(themeService)
                 .sheet(isPresented: .constant(!hasCompletedOnboarding)) {
                     OnboardingView(isPresented: Binding(

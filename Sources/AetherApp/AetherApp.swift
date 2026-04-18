@@ -18,8 +18,8 @@ struct AetherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     #endif
 
-    @StateObject private var epgStore = EPGStore()
-    @StateObject private var playerCore = PlayerCore()
+    @State private var epgStore = EPGStore()
+    @State private var playerCore = PlayerCore()
     @StateObject private var historyCoordinator = HistoryCoordinator()
     @StateObject private var sleepTimer = SleepTimerService()
     @StateObject private var subtitleStore = SubtitleStore()
@@ -34,7 +34,7 @@ struct AetherApp: App {
     @StateObject private var offlineQueue: OfflineQueueService
     @StateObject private var memoryMonitor = MemoryMonitorService()
     @StateObject private var analyticsService = AnalyticsService()
-    @StateObject private var iCloudSync = iCloudSyncService()
+    @State private var iCloudSync = iCloudSyncService()
     @StateObject private var statusBarController: StatusBarController
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
@@ -43,12 +43,12 @@ struct AetherApp: App {
         let player = PlayerCore()
         let network = NetworkMonitorService()
         let analytics = AnalyticsService()
-        _playerCore = StateObject(wrappedValue: player)
-        _miniPlayerController = StateObject(wrappedValue: MiniPlayerWindowController(player: player))
-        _networkMonitor = StateObject(wrappedValue: network)
-        _offlineQueue = StateObject(wrappedValue: OfflineQueueService(networkMonitor: network))
-        _analyticsService = StateObject(wrappedValue: analytics)
-        _statusBarController = StateObject(wrappedValue: StatusBarController(player: player))
+        _playerCore = State(wrappedValue: player)
+        _miniPlayerController = State(wrappedValue: MiniPlayerWindowController(player: player))
+        _networkMonitor = State(wrappedValue: network)
+        _offlineQueue = State(wrappedValue: OfflineQueueService(networkMonitor: network))
+        _analyticsService = State(wrappedValue: analytics)
+        _statusBarController = State(wrappedValue: StatusBarController(player: player))
 
         // Wire analytics to player
         player.onWatchSessionEnd = { channel, startTime, duration in
@@ -66,8 +66,9 @@ struct AetherApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(playerCore: playerCore)
-                .environmentObject(epgStore)
-                .environmentObject(playerCore)
+                .environment(epgStore)
+                .environment(playerCore)
+                .environment(iCloudSync)
                 .environmentObject(sleepTimer)
                 .environmentObject(subtitleStore)
                 .environmentObject(themeService)
@@ -80,7 +81,6 @@ struct AetherApp: App {
                 .environmentObject(offlineQueue)
                 .environmentObject(memoryMonitor)
                 .environmentObject(analyticsService)
-                .environmentObject(iCloudSync)
                 .task {
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)

@@ -9,7 +9,7 @@ import AetherCore
 /// Uses virtualized List with lazy sections to handle 50k+ channels efficiently.
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
-    @EnvironmentObject private var epgStore: EPGStore
+    @Environment(EPGStore.self) private var epgStore
     @EnvironmentObject private var parentalService: ParentalControlService
     @EnvironmentObject private var analyticsService: AnalyticsService
 

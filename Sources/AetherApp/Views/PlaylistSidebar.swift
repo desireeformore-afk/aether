@@ -7,7 +7,7 @@ struct PlaylistSidebar: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \PlaylistRecord.sortIndex) private var playlists: [PlaylistRecord]
     @Query(sort: \WatchHistoryRecord.watchedAt, order: .reverse) private var history: [WatchHistoryRecord]
-    @EnvironmentObject private var playerCore: PlayerCore
+    @Environment(PlayerCore.self) private var playerCore
 
     @Binding var selectedPlaylist: PlaylistRecord?
     @State private var showAddSheet = false

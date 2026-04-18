@@ -7,7 +7,7 @@ import AetherUI
 /// Root view for iOS — tab-based navigation.
 struct IOSContentView: View {
     @Bindable var playerCore: PlayerCore
-    @EnvironmentObject private var epgStore: EPGStore
+    @Environment(EPGStore.self) private var epgStore
 
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var selectedChannel: Channel?

@@ -3,7 +3,7 @@ import AetherCore
 
 struct RecommendationsView: View {
     @ObservedObject var recommendationService: RecommendationService
-    @EnvironmentObject var playerCore: PlayerCore
+    @Environment(PlayerCore.self) var playerCore
 
     var channels: [Channel]
 

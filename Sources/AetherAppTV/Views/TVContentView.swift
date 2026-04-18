@@ -8,7 +8,7 @@ import AetherUI
 /// Root view for tvOS — full-screen player with channel list overlay.
 struct TVContentView: View {
     @Bindable var playerCore: PlayerCore
-    @EnvironmentObject private var epgStore: EPGStore
+    @Environment(EPGStore.self) private var epgStore
 
     @Query private var playlists: [PlaylistRecord]
 

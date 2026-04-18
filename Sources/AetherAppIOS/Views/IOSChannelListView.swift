@@ -6,7 +6,7 @@ import AetherUI
 #if os(iOS)
 /// Channel list view for iOS — in-memory channels from ChannelCache.
 struct IOSChannelListView: View {
-    @EnvironmentObject private var epgStore: EPGStore
+    @Environment(EPGStore.self) private var epgStore
 
     let playlist: PlaylistRecord
     @Binding var selectedChannel: Channel?

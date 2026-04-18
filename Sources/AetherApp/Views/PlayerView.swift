@@ -6,7 +6,7 @@ import AetherUI
 
 /// Detail pane: AVPlayer video + transport controls + EPG info bar + timeline.
 struct PlayerView: View {
-    @EnvironmentObject private var epgStore: EPGStore
+    @Environment(EPGStore.self) private var epgStore
     @EnvironmentObject private var sleepTimer: SleepTimerService
     @EnvironmentObject private var subtitleStore: SubtitleStore
     @EnvironmentObject private var parentalService: ParentalControlService

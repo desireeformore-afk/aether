@@ -4,7 +4,7 @@ import AetherCore
 /// Mini player window - compact always-on-top player.
 public struct MiniPlayerView: View {
     @Bindable var player: PlayerCore
-    @EnvironmentObject private var epgStore: EPGStore
+    @Environment(EPGStore.self) private var epgStore
     @Binding var isPresented: Bool
 
     @State private var nowPlaying: EPGEntry?

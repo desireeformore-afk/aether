@@ -5,7 +5,7 @@ import AppKit
 
 /// App Settings panel — accessible via ⌘, / Aether > Settings…
 struct SettingsView: View {
-    @EnvironmentObject private var epgStore: EPGStore
+    @Environment(EPGStore.self) private var epgStore
     @EnvironmentObject private var themeService: ThemeService
 
     // MARK: - UserDefaults-backed preferences
