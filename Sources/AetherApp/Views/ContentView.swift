@@ -5,6 +5,7 @@ import AetherCore
 /// Root view: Fullscreen player with floating channel panel overlay.
 struct ContentView: View {
     @EnvironmentObject private var epgStore: EPGStore
+    @EnvironmentObject private var networkMonitor: NetworkMonitorService
     @ObservedObject var playerCore: PlayerCore
 
     @State private var selectedPlaylist: PlaylistRecord?
@@ -31,6 +32,13 @@ struct ContentView: View {
             // Base layer: Fullscreen player
             PlayerView(player: playerCore)
                 .ignoresSafeArea()
+
+            // Network status banner
+            VStack {
+                NetworkStatusBanner(networkMonitor: networkMonitor)
+                Spacer()
+            }
+            .ignoresSafeArea()
 
             // Floating channel panel overlay
             if showChannelPanel {

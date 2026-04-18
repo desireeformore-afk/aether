@@ -30,13 +30,18 @@ struct AetherApp: App {
     @StateObject private var trackService = TrackService()
     @StateObject private var miniPlayerController: MiniPlayerWindowController
     @StateObject private var crashReportingService = CrashReportingService()
+    @StateObject private var networkMonitor = NetworkMonitorService()
+    @StateObject private var offlineQueue: OfflineQueueService
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     init() {
         let player = PlayerCore()
+        let network = NetworkMonitorService()
         _playerCore = StateObject(wrappedValue: player)
         _miniPlayerController = StateObject(wrappedValue: MiniPlayerWindowController(player: player))
+        _networkMonitor = StateObject(wrappedValue: network)
+        _offlineQueue = StateObject(wrappedValue: OfflineQueueService(networkMonitor: network))
     }
 
     var body: some Scene {
@@ -52,6 +57,8 @@ struct AetherApp: App {
                 .environmentObject(timeshiftService)
                 .environmentObject(trackService)
                 .environmentObject(miniPlayerController)
+                .environmentObject(networkMonitor)
+                .environmentObject(offlineQueue)
                 .task {
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)
