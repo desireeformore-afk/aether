@@ -114,8 +114,7 @@ public class iCloudSyncService: ObservableObject {
     }
 
     public func deletePlaylist(_ playlistId: UUID) async throws {
-        let recordID = CKRecord.ID(recordName: playlistId.uuidString)
-        _ = try await privateDatabase.deleteRecord(withID: recordID)
+        _ = try await privateDatabase.deleteRecord(withID: CKRecord.ID(recordName: playlistId.uuidString))
     }
 
     private func decodePlaylist(from record: CKRecord) throws -> SyncedPlaylist {
@@ -170,8 +169,7 @@ public class iCloudSyncService: ObservableObject {
     }
 
     public func deleteFavorite(_ favoriteId: UUID) async throws {
-        let recordID = CKRecord.ID(recordName: favoriteId.uuidString)
-        _ = try await privateDatabase.deleteRecord(withID: recordID)
+        _ = try await privateDatabase.deleteRecord(withID: CKRecord.ID(recordName: favoriteId.uuidString))
     }
 
     private func decodeFavorite(from record: CKRecord) throws -> SyncedFavorite {
@@ -243,10 +241,8 @@ public class iCloudSyncService: ObservableObject {
     // MARK: - Sync Settings
 
     public func syncSettings() async throws {
-        let recordID = CKRecord.ID(recordName: "user-settings")
-
         do {
-            let record = try await privateDatabase.record(for: recordID)
+            let record = try await privateDatabase.record(for: CKRecord.ID(recordName: "user-settings"))
             // Settings exist, fetch them
             _ = try decodeSettings(from: record)
         } catch {

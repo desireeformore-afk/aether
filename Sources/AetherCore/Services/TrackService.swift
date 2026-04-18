@@ -39,7 +39,7 @@ public final class TrackService: ObservableObject {
         guard let asset = playerItem.asset as? AVURLAsset else { return }
 
         // Detect audio tracks
-        let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+        let characteristics = await asset.availableMediaCharacteristicsWithMediaSelectionOptions
         if characteristics.contains(.audible),
            let audioOptions = try await asset.loadMediaSelectionGroup(for: .audible) {
             audioTracks = []
@@ -75,7 +75,7 @@ public final class TrackService: ObservableObject {
     public func selectAudioTrack(_ track: AudioTrack, for playerItem: AVPlayerItem) async throws {
         guard let asset = playerItem.asset as? AVURLAsset else { return }
 
-        let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+        let characteristics = await asset.availableMediaCharacteristicsWithMediaSelectionOptions
         if characteristics.contains(.audible),
            let group = try await asset.loadMediaSelectionGroup(for: .audible),
            let option = group.options.first(where: { $0.displayName == track.id }) {
@@ -89,7 +89,7 @@ public final class TrackService: ObservableObject {
         guard let asset = playerItem.asset as? AVURLAsset else { return }
 
         do {
-            let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+            let characteristics = await asset.availableMediaCharacteristicsWithMediaSelectionOptions
             if characteristics.contains(.legible),
                let group = try await asset.loadMediaSelectionGroup(for: .legible) {
                 if let track = track,
