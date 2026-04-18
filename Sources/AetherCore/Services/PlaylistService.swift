@@ -30,7 +30,8 @@ public actor PlaylistService {
     public func fetchChannels(from url: URL, forceRefresh: Bool = false) async throws -> [Channel] {
         let cacheFile = cacheURL(for: url)
 
-        if !forceRefresh, FileManager.default.fileExists(atPath: cacheFile.path) {
+        if !forceRefresh, FileManager.default.fileExists(atPath: cacheFile.path),
+           isCacheValid(for: cacheFile, maxAge: 3600) {
             let cached = try String(contentsOf: cacheFile, encoding: .utf8)
             return try M3UParser.parse(content: cached)
         }
@@ -81,6 +82,14 @@ public actor PlaylistService {
             (h ^ UInt64(byte)) &* 16777619
         }
         return cacheDirectory.appendingPathComponent("\(hash).m3u")
+    }
+
+    private func isCacheValid(for cacheFile: URL, maxAge: TimeInterval) -> Bool {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: cacheFile.path),
+              let modificationDate = attributes[.modificationDate] as? Date else {
+            return false
+        }
+        return Date().timeIntervalSince(modificationDate) < maxAge
     }
 }
 

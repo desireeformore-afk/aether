@@ -4,7 +4,7 @@ import SwiftData
 /// Lightweight SwiftData record for a favorited channel.
 @Model
 public final class FavoriteRecord {
-    public var channelID: UUID
+    @Attribute(.unique) public var channelID: UUID
     public var channelName: String
     public var streamURLString: String
     public var logoURLString: String?
