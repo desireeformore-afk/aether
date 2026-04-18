@@ -20,6 +20,7 @@ struct ChannelListView: View {
     @State private var channels: [Channel] = []
     @State private var searchText = ""
     @State private var selectedGroup: String? = nil
+    @State private var selectedCategory: ContentCategory = .all
     @State private var isRefreshing = false
     @State private var errorMessage: String?
     @State private var nowPlaying: [String: EPGEntry] = [:]
@@ -140,6 +141,7 @@ struct ChannelListView: View {
         }
         .onChange(of: searchText)    { _, _ in debouncedRecompute() }
         .onChange(of: selectedGroup) { _, _ in recomputeFiltered() }
+        .onChange(of: selectedCategory) { _, _ in recomputeFiltered() }
     }
 
     // MARK: - Search debouncing
@@ -159,6 +161,7 @@ struct ChannelListView: View {
         let snap = channels
         let q = searchText.lowercased()
         let grp = selectedGroup
+        let cat = selectedCategory
         let maxDisplay = displayedChannelCount
 
         Task.detached(priority: .userInitiated) {
@@ -170,6 +173,28 @@ struct ChannelListView: View {
 
             // Filtered
             var result = snap
+            
+            // Category filter
+            switch cat {
+            case .all:
+                break
+            case .tv:
+                result = result.filter { ch in
+                    let g = ch.groupTitle.lowercased()
+                    return !g.contains("movie") && !g.contains("film") && !g.contains("series") && !g.contains("serial")
+                }
+            case .movies:
+                result = result.filter { ch in
+                    let g = ch.groupTitle.lowercased()
+                    return g.contains("movie") || g.contains("film") || g.contains("vod")
+                }
+            case .series:
+                result = result.filter { ch in
+                    let g = ch.groupTitle.lowercased()
+                    return g.contains("series") || g.contains("serial") || g.contains("show")
+                }
+            }
+            
             if let group = grp { result = result.filter { $0.groupTitle == group } }
             if !q.isEmpty      { result = result.filter { $0.name.lowercased().contains(q) } }
 
@@ -259,6 +284,25 @@ struct ChannelListView: View {
 
     private var allChannelsList: some View {
         VStack(spacing: 0) {
+            // Category filter (TV/Movies/Series)
+            if searchText.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(ContentCategory.allCases, id: \.self) { category in
+                            FilterChip(label: category.label, isSelected: selectedCategory == category) {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedCategory = category
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                }
+                .background(Color.aetherSurface)
+                Divider()
+            }
+            
             // Genre filter chips (only when not searching)
             if cachedAllGroups.count > 1 && searchText.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -585,6 +629,21 @@ private enum ListTab: String, CaseIterable {
         case .all:       return "list.bullet"
         case .favorites: return "star.fill"
         case .recommended: return "sparkles"
+        }
+    }
+}
+
+// MARK: - Content Category enum
+
+private enum ContentCategory: String, CaseIterable {
+    case all, tv, movies, series
+    
+    var label: String {
+        switch self {
+        case .all:    return "Wszystkie"
+        case .tv:     return "TV"
+        case .movies: return "Filmy"
+        case .series: return "Seriale"
         }
     }
 }

@@ -78,7 +78,7 @@ struct GlobalContentSearchView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(Color.aetherText.opacity(0.6))
                 
-                TextField("Search movies and series...", text: $searchText)
+                TextField("Szukaj filmów i seriali...", text: $searchText)
                     .textFieldStyle(.plain)
                     .foregroundStyle(Color.aetherText)
                 
@@ -97,13 +97,13 @@ struct GlobalContentSearchView: View {
 
             // Filter buttons
             HStack(spacing: 8) {
-                FilterButton(title: "All", isSelected: filterType == nil) {
+                FilterButton(title: "Wszystkie", isSelected: filterType == nil) {
                     filterType = nil
                 }
-                FilterButton(title: "Movies", isSelected: filterType == .movie) {
+                FilterButton(title: "Filmy", isSelected: filterType == .movie) {
                     filterType = .movie
                 }
-                FilterButton(title: "Series", isSelected: filterType == .series) {
+                FilterButton(title: "Seriale", isSelected: filterType == .series) {
                     filterType = .series
                 }
                 Spacer()
@@ -136,7 +136,7 @@ struct GlobalContentSearchView: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 48))
                         .foregroundStyle(Color.aetherText.opacity(0.3))
-                    Text("Type to search across all content")
+                    Text("Wpisz aby przeszukać całą zawartość")
                         .foregroundStyle(Color.aetherText.opacity(0.6))
                 }
                 Spacer()
@@ -146,7 +146,7 @@ struct GlobalContentSearchView: View {
                     Image(systemName: "film.stack")
                         .font(.system(size: 48))
                         .foregroundStyle(Color.aetherText.opacity(0.3))
-                    Text("No results found")
+                    Text("Brak wyników")
                         .foregroundStyle(Color.aetherText.opacity(0.6))
                 }
                 Spacer()
@@ -249,7 +249,7 @@ struct ContentCard: View {
                         .foregroundStyle(Color.aetherText)
                         .lineLimit(2)
                     
-                    Text(type == .movie ? "Movie" : "Series")
+                    Text(type == .movie ? "Film" : "Serial")
                         .font(.system(size: 10))
                         .foregroundStyle(Color.aetherText.opacity(0.6))
                 }
