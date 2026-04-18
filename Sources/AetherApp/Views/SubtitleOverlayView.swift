@@ -38,17 +38,3 @@ struct SubtitleOverlayView: View {
         .allowsHitTesting(false)  // don't block player interaction
     }
 }
-
-// MARK: - Color from hex
-
-extension Color {
-    init?(hex: String) {
-        let h = hex.trimmingCharacters(in: .init(charactersIn: "#"))
-        guard h.count == 6, let val = UInt64(h, radix: 16) else { return nil }
-        self.init(
-            red:   Double((val >> 16) & 0xFF) / 255,
-            green: Double((val >>  8) & 0xFF) / 255,
-            blue:  Double( val        & 0xFF) / 255
-        )
-    }
-}
