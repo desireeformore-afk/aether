@@ -197,7 +197,7 @@ public final class MovieManager: ObservableObject {
         let yearValue = year
         let descriptor = FetchDescriptor<MovieRecord>(
             predicate: #Predicate { $0.year == yearValue },
-            sortBy: [SortDescriptor(\\.title)]
+            sortBy: [SortDescriptor(\.title)]
         )
         return (try? modelContext.fetch(descriptor)) ?? []
     }
