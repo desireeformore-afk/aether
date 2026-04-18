@@ -151,17 +151,6 @@ public final class PlayerCore: ObservableObject {
         NotificationCenter.default.removeObserver(self)
     }
 
-    /// Stops the player and cleans up resources.
-    public func stop() {
-        player.pause()
-        player.replaceCurrentItem(with: nil)
-        statusObserver?.cancel()
-        statusObserver = nil
-        endWatchSession()
-        currentChannel = nil
-        state = .idle
-    }
-
     private func setupMemoryPressureObserver() {
         NotificationCenter.default.addObserver(
             forName: .memoryPressureCritical,
