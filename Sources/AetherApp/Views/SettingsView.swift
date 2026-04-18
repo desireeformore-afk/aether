@@ -1,6 +1,7 @@
 import SwiftUI
 import AetherCore
 import AetherUI
+import AppKit
 
 /// App Settings panel — accessible via ⌘, / Aether > Settings…
 struct SettingsView: View {
@@ -17,11 +18,18 @@ struct SettingsView: View {
 
     @State private var showClearConfirm = false
     @State private var cacheSize: String = "Calculating…"
+    @State private var showExportSheet = false
+    @State private var showImportSheet = false
+    @State private var exportMessage: String?
+    @State private var importMessage: String?
 
     var body: some View {
         TabView {
             generalTab
                 .tabItem { Label("General", systemImage: "gearshape") }
+
+            playlistTab
+                .tabItem { Label("Playlists", systemImage: "list.bullet") }
 
             epgTab
                 .tabItem { Label("EPG", systemImage: "calendar") }
@@ -55,6 +63,39 @@ struct SettingsView: View {
 
                 Toggle("Use Hardware Decoding", isOn: $useHardwareDecoding)
                     .help("Enable Apple Silicon / GPU-accelerated video decoding.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var playlistTab: some View {
+        Form {
+            Section("Import / Export") {
+                Button("Export Playlist to M3U…") {
+                    exportPlaylist()
+                }
+                .help("Export the current playlist to an M3U file.")
+
+                Button("Import M3U File…") {
+                    importPlaylist()
+                }
+                .help("Import channels from an M3U file.")
+            }
+
+            if let message = exportMessage {
+                Section {
+                    Text(message)
+                        .foregroundStyle(message.contains("Error") ? .red : .green)
+                        .font(.aetherCaption)
+                }
+            }
+
+            if let message = importMessage {
+                Section {
+                    Text(message)
+                        .foregroundStyle(message.contains("Error") ? .red : .green)
+                        .font(.aetherCaption)
+                }
             }
         }
         .formStyle(.grouped)
@@ -195,6 +236,47 @@ struct SettingsView: View {
             .padding()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Playlist Import/Export
+
+    private func exportPlaylist() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.init(filenameExtension: "m3u")!]
+        panel.nameFieldStringValue = "playlist.m3u"
+        panel.message = "Export playlist to M3U file"
+
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            Task { @MainActor in
+                do {
+                    try await PlaylistExporter.export(to: url)
+                    exportMessage = "✓ Playlist exported successfully"
+                } catch {
+                    exportMessage = "Error: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func importPlaylist() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.init(filenameExtension: "m3u")!]
+        panel.message = "Select an M3U file to import"
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            Task { @MainActor in
+                do {
+                    let count = try await PlaylistImporter.import(from: url)
+                    importMessage = "✓ Imported \(count) channels successfully"
+                } catch {
+                    importMessage = "Error: \(error.localizedDescription)"
+                }
+            }
+        }
     }
 }
 
