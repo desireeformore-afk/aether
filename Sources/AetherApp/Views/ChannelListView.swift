@@ -75,7 +75,7 @@ struct ChannelListView: View {
             case .all:
                 allChannelsList
             case .favorites:
-                FavoritesListView(player: player, selectedChannel: $selectedChannel)
+                favoritesChannelsList
             case .recommended:
                 recommendedChannelsList
             }
@@ -248,6 +248,74 @@ struct ChannelListView: View {
             // Generate recommendations when channels are loaded
             Task {
                 await recommendationService.generateRecommendations(for: channels)
+            }
+        }
+    }
+
+    // MARK: - Refresh
+
+    @MainActor
+    private func refresh() async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        errorMessage = nil
+        defer { isRefreshing = false }
+        do {
+            let fetched: [Channel]
+            if playlist.playlistType == .xtream, let creds = playlist.xstreamCredentials {
+                let service = XstreamService(credentials: creds)
+                fetched = try await service.channels()
+            } else {
+                guard let url = playlist.effectiveURL else {
+                    errorMessage = "Invalid playlist URL"
+                    return
+                }
+                fetched = try await PlaylistService().fetchChannels(from: url, forceRefresh: true)
+            }
+            channels = fetched
+            playlist.lastRefreshed = Date()
+            let id = playlist.id
+            Task.detached(priority: .background) {
+                try? await ChannelCache.shared.save(channels: fetched, playlistID: id)
+            }
+            // Generate recommendations after refresh
+            await recommendationService.generateRecommendations(for: channels)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    // MARK: - Favorites Channels List
+
+    private var favoritesChannelsList: some View {
+        let favoriteChannels = channels.filter { channel in
+            let descriptor = FetchDescriptor<FavoriteRecord>(
+                predicate: #Predicate { $0.channelID == channel.id }
+            )
+            return (try? modelContext.fetch(descriptor).first) != nil
+        }
+        
+        return VStack(spacing: 0) {
+            if favoriteChannels.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "star")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.secondary)
+                    Text("No favorites yet")
+                        .font(.headline)
+                    Text("Tap the star icon on any channel to add it to favorites")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(selection: $selectedChannel) {
+                    ForEach(favoriteChannels) { ch in
+                        channelRow(ch).tag(ch)
+                    }
+                }
             }
         }
     }
