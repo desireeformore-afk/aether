@@ -259,7 +259,7 @@ struct SettingsView: View {
                 Divider()
 
                 ThemePickerView()
-                    .environmentObject(themeService)
+                    .environment(themeService)
             }
             .padding()
         }
@@ -268,7 +268,7 @@ struct SettingsView: View {
 
     // MARK: - Parental Controls Tab
 
-    @StateObject private var parentalService = ParentalControlService()
+    @State private var parentalService = ParentalControlService()
 
     private var parentalControlsTab: some View {
         ParentalControlsView(service: parentalService)
@@ -276,7 +276,7 @@ struct SettingsView: View {
 
     // MARK: - Analytics Tab
 
-    @StateObject private var analyticsService = AnalyticsService()
+    @State private var analyticsService = AnalyticsService()
     @State private var showAnalytics = false
 
     private var analyticsTab: some View {
@@ -355,8 +355,8 @@ struct SettingsView: View {
 
     // MARK: - Advanced Tab
 
-    @StateObject private var crashReportingService = CrashReportingService()
-    @StateObject private var memoryMonitor = MemoryMonitorService()
+    @State private var crashReportingService = CrashReportingService()
+    @State private var memoryMonitor = MemoryMonitorService()
     @State private var showCrashReports = false
     @State private var showMemoryMonitor = false
 

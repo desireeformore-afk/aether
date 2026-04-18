@@ -48,11 +48,10 @@ public final class HTTPBypassProtocol: URLProtocol {
         return request
     }
     public override func startLoading() {
-        guard let client = self.client else { return }
         let request = self.request
-        
+
         var mutableRequest = request
-        
+
         // Add standard headers if missing
         if mutableRequest.value(forHTTPHeaderField: "User-Agent") == nil {
             mutableRequest.setValue(
@@ -60,14 +59,15 @@ public final class HTTPBypassProtocol: URLProtocol {
                 forHTTPHeaderField: "User-Agent"
             )
         }
-        
+
         #if DEBUG
         print("[HTTPBypassProtocol] Starting load: \(request.url?.absoluteString ?? "unknown")")
         #endif
-        
+
         dataTask = Self.bypassSession.dataTask(with: mutableRequest) { [weak self] data, response, error in
-            guard let self = self, let client = self.client else { return }
-            
+            guard let self = self else { return }
+            guard let client = self.client else { return }
+
             if let error = error {
                 #if DEBUG
                 print("[HTTPBypassProtocol] Error: \(error.localizedDescription)")
@@ -75,7 +75,7 @@ public final class HTTPBypassProtocol: URLProtocol {
                 client.urlProtocol(self, didFailWithError: error)
                 return
             }
-            
+
             if let response = response {
                 #if DEBUG
                 if let httpResponse = response as? HTTPURLResponse {
@@ -84,17 +84,17 @@ public final class HTTPBypassProtocol: URLProtocol {
                 #endif
                 client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             }
-            
+
             if let data = data {
                 #if DEBUG
                 print("[HTTPBypassProtocol] Loaded \(data.count) bytes")
                 #endif
                 client.urlProtocol(self, didLoad: data)
             }
-            
+
             client.urlProtocolDidFinishLoading(self)
         }
-        
+
         dataTask?.resume()
     }
     

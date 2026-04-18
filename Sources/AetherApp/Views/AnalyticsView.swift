@@ -3,7 +3,7 @@ import AetherCore
 import Charts
 
 struct AnalyticsView: View {
-    @ObservedObject var analyticsService: AnalyticsService
+    @State var analyticsService: AnalyticsService
 
     @State private var selectedTab = 0
 

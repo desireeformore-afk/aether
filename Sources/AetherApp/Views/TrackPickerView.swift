@@ -4,7 +4,7 @@ import AetherCore
 
 /// Audio and subtitle track picker view.
 public struct TrackPickerView: View {
-    @ObservedObject var trackService: TrackService
+    @State var trackService: TrackService
     let playerItem: AVPlayerItem?
     @Environment(\.dismiss) private var dismiss
 
