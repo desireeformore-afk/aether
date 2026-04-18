@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 @preconcurrency import Combine
 import Foundation
 

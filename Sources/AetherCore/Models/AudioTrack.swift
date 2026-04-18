@@ -1,5 +1,5 @@
 import Foundation
-import AVFoundation
+@preconcurrency import AVFoundation
 
 /// Audio track information.
 public struct AudioTrack: Identifiable, Sendable, Hashable {

@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 
 /// Applies IPTV-optimised buffering and network settings to AVPlayer/AVPlayerItem.
 public enum BufferingConfig {

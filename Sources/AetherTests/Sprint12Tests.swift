@@ -1,5 +1,5 @@
 import XCTest
-import AVFoundation
+@preconcurrency import AVFoundation
 @testable import AetherCore
 
 // MARK: - SRTParser Tests

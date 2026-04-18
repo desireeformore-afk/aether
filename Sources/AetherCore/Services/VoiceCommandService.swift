@@ -2,7 +2,7 @@ import Foundation
 #if canImport(Speech)
 import Speech
 #endif
-import AVFoundation
+@preconcurrency import AVFoundation
 
 @MainActor
 public final class VoiceCommandService: ObservableObject {

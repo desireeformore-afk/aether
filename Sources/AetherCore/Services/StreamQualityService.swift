@@ -1,5 +1,5 @@
 import Foundation
-import AVFoundation
+@preconcurrency import AVFoundation
 
 /// Represents a selectable HLS quality variant.
 public struct StreamQuality: Identifiable, Sendable, Hashable {
