@@ -5,8 +5,8 @@ import CoreImage
 @MainActor
 @Observable
 public final class PlaylistSharingService {
-    @Published public private(set) var sharedPlaylists: [ShareablePlaylist] = []
-    @Published public private(set) var shareStats: [String: PlaylistShareStats] = [:]
+    public private(set) var sharedPlaylists: [ShareablePlaylist] = []
+    public private(set) var shareStats: [String: PlaylistShareStats] = [:]
 
     private let storageKey = "aether.shared_playlists"
     private let statsKey = "aether.share_stats"

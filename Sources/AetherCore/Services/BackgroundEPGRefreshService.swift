@@ -4,9 +4,9 @@ import Foundation
 @MainActor
 @Observable
 public final class BackgroundEPGRefreshService {
-    @Published public private(set) var isEnabled: Bool = false
-    @Published public private(set) var lastRefreshDate: Date?
-    @Published public private(set) var nextRefreshDate: Date?
+    public private(set) var isEnabled: Bool = false
+    public private(set) var lastRefreshDate: Date?
+    public private(set) var nextRefreshDate: Date?
 
     private var refreshTask: Task<Void, Never>?
     private let refreshInterval: TimeInterval

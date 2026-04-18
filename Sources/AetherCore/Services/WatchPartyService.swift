@@ -5,8 +5,8 @@ import Foundation
 public final class WatchPartyService {
     public static let shared = WatchPartyService()
     
-    @Published public private(set) var isHosting = false
-    @Published public private(set) var isJoined = false
+    public private(set) var isHosting = false
+    public private(set) var isJoined = false
     public private(set) var partyCode: String?
     public private(set) var participants: [Participant] = []
     public private(set) var chatMessages: [ChatMessage] = []

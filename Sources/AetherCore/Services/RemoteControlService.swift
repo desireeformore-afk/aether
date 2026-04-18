@@ -8,9 +8,9 @@ import Network
 public final class RemoteControlService {
     public static let shared = RemoteControlService()
     
-    @Published public private(set) var isServerRunning = false
-    @Published public private(set) var serverPort: UInt16 = 8080
-    @Published public private(set) var connectedClients: [RemoteClient] = []
+    public private(set) var isServerRunning = false
+    public private(set) var serverPort: UInt16 = 8080
+    public private(set) var connectedClients: [RemoteClient] = []
     
     #if canImport(Network)
     private var listener: NWListener?

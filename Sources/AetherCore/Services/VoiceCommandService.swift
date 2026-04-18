@@ -9,11 +9,11 @@ import Speech
 public final class VoiceCommandService {
     public static let shared = VoiceCommandService()
     
-    @Published public private(set) var isListening = false
-    @Published public private(set) var lastCommand: String?
+    public private(set) var isListening = false
+    public private(set) var lastCommand: String?
     
     #if canImport(Speech)
-    @Published public private(set) var authorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
+    public private(set) var authorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
     
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?

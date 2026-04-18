@@ -10,9 +10,9 @@ extension Notification.Name {
 @MainActor
 @Observable
 public final class MemoryMonitorService {
-    @Published public private(set) var memoryPressure: MemoryPressureLevel = .normal
-    @Published public private(set) var currentMemoryUsage: UInt64 = 0
-    @Published public private(set) var memoryWarningCount: Int = 0
+    public private(set) var memoryPressure: MemoryPressureLevel = .normal
+    public private(set) var currentMemoryUsage: UInt64 = 0
+    public private(set) var memoryWarningCount: Int = 0
 
     private var cancellables = Set<AnyCancellable>()
     private let memoryWarningThreshold: Double = 0.8 // 80% of available memory
