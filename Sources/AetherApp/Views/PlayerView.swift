@@ -425,6 +425,22 @@ struct VideoPlayerLayer: NSViewRepresentable {
         view.allowsPictureInPicturePlayback = true
         view.showsFullScreenToggleButton = true
         view.pictureInPictureDelegate = context.coordinator
+
+        // Listen for PiP toggle notification
+        context.coordinator.pipObserver = NotificationCenter.default.addObserver(
+            forName: .togglePiP,
+            object: nil,
+            queue: .main
+        ) { [weak view] _ in
+            if let view = view, view.allowsPictureInPicturePlayback {
+                if view.isPictureInPictureActive {
+                    view.exitPictureInPicture()
+                } else {
+                    view.enterPictureInPicture()
+                }
+            }
+        }
+
         return view
     }
 
@@ -433,11 +449,18 @@ struct VideoPlayerLayer: NSViewRepresentable {
         context.coordinator.playerCore = playerCore
     }
 
+    static func dismantleNSView(_ nsView: AVPlayerView, coordinator: Coordinator) {
+        if let observer = coordinator.pipObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
     // MARK: - Coordinator
 
     @MainActor
     final class Coordinator: NSObject, AVPlayerViewPictureInPictureDelegate {
         weak var playerCore: PlayerCore?
+        var pipObserver: NSObjectProtocol?
 
         init(playerCore: PlayerCore?) {
             self.playerCore = playerCore
@@ -576,6 +599,11 @@ struct PlayerControls: View {
 
             // Subtitle picker
             SubtitlePickerButton()
+
+            Divider().frame(height: 24)
+
+            // Picture-in-Picture toggle
+            PiPButton(player: player)
 
             Divider().frame(height: 24)
 
@@ -729,6 +757,35 @@ fileprivate struct SleepTimerButton: View {
             SleepTimerView()
         }
     }
+}
+
+// MARK: - PiPButton
+
+fileprivate struct PiPButton: View {
+    @ObservedObject var player: PlayerCore
+
+    var body: some View {
+        Button(action: togglePiP) {
+            Image(systemName: player.isPiPActive ? "pip.fill" : "pip")
+                .font(.title3)
+                .foregroundStyle(player.isPiPActive ? Color.aetherAccent : Color.aetherText)
+        }
+        .buttonStyle(.plain)
+        .disabled(player.currentChannel == nil)
+        .help(player.isPiPActive ? "Exit Picture-in-Picture  P" : "Enter Picture-in-Picture  P")
+        .keyboardShortcut("p", modifiers: [])
+    }
+
+    private func togglePiP() {
+        // The actual PiP toggle is handled by AVPlayerView's native controls
+        // This button provides a keyboard shortcut and visual indicator
+        // We need to programmatically trigger PiP via the AVPlayerView
+        NotificationCenter.default.post(name: .togglePiP, object: nil)
+    }
+}
+
+extension Notification.Name {
+    static let togglePiP = Notification.Name("togglePiP")
 }
 
 // MARK: - SleepTimerView
