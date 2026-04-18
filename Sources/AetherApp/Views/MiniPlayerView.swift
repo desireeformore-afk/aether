@@ -178,8 +178,10 @@ public final class MiniPlayerWindowController: ObservableObject {
             object: window,
             queue: .main
         ) { [weak self] _ in
-            self?.isShowing = false
-            self?.window = nil
+            Task { @MainActor in
+                self?.isShowing = false
+                self?.window = nil
+            }
         }
     }
 

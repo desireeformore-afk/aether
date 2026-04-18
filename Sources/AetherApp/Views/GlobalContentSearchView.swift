@@ -48,7 +48,7 @@ struct GlobalContentSearchView: View {
         if filterType == nil || filterType == .movie {
             for stream in vodStreams where stream.name.lowercased().contains(query) {
                 results.append((
-                    id: "vod_\(stream.streamID)",
+                    id: "vod_\(stream.id)",
                     title: stream.name,
                     type: .movie,
                     item: stream
@@ -60,7 +60,7 @@ struct GlobalContentSearchView: View {
         if filterType == nil || filterType == .series {
             for s in series where s.name.lowercased().contains(query) {
                 results.append((
-                    id: "series_\(s.seriesID)",
+                    id: "series_\(s.id)",
                     title: s.name,
                     type: .series,
                     item: s
@@ -125,7 +125,7 @@ struct GlobalContentSearchView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.system(size: 48))
-                        .foregroundStyle(Color.aetherError)
+                        .foregroundStyle(Color.aetherDestructive)
                     Text(error)
                         .foregroundStyle(Color.aetherText)
                 }
