@@ -31,6 +31,11 @@ struct ChannelListView: View {
     @StateObject private var recommendationService: RecommendationService
 
     @AppStorage("channelViewMode") private var savedViewMode: String = ChannelViewMode.list.rawValue
+    
+    // Persist collapsed groups per playlist
+    private var collapsedGroupsKey: String {
+        "collapsedGroups_\(playlist.id.uuidString)"
+    }
 
     // Pagination for large playlists
     @State private var displayedChannelCount = 100
@@ -122,6 +127,12 @@ struct ChannelListView: View {
             if let mode = ChannelViewMode(rawValue: savedViewMode) {
                 viewMode = mode
             }
+            
+            // Load collapsed groups state
+            if let data = UserDefaults.standard.data(forKey: collapsedGroupsKey),
+               let decoded = try? JSONDecoder().decode(Set<String>.self, from: data) {
+                collapsedGroups = decoded
+            }
 
             await loadFromCache()
             let cacheAge = await ChannelCache.shared.lastModified(playlistID: playlist.id)
@@ -133,6 +144,11 @@ struct ChannelListView: View {
         }
         .onChange(of: viewMode) { _, newMode in
             savedViewMode = newMode.rawValue
+        }
+        .onChange(of: collapsedGroups) { _, newGroups in
+            if let encoded = try? JSONEncoder().encode(newGroups) {
+                UserDefaults.standard.set(encoded, forKey: collapsedGroupsKey)
+            }
         }
         // Recompute memoized lists whenever inputs change
         .onChange(of: channels)      { _, _ in
