@@ -138,7 +138,7 @@ public final class RecommendationService: ObservableObject {
 
         return channels.filter { channel in
             !favorites.contains(channel.name) &&
-            (channel.groupTitle.flatMap { favoriteCategories.contains($0) ? true : nil } ?? false)
+            favoriteCategories.contains(channel.groupTitle)
         }
     }
 
