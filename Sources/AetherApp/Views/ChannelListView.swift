@@ -266,7 +266,8 @@ struct ChannelListView: View {
         return ChannelRow(
             channel: ch,
             isPlaying: player.currentChannel == ch,
-            epgEntry: nowPlaying[epgKey]
+            epgEntry: nowPlaying[epgKey],
+            showFavoriteButton: true
         )
         .onTapGesture { play(ch) }
     }
@@ -472,6 +473,14 @@ struct ChannelRow: View {
     let channel: Channel
     let isPlaying: Bool
     let epgEntry: EPGEntry?
+    var showFavoriteButton: Bool = false
+
+    @Query private var favorites: [FavoriteRecord]
+    @Environment(\.modelContext) private var modelContext
+
+    private var isFavorite: Bool {
+        favorites.contains { $0.channelID == channel.id }
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -495,6 +504,16 @@ struct ChannelRow: View {
 
             Spacer()
 
+            if showFavoriteButton {
+                Button(action: toggleFavorite) {
+                    Image(systemName: isFavorite ? "star.fill" : "star")
+                        .font(.caption)
+                        .foregroundStyle(isFavorite ? Color.aetherAccent : Color.aetherText.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+                .help(isFavorite ? "Remove from Favorites" : "Add to Favorites")
+            }
+
             if isPlaying {
                 Image(systemName: "waveform")
                     .font(.caption)
@@ -504,5 +523,13 @@ struct ChannelRow: View {
         }
         .padding(.vertical, 3)
         .contentShape(Rectangle())
+    }
+
+    private func toggleFavorite() {
+        if let existing = favorites.first(where: { $0.channelID == channel.id }) {
+            modelContext.delete(existing)
+        } else {
+            modelContext.insert(FavoriteRecord(channel: channel))
+        }
     }
 }
