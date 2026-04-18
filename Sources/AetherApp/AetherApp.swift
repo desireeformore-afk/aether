@@ -28,8 +28,15 @@ struct AetherApp: App {
     @StateObject private var recordingService = RecordingService()
     @StateObject private var timeshiftService = TimeshiftService()
     @StateObject private var trackService = TrackService()
+    @StateObject private var miniPlayerController: MiniPlayerWindowController
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
+    init() {
+        let player = PlayerCore()
+        _playerCore = StateObject(wrappedValue: player)
+        _miniPlayerController = StateObject(wrappedValue: MiniPlayerWindowController(player: player))
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -43,6 +50,7 @@ struct AetherApp: App {
                 .environmentObject(recordingService)
                 .environmentObject(timeshiftService)
                 .environmentObject(trackService)
+                .environmentObject(miniPlayerController)
                 .task {
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)

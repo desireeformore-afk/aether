@@ -519,6 +519,7 @@ struct PlayerControls: View {
     @EnvironmentObject private var recordingService: RecordingService
     @EnvironmentObject private var timeshiftService: TimeshiftService
     @EnvironmentObject private var trackService: TrackService
+    @EnvironmentObject private var miniPlayerController: MiniPlayerWindowController
     @Environment(\.modelContext) private var modelContext
     @Binding var showStats: Bool
 
@@ -659,6 +660,20 @@ struct PlayerControls: View {
 
             // Picture-in-Picture toggle
             PiPButton(player: player)
+
+            Divider().frame(height: 24)
+
+            // Mini player toggle
+            Button(action: {
+                miniPlayerController.show()
+            }) {
+                Image(systemName: "pip.enter")
+                    .font(.title3)
+                    .foregroundStyle(Color.aetherText)
+            }
+            .buttonStyle(.plain)
+            .help("Mini Player  ⌘M")
+            .keyboardShortcut("m", modifiers: .command)
 
             Divider().frame(height: 24)
 
