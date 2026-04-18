@@ -92,7 +92,7 @@ struct PlaylistSidebar: View {
     
     private var historySheet: some View {
         WatchHistoryView()
-            .environmentObject(playerCore)
+            .environment(playerCore)
     }
     
     private var addPlaylistSheet: some View {

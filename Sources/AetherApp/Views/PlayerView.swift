@@ -89,7 +89,7 @@ struct PlayerView: View {
                 Spacer(minLength: 8)
 
                 // Controls
-                PlayerControls(player: player, showStats: $showStats)
+                PlayerControlsView(player: player, showStats: $showStats)
                     .padding(.horizontal)
                     .padding(.bottom)
             }
@@ -177,13 +177,25 @@ struct PlayerView: View {
             .padding(16)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
         case .error(let msg):
-            ErrorRetryView(message: msg) {
-                if let channel = player.currentChannel {
-                    Task { @MainActor in
-                        player.play(channel)
+            VStack(spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.red)
+                Text(msg)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                Button("Retry") {
+                    if let channel = player.currentChannel {
+                        Task { @MainActor in
+                            player.play(channel)
+                        }
                     }
                 }
+                .buttonStyle(.borderedProminent)
             }
+            .padding(24)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
         default:
             EmptyView()
         }
@@ -449,7 +461,7 @@ struct VideoPlayerLayer: NSViewRepresentable {
     weak var playerCore: PlayerCore?
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(playerCore: playerCore)
+        Coordinator()
     }
 
     func makeNSView(context: Context) -> AVPlayerView {
@@ -466,10 +478,10 @@ struct VideoPlayerLayer: NSViewRepresentable {
             forName: .togglePiP,
             object: nil,
             queue: .main
-        ) { [weak view, weak playerCore] _ in
+        ) { [weak view] _ in
             Task { @MainActor in
                 guard let view = view, view.allowsPictureInPicturePlayback else { return }
-                if playerCore?.isPiPActive == true {
+                if view.player != nil {
                     // Exit PiP by setting player to nil temporarily
                     let player = view.player
                     view.player = nil
@@ -485,7 +497,6 @@ struct VideoPlayerLayer: NSViewRepresentable {
 
     func updateNSView(_ nsView: AVPlayerView, context: Context) {
         if nsView.player !== avPlayer { nsView.player = avPlayer }
-        context.coordinator.playerCore = playerCore
     }
 
     static func dismantleNSView(_ nsView: AVPlayerView, coordinator: Coordinator) {
@@ -498,3 +509,11 @@ struct VideoPlayerLayer: NSViewRepresentable {
 
     @MainActor
     final class Coordinator: NSObject, AVPlayerViewPictureInPictureDelegate {
+        var pipObserver: NSObjectProtocol?
+        
+        func playerViewWillStartPictureInPicture(_ playerView: AVPlayerView) {}
+        func playerViewDidStartPictureInPicture(_ playerView: AVPlayerView) {}
+        func playerViewWillStopPictureInPicture(_ playerView: AVPlayerView) {}
+        func playerViewDidStopPictureInPicture(_ playerView: AVPlayerView) {}
+    }
+}
