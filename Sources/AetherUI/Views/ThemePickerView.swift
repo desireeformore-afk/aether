@@ -1,6 +1,12 @@
 import SwiftUI
 import AetherCore
 
+#if os(macOS)
+import AppKit
+#elseif os(iOS) || os(tvOS)
+import UIKit
+#endif
+
 /// Grid of theme cards. Tapping selects a theme.
 /// On macOS/iOS also shows a custom gradient builder section.
 public struct ThemePickerView: View {
