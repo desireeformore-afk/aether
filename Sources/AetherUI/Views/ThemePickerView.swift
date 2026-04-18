@@ -68,11 +68,11 @@ public struct ThemePickerView: View {
 
     #if !os(tvOS)
     private func applyCustomGradient() {
-        guard let startHex = customStart.toHex(),
-              let endHex = customEnd.toHex() else { return }
-        var colors   = [startHex]
-        if showMidStop, let mid = customMid, let midHex = mid.toHex() {
-            colors.append(midHex)
+        let startHex = customStart.toHex()
+        let endHex = customEnd.toHex()
+        var colors = [startHex]
+        if showMidStop, let mid = customMid {
+            colors.append(mid.toHex())
         }
         colors.append(endHex)
 
