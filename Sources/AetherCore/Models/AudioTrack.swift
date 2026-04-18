@@ -24,10 +24,10 @@ public struct AudioTrack: Identifiable, Sendable, Hashable {
     }
 
     /// Create from AVMediaSelectionOption.
-    public static func from(_ option: AVMediaSelectionOption) -> AudioTrack {
-        let langCode = option.extendedLanguageTag ?? option.locale?.languageCode?.identifier
+    public static func from(_ option: AVMediaSelectionOption) async -> AudioTrack {
+        let langCode = option.extendedLanguageTag ?? option.locale?.language.languageCode?.identifier
         let langName = option.displayName
-        let label = option.commonMetadata.first(where: { $0.commonKey == .commonKeyTitle })?.stringValue
+        let label = try? await option.commonMetadata.first(where: { $0.commonKey == .commonKeyTitle })?.load(.stringValue)
 
         return AudioTrack(
             id: option.displayName,
@@ -68,10 +68,10 @@ public struct SubtitleTrackInfo: Identifiable, Sendable, Hashable {
     }
 
     /// Create from AVMediaSelectionOption.
-    public static func from(_ option: AVMediaSelectionOption) -> SubtitleTrackInfo {
-        let langCode = option.extendedLanguageTag ?? option.locale?.languageCode?.identifier
+    public static func from(_ option: AVMediaSelectionOption) async -> SubtitleTrackInfo {
+        let langCode = option.extendedLanguageTag ?? option.locale?.language.languageCode?.identifier
         let langName = option.displayName
-        let label = option.commonMetadata.first(where: { $0.commonKey == .commonKeyTitle })?.stringValue
+        let label = try? await option.commonMetadata.first(where: { $0.commonKey == .commonKeyTitle })?.load(.stringValue)
 
         return SubtitleTrackInfo(
             id: option.displayName,
