@@ -31,6 +31,7 @@ public final class PlaylistSharingService: ObservableObject {
         let shareable = ShareablePlaylist(
             name: playlist.name,
             url: playlist.url.absoluteString,
+            type: playlist.type,
             channelCount: channelCount,
             expiresAt: expiresAt,
             isPublic: isPublic,
