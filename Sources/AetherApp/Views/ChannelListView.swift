@@ -25,6 +25,10 @@ struct ChannelListView: View {
     @State private var collapsedGroups: Set<String> = []
     @FocusState private var isSearchFocused: Bool
 
+    // Pagination for large playlists
+    @State private var displayedChannelCount = 100
+    private let batchSize = 100
+
     // Memoized derived state — recomputed only when channels/search/group changes
     @State private var cachedGrouped: [(group: String, channels: [Channel])] = []
     @State private var cachedAllGroups: [String] = []
@@ -94,7 +98,10 @@ struct ChannelListView: View {
             await refreshEPG()
         }
         // Recompute memoized lists whenever inputs change
-        .onChange(of: channels)      { _, _ in recomputeFiltered() }
+        .onChange(of: channels)      { _, _ in
+            displayedChannelCount = 100  // Reset pagination on new data
+            recomputeFiltered()
+        }
         .onChange(of: searchText)    { _, _ in debouncedRecompute() }
         .onChange(of: selectedGroup) { _, _ in recomputeFiltered() }
     }
@@ -116,6 +123,8 @@ struct ChannelListView: View {
         let snap = channels
         let q = searchText.lowercased()
         let grp = selectedGroup
+        let maxDisplay = displayedChannelCount
+
         Task.detached(priority: .userInitiated) {
             // All groups (stable order, dedup)
             var seenG = Set<String>()
@@ -127,6 +136,12 @@ struct ChannelListView: View {
             var result = snap
             if let group = grp { result = result.filter { $0.groupTitle == group } }
             if !q.isEmpty      { result = result.filter { $0.name.lowercased().contains(q) } }
+
+            // Apply pagination only when not searching and no group filter
+            let shouldPaginate = q.isEmpty && grp == nil && result.count > maxDisplay
+            if shouldPaginate {
+                result = Array(result.prefix(maxDisplay))
+            }
 
             // Group
             var order: [String] = []
@@ -219,6 +234,23 @@ struct ChannelListView: View {
                         sectionHeader(section)
                     }
                 }
+
+                // Load More button for pagination
+                if shouldShowLoadMore {
+                    Section {
+                        Button(action: loadMoreChannels) {
+                            HStack {
+                                Spacer()
+                                Label("Load More Channels", systemImage: "arrow.down.circle")
+                                    .font(.aetherBody)
+                                    .foregroundStyle(Color.aetherPrimary)
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
         }
         .listStyle(.inset)
@@ -231,6 +263,17 @@ struct ChannelListView: View {
                     .padding(.top, 8)
             }
         }
+    }
+
+    private var shouldShowLoadMore: Bool {
+        searchText.isEmpty && selectedGroup == nil && displayedChannelCount < channels.count
+    }
+
+    private func loadMoreChannels() {
+        withAnimation {
+            displayedChannelCount = min(displayedChannelCount + batchSize, channels.count)
+        }
+        recomputeFiltered()
     }
 
     private func sectionHeader(_ section: (group: String, channels: [Channel])) -> some View {
