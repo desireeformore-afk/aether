@@ -167,8 +167,8 @@ public final class PlayerCore: ObservableObject {
 
     private func handleMemoryPressure() {
         // Reduce quality to low on critical memory pressure
-        if selectedQuality != .low {
-            selectedQuality = StreamQuality.low
+        if selectedQuality.id != "low" {
+            selectedQuality = StreamQualityPreset.low.quality
         }
     }
 
