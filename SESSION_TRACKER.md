@@ -1,6 +1,6 @@
 # Aether Session Tracker
 
-## Current Status (2026-04-18 02:00 PM)
+## Current Status (2026-04-18 02:30 PM)
 
 **Last Session:** 01:32 - 02:15 (43 minutes)  
 **Status:** IDLE - No active process  
@@ -21,9 +21,9 @@
 11. Statistics & Analytics (viewing stats, charts)
 
 ### Recent Commits
-- bb7ad70: fix: remove empty Section header and fix ForEach id parameter
-- de9a235: fix: resolve all compilation errors - async calls, optional unwrapping, method names
-- ed6c617: fix: add explicit id parameter to ForEach in ChannelListView
+- 0f38028: fix: add explicit id parameter to ForEach to resolve Swift 6 type inference
+- 2e7215d: fix: add explicit type annotation and remove invalid listStyle modifier
+- 4a794d5: fix: replace List with ScrollView+LazyVStack to avoid Binding inference
 
 ### Remaining Features (13)
 - Recommendations (ML-based channel suggestions)
