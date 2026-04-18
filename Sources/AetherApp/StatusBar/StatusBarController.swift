@@ -6,7 +6,8 @@ import SwiftData
 
 /// macOS Menu Bar widget that shows "Now Playing" info and provides quick access to favorite channels.
 @MainActor
-final class StatusBarController: ObservableObject {
+@Observable
+final class StatusBarController {
     private var statusItem: NSStatusItem?
     private let player: PlayerCore
     private var cancellables = Set<AnyCancellable>()
@@ -66,21 +67,21 @@ final class StatusBarController: ObservableObject {
     }
 
     private func observePlayer() {
-        player.$currentChannel
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.updateMenu()
-                self?.updateButtonTitle()
+        // Observe state changes using withObservationTracking
+        Task { @MainActor in
+            while !Task.isCancelled {
+                withObservationTracking {
+                    _ = player.currentChannel
+                    _ = player.state
+                } onChange: {
+                    Task { @MainActor in
+                        self.updateMenu()
+                        self.updateButtonTitle()
+                    }
+                }
+                try? await Task.sleep(for: .seconds(0.5))
             }
-            .store(in: &cancellables)
-
-        player.$state
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.updateMenu()
-                self?.updateButtonTitle()
-            }
-            .store(in: &cancellables)
+        }
     }
 
     private func updateButtonTitle() {

@@ -498,3 +498,44 @@ struct ChannelListView: View {
             if isBlocked {
                 Image(systemName: "lock.fill")
                     .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if isBlocked {
+                parentalService.requestUnlock()
+            } else {
+                selectedChannel = ch
+                player.play(ch)
+                analyticsService.trackChannelPlay(ch)
+            }
+        }
+    }
+}
+
+// MARK: - Supporting Types
+
+enum ListTab: String, CaseIterable {
+    case all = "All"
+    case favorites = "Favorites"
+    
+    var icon: String {
+        switch self {
+        case .all: return "list.bullet"
+        case .favorites: return "star.fill"
+        }
+    }
+}
+
+enum ChannelViewMode: String, CaseIterable {
+    case list = "List"
+    case grid = "Grid"
+    
+    var icon: String {
+        switch self {
+        case .list: return "list.bullet"
+        case .grid: return "square.grid.2x2"
+        }
+    }
+}

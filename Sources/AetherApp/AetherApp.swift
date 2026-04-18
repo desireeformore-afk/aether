@@ -20,22 +20,22 @@ struct AetherApp: App {
 
     @State private var epgStore = EPGStore()
     @State private var playerCore = PlayerCore()
-    @StateObject private var historyCoordinator = HistoryCoordinator()
-    @StateObject private var sleepTimer = SleepTimerService()
-    @StateObject private var subtitleStore = SubtitleStore()
-    @StateObject private var themeService = ThemeService()
-    @StateObject private var parentalService = ParentalControlService()
-    @StateObject private var recordingService = RecordingService()
-    @StateObject private var timeshiftService = TimeshiftService()
-    @StateObject private var trackService = TrackService()
-    @StateObject private var miniPlayerController: MiniPlayerWindowController
-    @StateObject private var crashReportingService = CrashReportingService()
-    @StateObject private var networkMonitor = NetworkMonitorService()
-    @StateObject private var offlineQueue: OfflineQueueService
-    @StateObject private var memoryMonitor = MemoryMonitorService()
-    @StateObject private var analyticsService = AnalyticsService()
+    @State private var historyCoordinator = HistoryCoordinator()
+    @State private var sleepTimer = SleepTimerService()
+    @State private var subtitleStore = SubtitleStore()
+    @State private var themeService = ThemeService()
+    @State private var parentalService = ParentalControlService()
+    @State private var recordingService = RecordingService()
+    @State private var timeshiftService = TimeshiftService()
+    @State private var trackService = TrackService()
+    @State private var miniPlayerController: MiniPlayerWindowController
+    @State private var crashReportingService = CrashReportingService()
+    @State private var networkMonitor = NetworkMonitorService()
+    @State private var offlineQueue: OfflineQueueService
+    @State private var memoryMonitor = MemoryMonitorService()
+    @State private var analyticsService = AnalyticsService()
     @State private var iCloudSync = iCloudSyncService()
-    @StateObject private var statusBarController: StatusBarController
+    @State private var statusBarController: StatusBarController
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -108,9 +108,9 @@ struct AetherApp: App {
         #if os(macOS)
         Settings {
             SettingsView()
-                .environmentObject(epgStore)
-                .environmentObject(themeService)
-                .environmentObject(parentalService)
+                .environment(epgStore)
+                .environment(themeService)
+                .environment(parentalService)
         }
         #endif
     }
@@ -119,9 +119,10 @@ struct AetherApp: App {
 // MARK: - HistoryCoordinator
 
 /// Bridges `PlayerCore.onWatchSessionEnd` → SwiftData insert.
-/// Lives as a @StateObject so it's retained for the app's lifetime.
+/// Lives as a @State so it's retained for the app's lifetime.
 @MainActor
-final class HistoryCoordinator: ObservableObject {
+@Observable
+final class HistoryCoordinator {
     private var modelContext: ModelContext?
     private var isBound = false
 

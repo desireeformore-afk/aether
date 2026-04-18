@@ -2,7 +2,7 @@ import SwiftUI
 import AetherCore
 
 struct iCloudSyncView: View {
-    @EnvironmentObject var syncService: iCloudSyncService
+    @Environment(iCloudSyncService.self) var syncService
     @State private var showingConflicts = false
 
     var body: some View {
