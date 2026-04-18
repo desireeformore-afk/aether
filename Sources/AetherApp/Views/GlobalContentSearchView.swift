@@ -175,25 +175,6 @@ struct GlobalContentSearchView: View {
         }
     }
 
-    private func loadContent() async {
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            async let vodTask = xstreamService.vodStreams(categoryID: nil)
-            async let seriesTask = xstreamService.seriesList(categoryID: nil)
-
-            let (vodResult, seriesResult) = try await (vodTask, seriesTask)
-
-            vodStreams = vodResult
-            series = seriesResult
-        } catch {
-            errorMessage = "Failed to load content: \(error.localizedDescription)"
-        }
-
-        isLoading = false
-    }
-    
     private func handleSelection(_ item: (id: String, title: String, type: ContentType, item: Any)) {
         // TODO: Implement navigation to player or detail view
         dismiss()

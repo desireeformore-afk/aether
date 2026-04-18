@@ -1,4 +1,5 @@
 import SwiftUI
+import AetherCore
 
 /// PIN entry view for parental controls.
 struct PINEntryView: View {

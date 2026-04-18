@@ -1,5 +1,6 @@
 import SwiftUI
 import AetherCore
+@preconcurrency import AVFoundation
 
 /// Audio and subtitle track picker view.
 public struct TrackPickerView: View {

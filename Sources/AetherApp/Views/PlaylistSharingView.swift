@@ -172,9 +172,9 @@ struct SharePlaylistSheet: View {
 
     // Mock playlists for demo
     @State private var availablePlaylists: [Playlist] = [
-        Playlist(name: "Sports Channels", url: "http://example.com/sports.m3u", type: .m3u),
-        Playlist(name: "News Networks", url: "http://example.com/news.m3u", type: .m3u),
-        Playlist(name: "Entertainment", url: "http://example.com/entertainment.m3u", type: .m3u)
+        Playlist(name: "Sports Channels", url: URL(string: "http://example.com/sports.m3u")!, type: .m3u),
+        Playlist(name: "News Networks", url: URL(string: "http://example.com/news.m3u")!, type: .m3u),
+        Playlist(name: "Entertainment", url: URL(string: "http://example.com/entertainment.m3u")!, type: .m3u)
     ]
 
     var body: some View {
