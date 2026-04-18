@@ -133,8 +133,7 @@ public final class MemoryMonitorService: ObservableObject {
 
         let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
             $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                nonisolated(unsafe) let taskSelf = mach_task_self_
-                return task_info(taskSelf, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+                task_info(mach_task_self(), task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
             }
         }
 
