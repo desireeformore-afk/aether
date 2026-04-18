@@ -10,9 +10,10 @@ public enum NetworkStatus: Sendable {
 
 /// Service for monitoring network connectivity and handling reconnection.
 @MainActor
-public final class NetworkMonitorService: ObservableObject {
-    @Published public private(set) var status: NetworkStatus = .unknown
-    @Published public private(set) var isOnline: Bool = true
+@Observable
+public final class NetworkMonitorService {
+    public private(set) var status: NetworkStatus = .unknown
+    public private(set) var isOnline: Bool = true
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "com.aether.networkmonitor")
@@ -101,8 +102,9 @@ public final class NetworkMonitorService: ObservableObject {
 
 /// Service for handling offline operations and queuing.
 @MainActor
-public final class OfflineQueueService: ObservableObject {
-    @Published public private(set) var queuedOperations: [QueuedOperation] = []
+@Observable
+public final class OfflineQueueService {
+    public private(set) var queuedOperations: [QueuedOperation] = []
 
     private let networkMonitor: NetworkMonitorService
 

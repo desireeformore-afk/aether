@@ -3,8 +3,9 @@ import Foundation
 import Intents
 #endif
 
-@MainActor
-public final class ShortcutsService: ObservableObject {
+6|@MainActor
+@Observable
+public final class ShortcutsService {
     public static let shared = ShortcutsService()
     
     public weak var playerCore: PlayerCore?

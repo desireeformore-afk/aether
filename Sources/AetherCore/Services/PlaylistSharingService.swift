@@ -2,8 +2,9 @@ import Foundation
 import CoreImage
 
 /// Service for managing playlist sharing functionality
-@MainActor
-public final class PlaylistSharingService: ObservableObject {
+5|@MainActor
+@Observable
+public final class PlaylistSharingService {
     @Published public private(set) var sharedPlaylists: [ShareablePlaylist] = []
     @Published public private(set) var shareStats: [String: PlaylistShareStats] = [:]
 

@@ -3,12 +3,13 @@ import Foundation
 
 #if os(macOS)
 @MainActor
-public final class AirPlayService: ObservableObject {
+@Observable
+public final class AirPlayService {
     public static let shared = AirPlayService()
 
-    @Published public private(set) var isAirPlaying = false
-    @Published public private(set) var connectedDeviceName: String?
-    @Published public private(set) var availableDevices: [String] = []
+    public private(set) var isAirPlaying = false
+    public private(set) var connectedDeviceName: String?
+    public private(set) var availableDevices: [String] = []
 
     private var routeDetector: AVRouteDetector?
     private var player: AVPlayer?
@@ -48,12 +49,13 @@ public final class AirPlayService: ObservableObject {
 }
 #else
 @MainActor
-public final class AirPlayService: ObservableObject {
+@Observable
+public final class AirPlayService {
     public static let shared = AirPlayService()
 
-    @Published public private(set) var isAirPlaying = false
-    @Published public private(set) var connectedDeviceName: String?
-    @Published public private(set) var availableDevices: [String] = []
+    public private(set) var isAirPlaying = false
+    public private(set) var connectedDeviceName: String?
+    public private(set) var availableDevices: [String] = []
 
     private var routeDetector: AVRouteDetector?
     private var player: AVPlayer?

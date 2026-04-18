@@ -2,8 +2,9 @@ import Foundation
 
 /// Manages the active UI theme and persists selection to UserDefaults.
 @MainActor
-public final class ThemeService: ObservableObject {
-    @Published public private(set) var active: ThemeDefinition
+@Observable
+public final class ThemeService {
+    public private(set) var active: ThemeDefinition
 
     private let defaults: UserDefaults
     private let selectedKey = "selectedThemeID"

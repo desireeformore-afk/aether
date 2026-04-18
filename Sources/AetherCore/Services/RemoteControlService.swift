@@ -3,8 +3,9 @@ import Foundation
 import Network
 #endif
 
-@MainActor
-public final class RemoteControlService: ObservableObject {
+6|@MainActor
+@Observable
+public final class RemoteControlService {
     public static let shared = RemoteControlService()
     
     @Published public private(set) var isServerRunning = false

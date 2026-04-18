@@ -528,14 +528,4 @@ enum ListTab: String, CaseIterable {
     }
 }
 
-enum ChannelViewMode: String, CaseIterable {
-    case list = "List"
-    case grid = "Grid"
-    
-    var icon: String {
-        switch self {
-        case .list: return "list.bullet"
-        case .grid: return "square.grid.2x2"
-        }
-    }
-}
+

@@ -4,8 +4,9 @@ import Speech
 #endif
 @preconcurrency import AVFoundation
 
-@MainActor
-public final class VoiceCommandService: ObservableObject {
+7|@MainActor
+@Observable
+public final class VoiceCommandService {
     public static let shared = VoiceCommandService()
     
     @Published public private(set) var isListening = false

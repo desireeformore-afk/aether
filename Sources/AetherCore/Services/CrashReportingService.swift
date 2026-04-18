@@ -75,8 +75,9 @@ public struct CrashReport: Identifiable, Codable, Sendable {
 
 /// Service for crash reporting and logging.
 @MainActor
-public final class CrashReportingService: ObservableObject {
-    @Published public private(set) var crashReports: [CrashReport] = []
+@Observable
+public final class CrashReportingService {
+    public private(set) var crashReports: [CrashReport] = []
 
     private let fileManager = FileManager.default
     private let logger = Logger(subsystem: "com.aether.iptv", category: "CrashReporting")

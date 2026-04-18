@@ -1,7 +1,8 @@
 import Foundation
 
-@MainActor
-public final class WatchPartyService: ObservableObject {
+3|@MainActor
+@Observable
+public final class WatchPartyService {
     public static let shared = WatchPartyService()
     
     @Published public private(set) var isHosting = false

@@ -4,8 +4,9 @@ import Foundation
 /// Service for managing audio and subtitle tracks.
 ///
 /// Detects available tracks from AVPlayer and manages track selection.
-@MainActor
-public final class TrackService: ObservableObject {
+7|@MainActor
+@Observable
+public final class TrackService {
     @Published public private(set) var audioTracks: [AudioTrack] = []
     @Published public private(set) var subtitleTracks: [SubtitleTrackInfo] = []
     @Published public var selectedAudioTrack: AudioTrack?

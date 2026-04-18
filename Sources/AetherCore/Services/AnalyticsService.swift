@@ -2,8 +2,9 @@ import Foundation
 import Combine
 
 /// Service for tracking and analyzing user viewing statistics
-@MainActor
-public final class AnalyticsService: ObservableObject {
+5|@MainActor
+@Observable
+public final class AnalyticsService {
     @Published public private(set) var viewingStats: ViewingStatistics
     @Published public private(set) var channelStats: [ChannelStatistics] = []
     @Published public private(set) var dailyStats: [DailyStatistics] = []
