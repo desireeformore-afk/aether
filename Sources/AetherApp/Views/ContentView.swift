@@ -2,15 +2,14 @@ import SwiftUI
 import SwiftData
 import AetherCore
 
-/// Root view: NavigationSplitView with playlist sidebar, channel list, and player.
+/// Root view: Fullscreen player with floating channel panel overlay.
 struct ContentView: View {
     @EnvironmentObject private var epgStore: EPGStore
     @ObservedObject var playerCore: PlayerCore
 
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var selectedChannel: Channel?
-    @State private var showVODBrowser = false
-    @State private var showSeriesBrowser = false
+    @State private var showChannelPanel = false
     #if os(macOS)
     @State private var showCommandPalette = false
     #endif
@@ -28,52 +27,78 @@ struct ContentView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
-            PlaylistSidebar(selectedPlaylist: $selectedPlaylist)
-        } content: {
-            if let playlist = selectedPlaylist {
-                ChannelListView(
-                    playlist: playlist,
-                    selectedChannel: $selectedChannel,
-                    player: playerCore
-                )
-                .toolbar {
-                    // VOD button — only for Xtream Codes playlists
-                    if playlist.playlistType == .xtream,
-                       let creds = playlist.xstreamCredentials {
-                        ToolbarItem {
-                            Button(action: { showVODBrowser = true }) {
-                                Label("VOD", systemImage: "film.stack")
-                            }
-                            .help("Open VOD Browser")
-                            .sheet(isPresented: $showVODBrowser) {
-                                VODBrowserView(credentials: creds, player: playerCore)
-                            }
-                        }
-                        ToolbarItem {
-                            Button(action: { showSeriesBrowser = true }) {
-                                Label("Series", systemImage: "tv.and.mediabox")
-                            }
-                            .help("Browse Series")
-                            .sheet(isPresented: $showSeriesBrowser) {
-                                SeriesBrowserView(credentials: creds, player: playerCore)
-                            }
-                        }
-                    }
-                }
-            } else {
-                ContentUnavailableView(
-                    "No Playlist Selected",
-                    systemImage: "list.bullet.rectangle",
-                    description: Text("Add a playlist from the sidebar to get started.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.aetherBackground)
-            }
-        } detail: {
+        ZStack {
+            // Base layer: Fullscreen player
             PlayerView(player: playerCore)
+                .ignoresSafeArea()
+
+            // Floating channel panel overlay
+            if showChannelPanel {
+                ZStack {
+                    // Dismissal backdrop
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .onTapGesture { showChannelPanel = false }
+
+                    FloatingChannelPanel(
+                        isVisible: $showChannelPanel,
+                        selectedPlaylist: $selectedPlaylist,
+                        selectedChannel: $selectedChannel,
+                        player: playerCore
+                    )
+                }
+                .transition(.asymmetric(
+                    insertion: .move(edge: .leading).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
+            }
+
+            // Toggle button (top-left corner) - only show when panel is hidden
+            if !showChannelPanel {
+                VStack {
+                    HStack {
+                        Button(action: { showChannelPanel.toggle() }) {
+                            Image(systemName: "sidebar.left")
+                                .font(.system(size: 20))
+                                .foregroundStyle(.white)
+                                .padding(12)
+                                .background(Color.black.opacity(0.5))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Toggle Channel List  ⌘L")
+                        .padding(16)
+
+                        Spacer()
+                    }
+                    Spacer()
+                }
+                .transition(.opacity)
+            }
+
+            // Command Palette overlay
+            #if os(macOS)
+            if showCommandPalette {
+                ZStack {
+                    // Dismissal backdrop
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .ignoresSafeArea()
+                        .onTapGesture { showCommandPalette = false }
+
+                    CommandPaletteView(
+                        isPresented: $showCommandPalette,
+                        player: playerCore,
+                        channels: playerCore.channelList
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.top, 60)
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+            }
+            #endif
         }
-        .navigationSplitViewStyle(.balanced)
+        .animation(.spring(duration: 0.3), value: showChannelPanel)
         .background(Color.aetherBackground)
         .onChange(of: selectedPlaylist) { _, newPlaylist in
             guard let playlist = newPlaylist else {
@@ -95,30 +120,15 @@ struct ContentView: View {
             #endif
         }
         #if os(macOS)
-        .overlay {
-            if showCommandPalette {
-                ZStack {
-                    // Dismissal backdrop
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .ignoresSafeArea()
-                        .onTapGesture { showCommandPalette = false }
-
-                    CommandPaletteView(
-                        isPresented: $showCommandPalette,
-                        player: playerCore,
-                        channels: playerCore.channelList
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .padding(.top, 60)
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
-            }
-        }
         .animation(.spring(duration: 0.2), value: showCommandPalette)
         .onKeyPress(.init("k"), phases: .down) { event in
             guard event.modifiers.contains(.command) else { return .ignored }
             showCommandPalette.toggle()
+            return .handled
+        }
+        .onKeyPress(.init("l"), phases: .down) { event in
+            guard event.modifiers.contains(.command) else { return .ignored }
+            showChannelPanel.toggle()
             return .handled
         }
         #endif
