@@ -11,6 +11,9 @@ struct FloatingChannelPanel: View {
 
     @State private var showVODBrowser = false
     @State private var showSeriesBrowser = false
+    #if os(macOS)
+    @State private var showSettings = false
+    #endif
 
     var body: some View {
         HStack(spacing: 0) {

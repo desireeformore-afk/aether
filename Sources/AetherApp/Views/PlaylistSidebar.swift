@@ -12,6 +12,9 @@ struct PlaylistSidebar: View {
     @Binding var selectedPlaylist: PlaylistRecord?
     @State private var showAddSheet = false
     @State private var showHistory = false
+    #if os(macOS)
+    @State private var showSettings = false
+    #endif
 
     // Deduplicated last 5 unique channels from history
     private var recentChannels: [WatchHistoryRecord] {
@@ -59,6 +62,14 @@ struct PlaylistSidebar: View {
                 .help("Watch History")
                 .disabled(history.isEmpty)
             }
+            #if os(macOS)
+            ToolbarItem(placement: .secondaryAction) {
+                Button(action: { showSettings = true }) {
+                    Image(systemName: "gearshape")
+                }
+                .help("Settings  ⌘,")
+            }
+            #endif
         }
         .sheet(isPresented: $showHistory) {
             WatchHistoryView()
@@ -70,6 +81,13 @@ struct PlaylistSidebar: View {
                 selectedPlaylist = record
             }
         }
+        #if os(macOS)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+                .environmentObject(playerCore.epgStore ?? EPGStore())
+                .frame(width: 600, height: 500)
+        }
+        #endif
         .onChange(of: playlists) { _, newList in
             if selectedPlaylist == nil, let first = newList.first {
                 selectedPlaylist = first
