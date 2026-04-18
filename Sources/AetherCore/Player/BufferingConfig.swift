@@ -12,8 +12,11 @@ public enum BufferingConfig {
         item.preferredPeakBitRate = 0 // 0 = unlimited, set per-quality elsewhere
         // Allow network stalls to be retried by the system before we get notified
         item.canUseNetworkResourcesForLiveStreamingWhilePaused = false
-        // Prevent audio session interruptions from stopping playback permanently
+        #if os(iOS) || os(tvOS)
         item.audioTimePitchAlgorithm = .lowQualityZeroLatency
+        #else
+        item.audioTimePitchAlgorithm = .timePitch
+        #endif
     }
 
     public static func apply(to player: AVPlayer) {
