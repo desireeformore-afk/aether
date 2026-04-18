@@ -304,7 +304,6 @@ struct ChannelListView: View {
             }
         }
     }
-    }
 
     // MARK: - All Channels List
 
