@@ -231,8 +231,8 @@ public final class CrashReportingService: ObservableObject {
         var model = [CChar](repeating: 0, count: size)
         sysctlbyname("hw.model", &model, &size, nil, 0)
         
-        // Truncate null termination before decoding
-        let validChars = model.prefix(while: { $0 != 0 })
+        // Convert CChar to UInt8 and truncate null termination
+        let validChars = model.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) }
         return String(decoding: validChars, as: UTF8.self)
         #else
         return "iOS Device"
