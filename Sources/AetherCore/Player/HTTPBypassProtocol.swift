@@ -17,9 +17,17 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
     // MARK: - URLProtocol overrides
     
     public override class func canInit(with request: URLRequest) -> Bool {
-        // Only intercept HTTP (not HTTPS) requests
+        // Intercept both HTTP and HTTPS requests for IPTV streams
         guard let scheme = request.url?.scheme?.lowercased() else { return false }
-        return scheme == "http"
+        let shouldIntercept = scheme == "http" || scheme == "https"
+        
+        #if DEBUG
+        if shouldIntercept {
+            print("[HTTPBypassProtocol] Intercepting: \(request.url?.absoluteString ?? "unknown")")
+        }
+        #endif
+        
+        return shouldIntercept
     }
     
     public override class func canonicalRequest(for request: URLRequest) -> URLRequest {
@@ -39,19 +47,34 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
             )
         }
         
+        #if DEBUG
+        print("[HTTPBypassProtocol] Starting load: \(request.url?.absoluteString ?? "unknown")")
+        #endif
+        
         dataTask = Self.bypassSession.dataTask(with: mutableRequest) { [weak self] data, response, error in
             guard let self = self else { return }
             
             if let error = error {
+                #if DEBUG
+                print("[HTTPBypassProtocol] Error: \(error.localizedDescription)")
+                #endif
                 client.urlProtocol(self, didFailWithError: error)
                 return
             }
             
             if let response = response {
+                #if DEBUG
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("[HTTPBypassProtocol] Response: \(httpResponse.statusCode)")
+                }
+                #endif
                 client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             }
             
             if let data = data {
+                #if DEBUG
+                print("[HTTPBypassProtocol] Loaded \(data.count) bytes")
+                #endif
                 client.urlProtocol(self, didLoad: data)
             }
             
