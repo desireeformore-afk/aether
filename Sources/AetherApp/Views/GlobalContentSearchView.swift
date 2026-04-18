@@ -10,41 +10,64 @@ struct GlobalContentSearchView: View {
     @State private var series: [XstreamSeries] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
-    
+    @State private var filterType: ContentType? = nil
+
     private let xstreamService: XstreamService
-    
+
     init(xstreamService: XstreamService) {
         self.xstreamService = xstreamService
+    }
+
+    private func loadContent() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            async let vodTask = xstreamService.vodStreams()
+            async let seriesTask = xstreamService.seriesList()
+
+            let (vod, seriesData) = try await (vodTask, seriesTask)
+            vodStreams = vod
+            series = seriesData
+        } catch {
+            errorMessage = "Failed to load content: \(error.localizedDescription)"
+        }
+
+        isLoading = false
     }
     
     var filteredContent: [(id: String, title: String, type: ContentType, item: Any)] {
         let query = searchText.lowercased()
         var results: [(id: String, title: String, type: ContentType, item: Any)] = []
-        
+
         if query.isEmpty {
             return results
         }
-        
+
         // Filter VOD
-        for stream in vodStreams where stream.name.lowercased().contains(query) {
-            results.append((
-                id: "vod_\(stream.streamID)",
-                title: stream.name,
-                type: .movie,
-                item: stream
-            ))
+        if filterType == nil || filterType == .movie {
+            for stream in vodStreams where stream.name.lowercased().contains(query) {
+                results.append((
+                    id: "vod_\(stream.streamID)",
+                    title: stream.name,
+                    type: .movie,
+                    item: stream
+                ))
+            }
         }
-        
+
         // Filter Series
-        for s in series where s.name.lowercased().contains(query) {
-            results.append((
-                id: "series_\(s.seriesID)",
-                title: s.name,
-                type: .series,
-                item: s
-            ))
+        if filterType == nil || filterType == .series {
+            for s in series where s.name.lowercased().contains(query) {
+                results.append((
+                    id: "series_\(s.seriesID)",
+                    title: s.name,
+                    type: .series,
+                    item: s
+                ))
+            }
         }
-        
+
         return results.prefix(100).map { $0 }
     }
     
@@ -71,7 +94,24 @@ struct GlobalContentSearchView: View {
             }
             .padding()
             .background(Color.aetherBackground.opacity(0.8))
-            
+
+            // Filter buttons
+            HStack(spacing: 8) {
+                FilterButton(title: "All", isSelected: filterType == nil) {
+                    filterType = nil
+                }
+                FilterButton(title: "Movies", isSelected: filterType == .movie) {
+                    filterType = .movie
+                }
+                FilterButton(title: "Series", isSelected: filterType == .series) {
+                    filterType = .series
+                }
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(Color.aetherBackground.opacity(0.6))
+
             Divider()
             
             // Results
@@ -131,32 +171,51 @@ struct GlobalContentSearchView: View {
         }
         .background(Color.aetherBackground)
         .task {
-            await loadAllContent()
+            await loadContent()
         }
     }
-    
-    private func loadAllContent() async {
+
+    private func loadContent() async {
         isLoading = true
         errorMessage = nil
-        
+
         do {
             async let vodTask = xstreamService.vodStreams(categoryID: nil)
             async let seriesTask = xstreamService.seriesList(categoryID: nil)
-            
+
             let (vodResult, seriesResult) = try await (vodTask, seriesTask)
-            
+
             vodStreams = vodResult
             series = seriesResult
         } catch {
             errorMessage = "Failed to load content: \(error.localizedDescription)"
         }
-        
+
         isLoading = false
     }
     
     private func handleSelection(_ item: (id: String, title: String, type: ContentType, item: Any)) {
         // TODO: Implement navigation to player or detail view
         dismiss()
+    }
+}
+
+struct FilterButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.aetherCaption)
+                .foregroundStyle(isSelected ? Color.aetherBackground : Color.aetherText)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color.aetherPrimary : Color.aetherSecondary.opacity(0.3))
+                .cornerRadius(16)
+        }
+        .buttonStyle(.plain)
     }
 }
 

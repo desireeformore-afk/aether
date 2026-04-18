@@ -130,11 +130,16 @@ public final class PlayerCore: ObservableObject {
     private var watchStartTime: Date?
 
     public init() {
+        // Register HTTP bypass protocol to allow arbitrary HTTP streams (bypasses ATS)
+        URLProtocol.registerClass(HTTPBypassProtocol.self)
         setupMemoryPressureObserver()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        removeRetryObservers()
+        statusObserver?.cancel()
+        statusObserver = nil
     }
 
     private func setupMemoryPressureObserver() {
@@ -152,15 +157,6 @@ public final class PlayerCore: ObservableObject {
         if selectedQuality != .low {
             selectedQuality = .low
         }
-    }
-
-    /// Tracks when the current channel started playing (original).
-    private var watchStartTime: Date?
-
-    /// Creates a new player instance.
-    public init() {
-        // Register HTTP bypass protocol to allow arbitrary HTTP streams (bypasses ATS)
-        URLProtocol.registerClass(HTTPBypassProtocol.self)
     }
 
     // MARK: - Last-channel persistence
@@ -181,15 +177,17 @@ public final class PlayerCore: ObservableObject {
         // End previous watch session before switching
         endWatchSession()
 
+        // Clean up previous player item and observers
+        removeRetryObservers()
+        statusObserver?.cancel()
+        statusObserver = nil
+
         currentChannel = channel
         watchStartTime = .now
         state = .loading
         retryCount = 0
         isRetrying = false
         retrySourceItem = nil
-
-        // Remove previous notification observers
-        removeRetryObservers()
 
         // Build URLRequest with HTTP/1.1 forced — IPTV streams don't support QUIC/HTTP3
         var request = URLRequest(url: channel.streamURL)
@@ -251,6 +249,8 @@ public final class PlayerCore: ObservableObject {
     public func stop() {
         endWatchSession()
         removeRetryObservers()
+        statusObserver?.cancel()
+        statusObserver = nil
         player.pause()
         player.replaceCurrentItem(with: nil)
         currentChannel = nil
@@ -258,7 +258,6 @@ public final class PlayerCore: ObservableObject {
         isRetrying = false
         retrySourceItem = nil
         state = .idle
-        statusObserver = nil
     }
 
     /// Toggles mute.
@@ -379,6 +378,9 @@ public final class PlayerCore: ObservableObject {
     }
 
     private func observePlayerItem(_ item: AVPlayerItem) {
+        // Cancel previous observer to prevent memory leaks
+        statusObserver?.cancel()
+
         statusObserver = item.publisher(for: \.status)
             .receive(on: RunLoop.main)
             .sink { [weak self, weak item] status in

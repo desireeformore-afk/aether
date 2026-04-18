@@ -29,17 +29,47 @@ struct FloatingChannelPanel: View {
                 // Channel list on right
                 if let playlist = selectedPlaylist {
                     VStack(spacing: 0) {
+                        // Search All button at top for Xtream playlists
+                        if playlist.playlistType == .xtream,
+                           let creds = playlist.xstreamCredentials {
+                            Button(action: { showGlobalSearch = true }) {
+                                Label("Search All Content", systemImage: "magnifyingglass.circle")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .sheet(isPresented: $showGlobalSearch) {
+                                GlobalContentSearchView(
+                                    xstreamService: XstreamService(credentials: creds)
+                                )
+                            }
+
+                            Divider()
+                        }
+
                         ChannelListView(
                             playlist: playlist,
                             selectedChannel: $selectedChannel,
                             player: player
                         )
 
-                        // VOD/Series buttons at bottom if Xtream Codes
+                        // VOD/Series/Search buttons at bottom if Xtream Codes
                         if playlist.playlistType == .xtream,
                            let creds = playlist.xstreamCredentials {
                             Divider()
                             HStack(spacing: 12) {
+                                Button(action: { showGlobalSearch = true }) {
+                                    Label("Search", systemImage: "magnifyingglass.circle")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .sheet(isPresented: $showGlobalSearch) {
+                                    GlobalContentSearchView(
+                                        xstreamService: XstreamService(credentials: creds)
+                                    )
+                                }
+                                
                                 Button(action: { showVODBrowser = true }) {
                                     Label("VOD", systemImage: "film.stack")
                                         .frame(maxWidth: .infinity)
