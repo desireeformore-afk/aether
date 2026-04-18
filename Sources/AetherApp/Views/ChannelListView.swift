@@ -11,6 +11,7 @@ struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var epgStore: EPGStore
     @EnvironmentObject private var parentalService: ParentalControlService
+    @EnvironmentObject private var analyticsService: AnalyticsService
 
     let playlist: PlaylistRecord
     @Binding var selectedChannel: Channel?
@@ -26,6 +27,7 @@ struct ChannelListView: View {
     @State private var collapsedGroups: Set<String> = []
     @State private var viewMode: ChannelViewMode = .list
     @FocusState private var isSearchFocused: Bool
+    @StateObject private var recommendationService: RecommendationService
 
     @AppStorage("channelViewMode") private var savedViewMode: String = ChannelViewMode.list.rawValue
 
@@ -36,6 +38,15 @@ struct ChannelListView: View {
     // Memoized derived state — recomputed only when channels/search/group changes
     @State private var cachedGrouped: [(group: String, channels: [Channel])] = []
     @State private var cachedAllGroups: [String] = []
+
+    init(playlist: PlaylistRecord, selectedChannel: Binding<Channel?>, player: PlayerCore) {
+        self.playlist = playlist
+        self._selectedChannel = selectedChannel
+        self.player = player
+        // Initialize recommendation service with analytics
+        let analytics = AnalyticsService()
+        _recommendationService = StateObject(wrappedValue: RecommendationService(analyticsService: analytics))
+    }
 
     // Search debouncing
     @State private var searchDebounceTask: Task<Void, Never>?
@@ -60,6 +71,8 @@ struct ChannelListView: View {
                 allChannelsList
             case .favorites:
                 FavoritesListView(player: player, selectedChannel: $selectedChannel)
+            case .recommended:
+                recommendedChannelsList
             }
         }
         .searchable(text: $searchText, prompt: "Search channels")
@@ -192,6 +205,53 @@ struct ChannelListView: View {
         let cached = await ChannelCache.shared.load(playlistID: playlist.id)
         if !cached.isEmpty {
             channels = cached
+            // Generate recommendations when channels are loaded
+            Task {
+                await recommendationService.generateRecommendations(for: channels)
+            }
+        }
+    }
+
+    // MARK: - Recommended Channels List
+
+    private var recommendedChannelsList: some View {
+        VStack(spacing: 0) {
+            if recommendationService.recommendations.isEmpty {
+                VStack(spacing: 12) {
+                    if recommendationService.isGenerating {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                        Text("Generating recommendations...")
+                            .foregroundColor(.secondary)
+                            .padding(.top, 8)
+                    } else {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        Text("No recommendations yet")
+                            .foregroundColor(.secondary)
+                        Text("Watch some channels to get personalized recommendations")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    ForEach(recommendationService.recommendations) { recommendation in
+                        if let channel = channels.first(where: { $0.name == recommendation.channelName }) {
+                            ChannelRow(
+                                channel: channel,
+                                nowPlaying: nowPlaying[channel.id],
+                                onPlay: { play(channel) }
+                            )
+                        }
+                    }
+                }
+                .listStyle(.plain)
+            }
         }
     }
 
@@ -511,18 +571,20 @@ private struct FilterChip: View {
 // MARK: - Tab enum
 
 private enum ListTab: String, CaseIterable {
-    case all, favorites
+    case all, favorites, recommended
 
     var label: String {
         switch self {
         case .all:       return "All"
         case .favorites: return "Favorites"
+        case .recommended: return "For You"
         }
     }
     var icon: String {
         switch self {
         case .all:       return "list.bullet"
         case .favorites: return "star.fill"
+        case .recommended: return "sparkles"
         }
     }
 }
