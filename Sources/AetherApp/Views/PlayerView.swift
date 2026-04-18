@@ -20,6 +20,10 @@ struct PlayerView: View {
     @State private var showTimeline = false
     /// Cancellation token for in-flight EPG fetch (debounce for rapid channel changes).
     @State private var epgFetchTask: Task<Void, Never>?
+    /// EPG timeline overlay visibility (hover/interaction)
+    @State private var showEPGOverlay = false
+    /// Auto-hide timer for EPG overlay
+    @State private var overlayHideTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -34,6 +38,20 @@ struct PlayerView: View {
                         .overlay(alignment: .bottomLeading) {
                             stateOverlay
                                 .padding([.horizontal, .bottom], 20)
+                        }
+                        .overlay(alignment: .bottom) {
+                            // EPG Timeline Overlay (bottom, auto-hide)
+                            if showEPGOverlay, let current = nowPlaying {
+                                EPGTimelineOverlay(current: current, next: nextUp)
+                                    .padding(.horizontal, 20)
+                                    .padding(.bottom, 16)
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                            }
+                        }
+                        .onHover { hovering in
+                            if hovering {
+                                showEPGOverlayWithAutoHide()
+                            }
                         }
 
                     // Subtitle overlay — non-interactive
@@ -148,6 +166,126 @@ struct PlayerView: View {
         nowPlaying = await epgStore.service.nowPlaying(for: cid, at: now)
         nextUp    = await epgStore.service.nextUp(for: cid, at: now)
         allEPGEntries = await epgStore.service.entries(for: cid)
+    }
+
+    @MainActor
+    private func showEPGOverlayWithAutoHide() {
+        // Cancel any existing hide task
+        overlayHideTask?.cancel()
+
+        // Show overlay
+        withAnimation(.easeInOut(duration: 0.25)) {
+            showEPGOverlay = true
+        }
+
+        // Schedule auto-hide after 3 seconds
+        overlayHideTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.25)) {
+                showEPGOverlay = false
+            }
+        }
+    }
+}
+
+// MARK: - EPGTimelineOverlay
+
+@MainActor
+struct EPGTimelineOverlay: View {
+    let current: EPGEntry
+    let next: EPGEntry?
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .none
+        f.timeStyle = .short
+        return f
+    }()
+
+    private var timeRemaining: String {
+        let remaining = current.end.timeIntervalSince(Date())
+        guard remaining > 0 else { return "Ending soon" }
+        let minutes = Int(remaining / 60)
+        if minutes < 60 {
+            return "\(minutes) min left"
+        } else {
+            let hours = minutes / 60
+            let mins = minutes % 60
+            return "\(hours)h \(mins)m left"
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Current program
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(current.title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text(timeRemaining)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                Spacer()
+            }
+
+            // Progress bar
+            EPGOverlayProgressBar(entry: current)
+
+            // Next program
+            if let next {
+                HStack(spacing: 6) {
+                    Text("NEXT:")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.6))
+                    Text(next.title)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .lineLimit(1)
+                    Text("·")
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text(Self.timeFormatter.string(from: next.start))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.black.opacity(0.75))
+                .background(.ultraThinMaterial.opacity(0.5))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+        )
+        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+    }
+}
+
+// MARK: - EPGOverlayProgressBar
+
+struct EPGOverlayProgressBar: View {
+    let entry: EPGEntry
+    @State private var progress: Double = 0
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(.white.opacity(0.2))
+                    .frame(height: 3)
+                Capsule()
+                    .fill(.white)
+                    .frame(width: geo.size.width * progress, height: 3)
+            }
+        }
+        .frame(height: 3)
+        .onAppear { progress = entry.progress() }
+        .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) { _ in
+            withAnimation(.linear(duration: 1)) { progress = entry.progress() }
+        }
     }
 }
 

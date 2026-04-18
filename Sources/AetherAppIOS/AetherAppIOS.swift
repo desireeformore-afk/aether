@@ -8,6 +8,7 @@ import AetherUI
 struct AetherAppIOS: App {
     @StateObject private var playerCore = PlayerCore()
     @StateObject private var epgStore = EPGStore()
+    @StateObject private var themeService = ThemeService()
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -16,6 +17,7 @@ struct AetherAppIOS: App {
             IOSContentView(playerCore: playerCore)
                 .environmentObject(epgStore)
                 .environmentObject(playerCore)
+                .environmentObject(themeService)
                 .sheet(isPresented: .constant(!hasCompletedOnboarding)) {
                     OnboardingView(isPresented: Binding(
                         get: { !hasCompletedOnboarding },
