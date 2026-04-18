@@ -1,76 +1,46 @@
-# Aether Session Report - Sprint 15 Complete
-**Date:** 2026-04-18 07:34-07:50 UTC  
-**Branch:** main  
-**Latest Commit:** 0866827
+# Aether Development Session Report
 
-## ✅ Completed Tasks
+## Sprint 14 - Playlist Filters & Groups (In Progress)
 
-### 1. Global Content Search (VOD + Series)
-- **File:** `Sources/AetherApp/Views/GlobalContentSearchView.swift`
-- Unified search across Movies and Series from XstreamService
-- Filter buttons (All/Movies/Series)
-- Grid layout with ContentCard components
-- Loading states and error handling
-- **Integration:** Added "Search" button to FloatingChannelPanel
+### Completed
+1. **Category Filters** - Added TV/Movies/Series filter chips to ChannelListView
+   - ContentCategory enum (Wszystkie/TV/Filmy/Seriale)
+   - Smart categorization based on group title keywords
+   - Filter state persisted across searches
+   - Commit: f42996a
 
-### 2. Menu Bar Widget (macOS)
-- **File:** `Sources/AetherApp/StatusBar/StatusBarController.swift`
-- Shows current playing channel name and logo in menu bar
-- Quick access to favorite channels
-- Mini player controls (play/pause, stop, next/prev, mute)
-- Volume slider
-- Auto-refreshes favorites every 5s
-- Integrated into AetherApp.swift
+2. **Collapsed Groups Persistence** - Store/restore collapsed state per playlist
+   - UserDefaults storage with playlist-specific key
+   - Auto-save on collapse/expand
+   - Commit: 339ccbc
 
-### 3. Player Stability Fixes
-- **File:** `Sources/AetherCore/Player/PlayerCore.swift`
-- Fixed memory leak: Added `removeNotificationObservers()` to deinit
-- Improved user feedback: State updates to `.loading` when retrying failed streams
-- Fixed documentation: Removed force unwrap example
-- **File:** `Sources/AetherCore/Player/BufferingConfig.swift`
-- Added `audioTimePitchAlgorithm = .lowQualityZeroLatency` for better interruption handling
+3. **Polish Localization** - GlobalContentSearchView fully translated
+   - Search placeholder, filter buttons, empty states
+   - Category badges (Film/Serial)
 
-## 🔧 Bug Fixes Applied
-1. **Memory Leak:** Notification observers not cleaned up in deinit
-2. **UX Issue:** No visual feedback when stream retry happens
-3. **Documentation:** Force unwrap in example code
+### Current State
+- Branch: main @ 339ccbc
+- CI: Not checked yet
+- Claude Code: Timeout issues - continuing manual implementation
 
-## 📊 Code Changes
-- **5 files modified**
-- **+311 lines / -50 lines**
-- **2 commits pushed:**
-  - `184b46d` - Sprint 15 main features
-  - `0866827` - Critical bug fixes
+### Remaining Sprint 14 Tasks
+1. Dark/Light mode toggle
+2. Theme Engine implementation
+3. Better VOD/Series categorization in XstreamService
+4. "Show All Groups" / "Show Only Active" toggle
 
-## 🛠️ Tools Used
-- **Claude Code CLI:** Used for code analysis and implementation
-- Successfully identified memory leaks and concurrency issues
-- Applied fixes for observer cleanup and state management
+### Technical Notes
+- Category filter uses keyword matching: "movie"/"film"/"vod" → Movies, "series"/"serial"/"show" → Series
+- Collapsed groups stored as JSON-encoded Set<String> in UserDefaults
+- Filter logic runs off main thread via Task.detached for performance
 
-## ✅ CI Status
-- Push successful to origin/main
-- GitHub Actions: (monitoring required - API 404 on public endpoint)
+### Next Steps
+1. Push current changes
+2. Check GitHub Actions
+3. Continue with Dark/Light mode toggle
+4. Implement Theme Engine
 
-## 🎯 Sprint 15 Status: COMPLETE
-
-All planned features delivered:
-- ✅ Global Search with VOD/Series aggregation
-- ✅ Menu Bar Widget with now playing + favorites
-- ✅ Player stability improvements (memory leaks fixed)
-
-## 📝 Next Steps (Sprint 16)
-1. EPG Timeline view with program guide
-2. Playlist filters and groups
-3. Dark/Light mode toggle
-4. Theme engine implementation
-5. iOS/tvOS Xcode project setup
-
-## 🔍 Known Issues
-- GitHub Actions API returns 404 (token permissions or private repo)
-- Swift not available in Linux environment (expected - macOS app)
-
-## 💾 Environment
-- **OS:** Ubuntu 24.04.4 LTS (Linux)
-- **Repo:** /home/hermes/aether
-- **Claude Code:** v2.1.110
-- **API:** right.codes/claude-aws proxy
+### Issues
+- Claude Code CLI hangs on all invocations (timeout after 20s)
+- API key works for Hermes but not for standalone Claude Code
+- Continuing with manual implementation
