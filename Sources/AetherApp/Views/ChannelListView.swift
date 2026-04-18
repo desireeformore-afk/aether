@@ -24,7 +24,10 @@ struct ChannelListView: View {
     @State private var nowPlaying: [String: EPGEntry] = [:]
     @State private var activeTab: ListTab = .all
     @State private var collapsedGroups: Set<String> = []
+    @State private var viewMode: ChannelViewMode = .list
     @FocusState private var isSearchFocused: Bool
+
+    @AppStorage("channelViewMode") private var savedViewMode: String = ChannelViewMode.list.rawValue
 
     // Pagination for large playlists
     @State private var displayedChannelCount = 100
@@ -63,6 +66,17 @@ struct ChannelListView: View {
         .navigationTitle(playlist.name)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
+                // View mode toggle
+                Picker("View Mode", selection: $viewMode) {
+                    ForEach(ChannelViewMode.allCases, id: \.self) { mode in
+                        Label(mode.label, systemImage: mode.icon).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .help("Toggle View Mode")
+            }
+
+            ToolbarItem(placement: .primaryAction) {
                 Button(action: { Task { await refresh() } }) {
                     if isRefreshing {
                         ProgressView().scaleEffect(0.7)
@@ -90,6 +104,11 @@ struct ChannelListView: View {
         }
         #endif
         .task {
+            // Load saved view mode
+            if let mode = ChannelViewMode(rawValue: savedViewMode) {
+                viewMode = mode
+            }
+
             await loadFromCache()
             let cacheAge = await ChannelCache.shared.lastModified(playlistID: playlist.id)
                 .map { Date().timeIntervalSince($0) } ?? .infinity
@@ -97,6 +116,9 @@ struct ChannelListView: View {
                 await refresh()
             }
             await refreshEPG()
+        }
+        .onChange(of: viewMode) { _, newMode in
+            savedViewMode = newMode.rawValue
         }
         // Recompute memoized lists whenever inputs change
         .onChange(of: channels)      { _, _ in
@@ -208,14 +230,19 @@ struct ChannelListView: View {
             if channels.isEmpty && !isRefreshing {
                 emptyState
             } else {
-                channelList
+                switch viewMode {
+                case .list:
+                    channelListView
+                case .grid:
+                    channelGridView
+                }
             }
         }
     }
 
     // MARK: - Channel list (virtualized)
 
-    private var channelList: some View {
+    private var channelListView: some View {
         List(selection: $selectedChannel) {
             if !searchText.isEmpty {
                 // Flat list when searching — fully lazy, OS only renders visible rows
@@ -255,6 +282,28 @@ struct ChannelListView: View {
             }
         }
         .listStyle(.inset)
+        .overlay(alignment: .top) {
+            if isRefreshing {
+                ProgressView()
+                    .scaleEffect(0.8)
+                    .padding(8)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(.top, 8)
+            }
+        }
+    }
+
+    // MARK: - Channel grid view
+
+    private var channelGridView: some View {
+        ChannelGridView(
+            channels: cachedGrouped.flatMap(\.channels),
+            selectedChannel: selectedChannel,
+            onSelect: { channel in
+                play(channel)
+            },
+            nowPlaying: nowPlaying
+        )
         .overlay(alignment: .top) {
             if isRefreshing {
                 ProgressView()
