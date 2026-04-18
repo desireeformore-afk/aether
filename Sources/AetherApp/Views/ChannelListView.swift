@@ -280,9 +280,10 @@ struct ChannelListView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
+                let recommendations: [RecommendationService.ChannelRecommendation] = recommendationService.recommendations
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(recommendationService.recommendations) { recommendation in
+                        ForEach(recommendations) { recommendation in
                             if let channel = channels.first(where: { $0.name == recommendation.channelName }) {
                                 ChannelRow(
                                     channel: channel,
@@ -294,7 +295,6 @@ struct ChannelListView: View {
                         }
                     }
                 }
-                .listStyle(.plain)
             }
         }
     }
