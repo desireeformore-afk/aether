@@ -112,6 +112,18 @@ struct SettingsView: View {
                     Text("Never").tag(0.0)
                 }
 
+                Toggle("Background Auto-Refresh", isOn: Binding(
+                    get: { epgRefreshInterval > 0 },
+                    set: { enabled in
+                        if !enabled {
+                            epgRefreshInterval = 0
+                        } else if epgRefreshInterval == 0 {
+                            epgRefreshInterval = 3600
+                        }
+                    }
+                ))
+                .help("Automatically refresh EPG data in the background.")
+
                 Button("Refresh Now") {
                     Task { await epgStore.loadGuide(from: epgStore.currentEPGURL ?? URL(string: "about:blank")!, forceRefresh: true) }
                 }
