@@ -30,8 +30,9 @@ public final class SeriesManager: ObservableObject {
         let completionPercent = duration.map { position / $0 } ?? 0
         let isCompleted = completionPercent >= 0.9
 
+        let episodeID = episode.id
         let descriptor = FetchDescriptor<WatchProgressRecord>(
-            predicate: #Predicate { $0.contentID == episode.id }
+            predicate: #Predicate { $0.contentID == episodeID }
         )
 
         if let existing = try? modelContext.fetch(descriptor).first {
@@ -66,8 +67,9 @@ public final class SeriesManager: ObservableObject {
     /// - Parameter episode: The episode to query.
     /// - Returns: Watch progress record if found.
     public func progress(for episode: Episode) -> WatchProgressRecord? {
+        let episodeID = episode.id
         let descriptor = FetchDescriptor<WatchProgressRecord>(
-            predicate: #Predicate { $0.contentID == episode.id }
+            predicate: #Predicate { $0.contentID == episodeID }
         )
         return try? modelContext.fetch(descriptor).first
     }
@@ -165,8 +167,9 @@ public final class SeriesManager: ObservableObject {
     /// - Parameter seriesName: Name of the series.
     /// - Returns: The series record.
     public func seriesRecord(for seriesName: String) -> SeriesRecord {
+        let name = seriesName
         let descriptor = FetchDescriptor<SeriesRecord>(
-            predicate: #Predicate { $0.name == seriesName }
+            predicate: #Predicate { $0.name == name }
         )
 
         if let existing = try? modelContext.fetch(descriptor).first {
@@ -216,8 +219,9 @@ public final class SeriesManager: ObservableObject {
     ///   - totalEpisodes: Total number of episodes in the series.
     /// - Returns: Tuple of (watched count, in-progress count, unwatched count).
     public func watchStats(for seriesName: String, totalEpisodes: Int) -> (watched: Int, inProgress: Int, unwatched: Int) {
+        let name = seriesName
         let descriptor = FetchDescriptor<WatchProgressRecord>(
-            predicate: #Predicate { $0.seriesName == seriesName }
+            predicate: #Predicate { $0.seriesName == name }
         )
 
         guard let records = try? modelContext.fetch(descriptor) else {

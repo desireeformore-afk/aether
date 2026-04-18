@@ -20,8 +20,9 @@ public final class MovieManager: ObservableObject {
     ///
     /// - Parameter movie: The movie to add or update.
     public func addOrUpdate(_ movie: Movie) {
+        let movieID = movie.id
         let descriptor = FetchDescriptor<MovieRecord>(
-            predicate: #Predicate { $0.id == movie.id }
+            predicate: #Predicate { $0.id == movieID }
         )
 
         if let existing = try? modelContext.fetch(descriptor).first {
@@ -54,8 +55,9 @@ public final class MovieManager: ObservableObject {
     /// - Parameter id: Movie identifier.
     /// - Returns: Movie record if found.
     public func movieRecord(for id: UUID) -> MovieRecord? {
+        let movieID = id
         let descriptor = FetchDescriptor<MovieRecord>(
-            predicate: #Predicate { $0.id == id }
+            predicate: #Predicate { $0.id == movieID }
         )
         return try? modelContext.fetch(descriptor).first
     }
@@ -86,8 +88,9 @@ public final class MovieManager: ObservableObject {
         let completionPercent = duration.map { position / $0 } ?? 0
         let isCompleted = completionPercent >= 0.9
 
+        let movieID = movie.id
         let descriptor = FetchDescriptor<WatchProgressRecord>(
-            predicate: #Predicate { $0.contentID == movie.id }
+            predicate: #Predicate { $0.contentID == movieID }
         )
 
         if let existing = try? modelContext.fetch(descriptor).first {
@@ -120,8 +123,9 @@ public final class MovieManager: ObservableObject {
     /// - Parameter movie: The movie to query.
     /// - Returns: Watch progress record if found.
     public func progress(for movie: Movie) -> WatchProgressRecord? {
+        let movieID = movie.id
         let descriptor = FetchDescriptor<WatchProgressRecord>(
-            predicate: #Predicate { $0.contentID == movie.id }
+            predicate: #Predicate { $0.contentID == movieID }
         )
         return try? modelContext.fetch(descriptor).first
     }
@@ -177,8 +181,9 @@ public final class MovieManager: ObservableObject {
     /// - Parameter genre: Genre to filter by.
     /// - Returns: Array of movie records matching the genre.
     public func movies(byGenre genre: String) -> [MovieRecord] {
+        let genreValue = genre
         let descriptor = FetchDescriptor<MovieRecord>(
-            predicate: #Predicate { $0.genre == genre },
+            predicate: #Predicate { $0.genre == genreValue },
             sortBy: [SortDescriptor(\.title)]
         )
         return (try? modelContext.fetch(descriptor)) ?? []
@@ -189,9 +194,10 @@ public final class MovieManager: ObservableObject {
     /// - Parameter year: Release year to filter by.
     /// - Returns: Array of movie records from that year.
     public func movies(byYear year: Int) -> [MovieRecord] {
+        let yearValue = year
         let descriptor = FetchDescriptor<MovieRecord>(
-            predicate: #Predicate { $0.year == year },
-            sortBy: [SortDescriptor(\.title)]
+            predicate: #Predicate { $0.year == yearValue },
+            sortBy: [SortDescriptor(\\.title)]
         )
         return (try? modelContext.fetch(descriptor)) ?? []
     }
