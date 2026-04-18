@@ -314,7 +314,7 @@ struct SettingsView: View {
 
             Section("Actions") {
                 Button("Clear All Statistics") {
-                    analyticsService.clearAllStatistics()
+                    analyticsService.clearStatistics()
                 }
                 .help("Clear all viewing statistics and analytics data")
 
@@ -347,7 +347,9 @@ struct SettingsView: View {
 
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
-            analyticsService.exportStatistics(to: url)
+            if let data = analyticsService.exportStatistics() {
+                try? data.write(to: url)
+            }
         }
     }
 

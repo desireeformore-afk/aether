@@ -246,11 +246,11 @@ public final class SubtitleStylingSettings: ObservableObject {
         if let italic = dict["isItalic"] as? Bool {
             isItalic = italic
         }
-        if let hex = dict["textColor"] as? String {
-            textColor = Color(hex: hex)
+        if let hex = dict["textColor"] as? String, let color = Color(hex: hex) {
+            textColor = color
         }
-        if let hex = dict["backgroundColor"] as? String {
-            backgroundColor = Color(hex: hex)
+        if let hex = dict["backgroundColor"] as? String, let color = Color(hex: hex) {
+            backgroundColor = color
         }
         if let opacity = dict["backgroundOpacity"] as? Double {
             backgroundOpacity = opacity
@@ -258,8 +258,8 @@ public final class SubtitleStylingSettings: ObservableObject {
         if let outline = dict["hasOutline"] as? Bool {
             hasOutline = outline
         }
-        if let hex = dict["outlineColor"] as? String {
-            outlineColor = Color(hex: hex)
+        if let hex = dict["outlineColor"] as? String, let color = Color(hex: hex) {
+            outlineColor = color
         }
         if let width = dict["outlineWidth"] as? Double {
             outlineWidth = width

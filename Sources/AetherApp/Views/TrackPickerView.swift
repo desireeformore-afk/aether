@@ -70,7 +70,9 @@ public struct TrackPickerView: View {
                 List(trackService.audioTracks) { track in
                     Button(action: {
                         if let item = playerItem {
-                            trackService.selectAudioTrack(track, for: item)
+                            Task {
+                                try? await trackService.selectAudioTrack(track, for: item)
+                            }
                         }
                     }) {
                         HStack {
@@ -121,12 +123,14 @@ public struct TrackPickerView: View {
                     get: { trackService.subtitlesEnabled },
                     set: { enabled in
                         if let item = playerItem {
-                            if enabled {
-                                if let firstTrack = trackService.subtitleTracks.first {
-                                    trackService.selectSubtitleTrack(firstTrack, for: item)
+                            Task {
+                                if enabled {
+                                    if let firstTrack = trackService.subtitleTracks.first {
+                                        try? await trackService.selectSubtitleTrack(firstTrack, for: item)
+                                    }
+                                } else {
+                                    try? await trackService.selectSubtitleTrack(nil, for: item)
                                 }
-                            } else {
-                                trackService.selectSubtitleTrack(nil, for: item)
                             }
                         }
                     }
@@ -155,7 +159,9 @@ public struct TrackPickerView: View {
                 List(trackService.subtitleTracks) { track in
                     Button(action: {
                         if let item = playerItem {
-                            trackService.selectSubtitleTrack(track, for: item)
+                            Task {
+                                try? await trackService.selectSubtitleTrack(track, for: item)
+                            }
                         }
                     }) {
                         HStack {
