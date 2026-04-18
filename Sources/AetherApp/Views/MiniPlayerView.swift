@@ -146,7 +146,7 @@ public final class MiniPlayerWindowController: ObservableObject {
             get: { self.isShowing },
             set: { self.isShowing = $0 }
         ))
-        .environmentObject(EPGStore())
+        .environment(EPGStore())
 
         let hostingController = NSHostingController(rootView: contentView)
 

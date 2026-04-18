@@ -105,7 +105,7 @@ struct PlaylistSidebar: View {
     #if os(macOS)
     private var settingsSheet: some View {
         SettingsView()
-            .environmentObject(EPGStore())
+            .environment(EPGStore())
             .frame(width: 600, height: 500)
     }
     #endif
