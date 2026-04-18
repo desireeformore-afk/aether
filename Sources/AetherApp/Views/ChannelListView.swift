@@ -139,7 +139,6 @@ struct ChannelListView: View {
             if channels.isEmpty || cacheAge > 3600 {
                 await refresh()
             }
-            await refreshEPG()
         }
         .onChange(of: viewMode) { _, newMode in
             savedViewMode = newMode.rawValue
@@ -288,12 +287,9 @@ struct ChannelListView: View {
     // MARK: - Favorites Channels List
 
     private var favoritesChannelsList: some View {
-        let favoriteChannels = channels.filter { channel in
-            let descriptor = FetchDescriptor<FavoriteRecord>(
-                predicate: #Predicate { $0.channelID == channel.id }
-            )
-            return (try? modelContext.fetch(descriptor).first) != nil
-        }
+        let favoriteIDs = (try? modelContext.fetch(FetchDescriptor<FavoriteRecord>())) ?? []
+        let favoriteChannelIDs = Set(favoriteIDs.map { $0.channelID })
+        let favoriteChannels = channels.filter { favoriteChannelIDs.contains($0.id) }
         
         return VStack(spacing: 0) {
             if favoriteChannels.isEmpty {
