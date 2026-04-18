@@ -47,8 +47,9 @@ public final class HTTPBypassProtocol: URLProtocol {
     public override class func canonicalRequest(for request: URLRequest) -> URLRequest {
         return request
     }
-    public override func startLoading() {
+    nonisolated public override func startLoading() {
         let request = self.request
+        guard let client = self.client else { return }
 
         var mutableRequest = request
 
@@ -64,12 +65,8 @@ public final class HTTPBypassProtocol: URLProtocol {
         print("[HTTPBypassProtocol] Starting load: \(request.url?.absoluteString ?? "unknown")")
         #endif
 
-        dataTask = Self.bypassSession.dataTask(with: mutableRequest) { [weak self] data, response, error in
-            guard let self = self else { return }
-            
+        let task = Self.bypassSession.dataTask(with: mutableRequest) { data, response, error in
             DispatchQueue.main.async {
-                guard let client = self.client else { return }
-
                 if let error = error {
                     #if DEBUG
                     print("[HTTPBypassProtocol] Error: \(error.localizedDescription)")
@@ -97,8 +94,9 @@ public final class HTTPBypassProtocol: URLProtocol {
                 client.urlProtocolDidFinishLoading(self)
             }
         }
-
-        dataTask?.resume()
+        
+        dataTask = task
+        task.resume()
     }
     
     public override func stopLoading() {
