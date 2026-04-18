@@ -50,11 +50,13 @@ public final class VoiceCommandService: ObservableObject {
             recognitionTask?.cancel()
             recognitionTask = nil
         }
-        
+
+        #if os(iOS)
         let audioSession = AVAudioSession.sharedInstance()
         try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-        
+        #endif
+
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         
         guard let recognitionRequest = recognitionRequest else {
@@ -115,9 +117,9 @@ public final class VoiceCommandService: ObservableObject {
                 playChannel(named: channelName)
             }
         } else if lowercased.contains("next") || lowercased.contains("skip") {
-            playerCore?.nextChannel()
+            playerCore?.playNext()
         } else if lowercased.contains("previous") || lowercased.contains("back") {
-            playerCore?.previousChannel()
+            playerCore?.playPrevious()
         } else if lowercased.contains("pause") || lowercased.contains("stop") {
             playerCore?.pause()
         } else if lowercased.contains("resume") || lowercased.contains("continue") {
@@ -162,7 +164,7 @@ public final class VoiceCommandService: ObservableObject {
         }
         
         if let channel = matchingChannel {
-            playerCore?.play(channel: channel)
+            playerCore?.play(channel)
         }
     }
     #endif

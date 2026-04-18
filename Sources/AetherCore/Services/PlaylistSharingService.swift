@@ -30,8 +30,7 @@ public final class PlaylistSharingService: ObservableObject {
 
         let shareable = ShareablePlaylist(
             name: playlist.name,
-            url: playlist.url,
-            type: playlist.type,
+            url: playlist.url.absoluteString,
             channelCount: channelCount,
             expiresAt: expiresAt,
             isPublic: isPublic,
@@ -89,10 +88,14 @@ public final class PlaylistSharingService: ObservableObject {
         }
 
         // Create playlist from shareable
+        guard let url = URL(string: shareable.url) else {
+            throw SharingError.invalidShareCode
+        }
+
         return Playlist(
             name: shareable.name,
-            url: shareable.url,
-            type: shareable.type
+            url: url,
+            channels: []
         )
     }
 
