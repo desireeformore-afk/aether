@@ -283,7 +283,7 @@ struct ChannelListView: View {
                 let recommendations: [RecommendationService.ChannelRecommendation] = recommendationService.recommendations
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(recommendations) { recommendation in
+                        ForEach(recommendations, id: \.id) { recommendation in
                             if let channel = channels.first(where: { $0.name == recommendation.channelName }) {
                                 ChannelRow(
                                     channel: channel,
