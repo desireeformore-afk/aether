@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(Intents)
 import Intents
+#endif
 
 @MainActor
 public final class ShortcutsService: ObservableObject {
@@ -9,9 +11,12 @@ public final class ShortcutsService: ObservableObject {
     public var channelProvider: (() -> [Channel])?
     
     private init() {
+        #if canImport(Intents)
         donateShortcuts()
+        #endif
     }
     
+    #if canImport(Intents)
     private func donateShortcuts() {
         // Donate "Play Favorite Channel" shortcut
         let playFavoriteIntent = PlayChannelIntent()
@@ -24,6 +29,7 @@ public final class ShortcutsService: ObservableObject {
             }
         }
     }
+    #endif
     
     public func handlePlayChannel(channelName: String) {
         guard let channels = channelProvider?() else { return }
@@ -54,6 +60,7 @@ public final class ShortcutsService: ObservableObject {
     }
 }
 
+#if canImport(Intents)
 // Intent definitions would go in separate Intents.intentdefinition file
 public class PlayChannelIntent: INIntent {
     @NSManaged public var channelName: String?
@@ -66,3 +73,4 @@ public class PreviousChannelIntent: INIntent {}
 public class ToggleParentalControlsIntent: INIntent {}
 
 public class StartRecordingIntent: INIntent {}
+#endif

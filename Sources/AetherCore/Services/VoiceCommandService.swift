@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(Speech)
 import Speech
+#endif
 import AVFoundation
 
 @MainActor
@@ -8,20 +10,27 @@ public final class VoiceCommandService: ObservableObject {
     
     @Published public private(set) var isListening = false
     @Published public private(set) var lastCommand: String?
+    
+    #if canImport(Speech)
     @Published public private(set) var authorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
     
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
+    #endif
+    
     private let audioEngine = AVAudioEngine()
     
     public weak var playerCore: PlayerCore?
     public var channelProvider: (() -> [Channel])?
     
     private init() {
+        #if canImport(Speech)
         requestAuthorization()
+        #endif
     }
     
+    #if canImport(Speech)
     public func requestAuthorization() {
         SFSpeechRecognizer.requestAuthorization { [weak self] status in
             Task { @MainActor in
@@ -156,6 +165,7 @@ public final class VoiceCommandService: ObservableObject {
             playerCore?.play(channel: channel)
         }
     }
+    #endif
 }
 
 public enum VoiceCommandError: Error {

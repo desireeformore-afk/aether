@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(Network)
 import Network
+#endif
 
 @MainActor
 public final class RemoteControlService: ObservableObject {
@@ -9,13 +11,16 @@ public final class RemoteControlService: ObservableObject {
     @Published public private(set) var serverPort: UInt16 = 8080
     @Published public private(set) var connectedClients: [RemoteClient] = []
     
+    #if canImport(Network)
     private var listener: NWListener?
     private var connections: [NWConnection] = []
+    #endif
     
     public weak var playerCore: PlayerCore?
     
     private init() {}
     
+    #if canImport(Network)
     public func startServer(port: UInt16 = 8080) throws {
         guard !isServerRunning else { return }
         
@@ -48,14 +53,17 @@ public final class RemoteControlService: ObservableObject {
     }
     
     public func stopServer() {
+        #if canImport(Network)
         listener?.cancel()
         connections.forEach { $0.cancel() }
         connections.removeAll()
+        #endif
         connectedClients.removeAll()
         isServerRunning = false
     }
     
     private func handleNewConnection(_ connection: NWConnection) {
+        #if canImport(Network)
         connections.append(connection)
         
         let client = RemoteClient(
@@ -76,9 +84,11 @@ public final class RemoteControlService: ObservableObject {
         
         connection.start(queue: .main)
         receiveMessage(from: connection)
+        #endif
     }
     
     private func receiveMessage(from connection: NWConnection) {
+        #if canImport(Network)
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, isComplete, error in
             Task { @MainActor in
                 if let data = data, !data.isEmpty {
@@ -90,9 +100,11 @@ public final class RemoteControlService: ObservableObject {
                 }
             }
         }
+        #endif
     }
     
     private func handleMessage(_ data: Data, from connection: NWConnection) {
+        #if canImport(Network)
         guard let message = try? JSONDecoder().decode(RemoteCommand.self, from: data) else {
             return
         }
@@ -124,14 +136,18 @@ public final class RemoteControlService: ObservableObject {
         }
         
         sendResponse(to: connection, success: true)
+        #endif
     }
     
     private func sendResponse(to connection: NWConnection, success: Bool) {
+        #if canImport(Network)
         let response = RemoteResponse(success: success, timestamp: Date())
         if let data = try? JSONEncoder().encode(response) {
             connection.send(content: data, completion: .idempotent)
         }
+        #endif
     }
+    #endif
     
     private func findChannel(by id: String) -> Channel? {
         // This would need access to PlaylistManager
