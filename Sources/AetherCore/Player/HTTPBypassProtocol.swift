@@ -47,11 +47,11 @@ public final class HTTPBypassProtocol: URLProtocol {
     public override class func canonicalRequest(for request: URLRequest) -> URLRequest {
         return request
     }
-    
     public override func startLoading() {
-        guard let client = client else { return }
-
-        var mutableRequest = (request as NSURLRequest).mutableCopy() as? URLRequest ?? request
+        let request = self.request
+        nonisolated(unsafe) let client = self.client
+        
+        var mutableRequest = request
         
         // Add standard headers if missing
         if mutableRequest.value(forHTTPHeaderField: "User-Agent") == nil {

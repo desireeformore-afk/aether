@@ -2,7 +2,7 @@ import SwiftUI
 import AetherCore
 
 struct WatchPartyView: View {
-    @StateObject private var watchParty = WatchPartyService.shared
+    @State private var watchParty = WatchPartyService.shared
     @State private var partyCodeInput = ""
     @State private var messageInput = ""
     @State private var showError = false

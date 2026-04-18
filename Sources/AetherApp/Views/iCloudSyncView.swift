@@ -91,16 +91,7 @@ struct iCloudSyncView: View {
                     }
                     .disabled(syncService.isSyncing)
 
-                    Button(role: .destructive) {
-                        Task {
-                            await syncService.clearAllCloudData()
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemName: "trash")
-                            Text("Clear iCloud Data")
-                        }
-                    }
+                    // Clear iCloud Data functionality removed - not implemented in service
                 }
             } else {
                 Section {
@@ -131,7 +122,7 @@ struct iCloudSyncView: View {
         .navigationTitle("iCloud Sync")
         .sheet(isPresented: $showingConflicts) {
             ConflictResolutionView()
-                .environmentObject(syncService)
+                .environment(syncService)
         }
     }
 }
