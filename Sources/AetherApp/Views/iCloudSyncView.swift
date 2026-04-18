@@ -78,7 +78,7 @@ struct iCloudSyncView: View {
                     SyncItemRow(icon: "gearshape.fill", title: "Settings", description: "App preferences and settings")
                 }
 
-                Section("") {
+                Section {
                     Button {
                         Task {
                             await syncService.syncAll()
