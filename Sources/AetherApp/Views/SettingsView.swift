@@ -44,6 +44,10 @@ struct SettingsView: View {
             appearanceTab
                 .tabItem { Label("Appearance", systemImage: "paintbrush") }
                 .tag("appearance")
+
+            parentalControlsTab
+                .tabItem { Label("Parental Controls", systemImage: "lock.shield") }
+                .tag("parental")
         }
         .padding(20)
         .frame(width: 480)
@@ -248,6 +252,14 @@ struct SettingsView: View {
             .padding()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Parental Controls Tab
+
+    @StateObject private var parentalService = ParentalControlService()
+
+    private var parentalControlsTab: some View {
+        ParentalControlsView(service: parentalService)
     }
 
     // MARK: - Playlist Import/Export

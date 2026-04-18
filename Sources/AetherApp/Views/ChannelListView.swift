@@ -10,6 +10,7 @@ import AetherCore
 struct ChannelListView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var epgStore: EPGStore
+    @EnvironmentObject private var parentalService: ParentalControlService
 
     let playlist: PlaylistRecord
     @Binding var selectedChannel: Channel?
@@ -306,12 +307,23 @@ struct ChannelListView: View {
 
     private func channelRow(_ ch: Channel) -> some View {
         let epgKey = ch.epgId ?? ch.name
-        return ChannelRow(
-            channel: ch,
-            isPlaying: player.currentChannel == ch,
-            epgEntry: nowPlaying[epgKey],
-            showFavoriteButton: true
-        )
+        let isBlocked = parentalService.settings.isEnabled && !parentalService.isChannelAllowed(ch)
+
+        return HStack {
+            ChannelRow(
+                channel: ch,
+                isPlaying: player.currentChannel == ch,
+                epgEntry: nowPlaying[epgKey],
+                showFavoriteButton: true
+            )
+
+            if isBlocked {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .help("Restricted by parental controls")
+            }
+        }
         .onTapGesture { play(ch) }
     }
 

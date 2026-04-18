@@ -9,6 +9,7 @@ struct PlayerView: View {
     @EnvironmentObject private var epgStore: EPGStore
     @EnvironmentObject private var sleepTimer: SleepTimerService
     @EnvironmentObject private var subtitleStore: SubtitleStore
+    @EnvironmentObject private var parentalService: ParentalControlService
 
     @ObservedObject var player: PlayerCore
 
@@ -24,6 +25,10 @@ struct PlayerView: View {
     @State private var showEPGOverlay = false
     /// Auto-hide timer for EPG overlay
     @State private var overlayHideTask: Task<Void, Never>?
+    /// Parental control lock state
+    @State private var showPINLock = false
+    @State private var blockedChannel: Channel?
+    @State private var blockReason: String?
 
     var body: some View {
         ZStack {
@@ -88,8 +93,38 @@ struct PlayerView: View {
                     .padding(.horizontal)
                     .padding(.bottom)
             }
+
+            // PIN Lock Overlay
+            if showPINLock, let channel = blockedChannel, let reason = blockReason {
+                PINLockView(
+                    reason: reason,
+                    service: parentalService,
+                    onUnlock: {
+                        showPINLock = false
+                        blockedChannel = nil
+                        blockReason = nil
+                    },
+                    onCancel: {
+                        showPINLock = false
+                        blockedChannel = nil
+                        blockReason = nil
+                        player.stop()
+                    }
+                )
+            }
         }
         .onChange(of: player.currentChannel) { _, newChannel in
+            // Check parental controls
+            if let channel = newChannel {
+                if !parentalService.isChannelAllowed(channel) {
+                    blockedChannel = channel
+                    blockReason = parentalService.getBlockReason(for: channel)
+                    showPINLock = true
+                    player.pause()
+                    return
+                }
+            }
+
             // Cancel any in-flight EPG fetch (debounce for rapid zap/prev/next)
             epgFetchTask?.cancel()
             epgFetchTask = Task {

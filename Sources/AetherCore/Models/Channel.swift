@@ -35,6 +35,9 @@ public struct Channel: Identifiable, Sendable, Hashable {
     /// EPG identifier for matching with electronic program guide data.
     public var epgId: String?
 
+    /// Age rating for parental control filtering.
+    public var ageRating: AgeRating?
+
     /// Creates a new channel.
     ///
     /// - Parameters:
@@ -44,13 +47,15 @@ public struct Channel: Identifiable, Sendable, Hashable {
     ///   - logoURL: Optional logo image URL.
     ///   - groupTitle: Category or group. Defaults to "Uncategorized".
     ///   - epgId: EPG identifier for program guide matching.
+    ///   - ageRating: Age rating for parental controls.
     public init(
         id: UUID = UUID(),
         name: String,
         streamURL: URL,
         logoURL: URL? = nil,
         groupTitle: String = "Uncategorized",
-        epgId: String? = nil
+        epgId: String? = nil,
+        ageRating: AgeRating? = nil
     ) {
         self.id = id
         self.name = name
@@ -58,5 +63,6 @@ public struct Channel: Identifiable, Sendable, Hashable {
         self.logoURL = logoURL
         self.groupTitle = groupTitle
         self.epgId = epgId
+        self.ageRating = ageRating
     }
 }
