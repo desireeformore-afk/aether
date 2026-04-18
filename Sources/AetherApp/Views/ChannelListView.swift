@@ -29,6 +29,9 @@ struct ChannelListView: View {
     @State private var cachedGrouped: [(group: String, channels: [Channel])] = []
     @State private var cachedAllGroups: [String] = []
 
+    // Search debouncing
+    @State private var searchDebounceTask: Task<Void, Never>?
+
     // MARK: - Body
 
     var body: some View {
@@ -92,8 +95,19 @@ struct ChannelListView: View {
         }
         // Recompute memoized lists whenever inputs change
         .onChange(of: channels)      { _, _ in recomputeFiltered() }
-        .onChange(of: searchText)    { _, _ in recomputeFiltered() }
+        .onChange(of: searchText)    { _, _ in debouncedRecompute() }
         .onChange(of: selectedGroup) { _, _ in recomputeFiltered() }
+    }
+
+    // MARK: - Search debouncing
+
+    private func debouncedRecompute() {
+        searchDebounceTask?.cancel()
+        searchDebounceTask = Task {
+            try? await Task.sleep(for: .milliseconds(150))
+            guard !Task.isCancelled else { return }
+            recomputeFiltered()
+        }
     }
 
     // MARK: - Memoized filter (runs off main thread via Task)
