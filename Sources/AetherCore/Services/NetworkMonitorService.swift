@@ -26,9 +26,7 @@ public final class NetworkMonitorService: ObservableObject {
     }
 
     deinit {
-        Task { @MainActor in
-            await stopMonitoring()
-        }
+        monitor.cancel()
     }
 
     // MARK: - Monitoring

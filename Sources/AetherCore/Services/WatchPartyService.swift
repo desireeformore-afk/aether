@@ -94,7 +94,7 @@ public final class WatchPartyService: ObservableObject {
 
         if isHosting {
             // Broadcast current playback state
-            let currentTime = playerCore.player.currentTime().seconds
+            let currentTime = playerCore.currentTime
             let isPlaying = playerCore.state == .playing
             syncPlayback(position: currentTime, isPlaying: isPlaying)
         } else if isJoined {

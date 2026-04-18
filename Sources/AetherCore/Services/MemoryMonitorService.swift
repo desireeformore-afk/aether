@@ -53,12 +53,9 @@ public final class MemoryMonitorService: ObservableObject {
         self.originalCache = URLCache.shared
         setupMemoryMonitoring()
     }
-    
+
     deinit {
         memoryCheckTimer?.invalidate()
-        // Restore original cache settings
-        URLCache.shared.memoryCapacity = originalCache.memoryCapacity
-        URLCache.shared.diskCapacity = originalCache.diskCapacity
     }
 
     private func setupMemoryMonitoring() {

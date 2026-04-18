@@ -36,7 +36,7 @@ public enum PlaylistImporter {
             throw ImportError.invalidFormat
         }
 
-        let channels = M3UParser.parse(content: content)
+        let channels = try M3UParser.parse(content: content)
 
         guard !channels.isEmpty else {
             throw ImportError.noChannels
