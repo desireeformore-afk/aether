@@ -25,6 +25,7 @@ public struct ChannelRowView: View {
             }
             .frame(width: 36, height: 36)
             .clipShape(RoundedRectangle(cornerRadius: 6))
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(channel.name)
@@ -44,5 +45,18 @@ public struct ChannelRowView: View {
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityDescription)
+    }
+
+    private var accessibilityDescription: String {
+        var description = channel.name
+        if let title = epgTitle {
+            description += ", now playing: \(title)"
+        }
+        if isSelected {
+            description += ", currently selected"
+        }
+        return description
     }
 }
