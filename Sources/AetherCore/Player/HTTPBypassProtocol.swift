@@ -50,6 +50,7 @@ public final class HTTPBypassProtocol: URLProtocol {
     nonisolated public override func startLoading() {
         let request = self.request
         guard let client = self.client else { return }
+        let protocolInstance = self
 
         var mutableRequest = request
 
@@ -66,12 +67,12 @@ public final class HTTPBypassProtocol: URLProtocol {
         #endif
 
         let task = Self.bypassSession.dataTask(with: mutableRequest) { data, response, error in
-            DispatchQueue.main.async {
+            MainActor.assumeIsolated {
                 if let error = error {
                     #if DEBUG
                     print("[HTTPBypassProtocol] Error: \(error.localizedDescription)")
                     #endif
-                    client.urlProtocol(self, didFailWithError: error)
+                    client.urlProtocol(protocolInstance, didFailWithError: error)
                     return
                 }
 
@@ -81,17 +82,17 @@ public final class HTTPBypassProtocol: URLProtocol {
                         print("[HTTPBypassProtocol] Response: \(httpResponse.statusCode)")
                     }
                     #endif
-                    client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+                    client.urlProtocol(protocolInstance, didReceive: response, cacheStoragePolicy: .notAllowed)
                 }
 
                 if let data = data {
                     #if DEBUG
                     print("[HTTPBypassProtocol] Loaded \(data.count) bytes")
                     #endif
-                    client.urlProtocol(self, didLoad: data)
+                    client.urlProtocol(protocolInstance, didLoad: data)
                 }
 
-                client.urlProtocolDidFinishLoading(self)
+                client.urlProtocolDidFinishLoading(protocolInstance)
             }
         }
         
