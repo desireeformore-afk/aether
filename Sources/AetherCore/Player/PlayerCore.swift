@@ -351,9 +351,10 @@ public final class PlayerCore: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
+            let item = notification.object as? AVPlayerItem
             Task { @MainActor [weak self] in
                 guard let self,
-                      let item = notification.object as? AVPlayerItem,
+                      let item,
                       item === self.player.currentItem else { return }
                 self.scheduleRetry(for: item)
             }
@@ -365,9 +366,10 @@ public final class PlayerCore: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
+            let item = notification.object as? AVPlayerItem
             Task { @MainActor [weak self] in
                 guard let self,
-                      let item = notification.object as? AVPlayerItem,
+                      let item,
                       item === self.player.currentItem else { return }
                 self.scheduleRetry(for: item)
             }
