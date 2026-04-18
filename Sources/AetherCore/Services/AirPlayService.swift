@@ -25,7 +25,9 @@ public final class AirPlayService: ObservableObject {
     public func setPlayer(_ player: AVPlayer) {
         self.player = player
         player.allowsExternalPlayback = true
+        #if os(iOS) || os(tvOS)
         player.usesExternalPlaybackWhileExternalScreenIsActive = true
+        #endif
         updateAirPlayStatus()
     }
 
@@ -81,7 +83,9 @@ public final class AirPlayService: ObservableObject {
     public func setPlayer(_ player: AVPlayer) {
         self.player = player
         player.allowsExternalPlayback = true
+        #if os(iOS) || os(tvOS)
         player.usesExternalPlaybackWhileExternalScreenIsActive = true
+        #endif
         updateAirPlayStatus()
     }
 
