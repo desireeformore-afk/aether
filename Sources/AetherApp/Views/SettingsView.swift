@@ -48,6 +48,10 @@ struct SettingsView: View {
             parentalControlsTab
                 .tabItem { Label("Parental Controls", systemImage: "lock.shield") }
                 .tag("parental")
+
+            advancedTab
+                .tabItem { Label("Advanced", systemImage: "gearshape.2") }
+                .tag("advanced")
         }
         .padding(20)
         .frame(width: 480)
@@ -260,6 +264,67 @@ struct SettingsView: View {
 
     private var parentalControlsTab: some View {
         ParentalControlsView(service: parentalService)
+    }
+
+    // MARK: - Advanced Tab
+
+    @StateObject private var crashReportingService = CrashReportingService()
+    @State private var showCrashReports = false
+
+    private var advancedTab: some View {
+        Form {
+            Section("Crash Reporting") {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Crash Reports")
+                            .font(.body)
+                        Text("\(crashReportingService.crashReports.count) reports")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Button("View Reports") {
+                        showCrashReports = true
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                Button("Report a Bug") {
+                    reportBug()
+                }
+                .help("Open GitHub issues page to report a bug")
+            }
+
+            Section("Debug") {
+                Toggle("Enable Debug Logging", isOn: .constant(false))
+                    .help("Enable verbose logging for troubleshooting")
+
+                Button("Clear All Caches") {
+                    clearAllCaches()
+                }
+                .help("Clear EPG cache, logo cache, and temporary files")
+            }
+        }
+        .formStyle(.grouped)
+        .sheet(isPresented: $showCrashReports) {
+            CrashReportsView(service: crashReportingService)
+        }
+    }
+
+    private func reportBug() {
+        if let url = URL(string: "https://github.com/desireeformore-afk/aether/issues") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    private func clearAllCaches() {
+        Task {
+            await epgStore.clearCache()
+            URLCache.shared.removeAllCachedResponses()
+            refreshCacheSize()
+        }
     }
 
     // MARK: - Playlist Import/Export

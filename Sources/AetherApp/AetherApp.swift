@@ -29,6 +29,7 @@ struct AetherApp: App {
     @StateObject private var timeshiftService = TimeshiftService()
     @StateObject private var trackService = TrackService()
     @StateObject private var miniPlayerController: MiniPlayerWindowController
+    @StateObject private var crashReportingService = CrashReportingService()
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
