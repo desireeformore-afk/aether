@@ -296,8 +296,10 @@ struct ChannelListView: View {
         let navList = cachedGrouped
             .first(where: { $0.group == channel.groupTitle })?
             .channels ?? cachedGrouped.flatMap(\.channels)
-        player.channelList = navList
-        player.play(channel)
+        Task { @MainActor in
+            player.channelList = navList
+            player.play(channel)
+        }
     }
 
     // MARK: - Refresh
@@ -443,8 +445,10 @@ private struct FavoritesListView: View {
 
     private func play(_ channel: Channel) {
         selectedChannel = channel
-        player.channelList = favorites.compactMap { $0.toChannel() }
-        player.play(channel)
+        Task { @MainActor in
+            player.channelList = favorites.compactMap { $0.toChannel() }
+            player.play(channel)
+        }
     }
 }
 

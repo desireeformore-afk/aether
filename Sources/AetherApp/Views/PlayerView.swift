@@ -126,7 +126,9 @@ struct PlayerView: View {
         case .error(let msg):
             ErrorRetryView(message: msg) {
                 if let channel = player.currentChannel {
-                    player.play(channel)
+                    Task { @MainActor in
+                        player.play(channel)
+                    }
                 }
             }
         default:

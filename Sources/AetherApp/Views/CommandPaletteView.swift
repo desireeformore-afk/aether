@@ -126,9 +126,11 @@ struct CommandPaletteView: View {
     private func commitSelection() {
         guard !results.isEmpty, results.indices.contains(selectedIndex) else { return }
         let channel = results[selectedIndex]
-        player.channelList = channels
-        player.play(channel)
         isPresented = false
+        Task { @MainActor in
+            player.channelList = channels
+            player.play(channel)
+        }
     }
 }
 

@@ -227,6 +227,8 @@ private struct VODDetailSheet: View {
             groupTitle: "VOD",
             epgId: nil
         )
-        player.play(channel)
+        Task { @MainActor in
+            player.play(channel)
+        }
     }
 }

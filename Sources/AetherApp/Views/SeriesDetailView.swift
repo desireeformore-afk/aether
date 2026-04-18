@@ -130,6 +130,8 @@ struct SeriesDetailView: View {
             groupTitle: "Series",
             epgId: nil
         )
-        player.play(channel)
+        Task { @MainActor in
+            player.play(channel)
+        }
     }
 }

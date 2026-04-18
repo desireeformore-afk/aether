@@ -60,8 +60,10 @@ struct IOSChannelListView: View {
 
     private func selectAndPlay(_ channel: Channel) {
         selectedChannel = channel
-        player.channelList = filteredChannels
-        player.play(channel)
+        Task { @MainActor in
+            player.channelList = filteredChannels
+            player.play(channel)
+        }
     }
 
     @MainActor
