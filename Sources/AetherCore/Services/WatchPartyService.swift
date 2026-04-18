@@ -7,9 +7,9 @@ public final class WatchPartyService {
     
     @Published public private(set) var isHosting = false
     @Published public private(set) var isJoined = false
-    @Published public private(set) var partyCode: String?
-    @Published public private(set) var participants: [Participant] = []
-    @Published public private(set) var chatMessages: [ChatMessage] = []
+10|    public private(set) var partyCode: String?
+11|    public private(set) var participants: [Participant] = []
+12|    public private(set) var chatMessages: [ChatMessage] = []
     
     private var syncTimer: Timer?
     

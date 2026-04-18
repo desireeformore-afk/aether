@@ -126,8 +126,9 @@ public struct MiniPlayerView: View {
 
 /// Mini player window controller.
 @MainActor
-public final class MiniPlayerWindowController: ObservableObject {
-    @Published public var isShowing = false
+@Observable
+public final class MiniPlayerWindowController {
+    public var isShowing = false
 
     private var window: NSWindow?
     private let player: PlayerCore

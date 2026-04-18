@@ -3,14 +3,15 @@ import AetherCore
 import Combine
 
 @MainActor
-final class SubtitleStore: ObservableObject {
+@Observable
+final class SubtitleStore {
     let service = SubtitleService()
 
-    @Published private(set) var tracks: [SubtitleTrack] = []
-    @Published private(set) var cues: [SubtitleCue] = []
-    @Published private(set) var currentCue: SubtitleCue? = nil
-    @Published private(set) var isSearching: Bool = false
-    @Published private(set) var lastError: String? = nil
+    private(set) var tracks: [SubtitleTrack] = []
+    private(set) var cues: [SubtitleCue] = []
+    private(set) var currentCue: SubtitleCue? = nil
+    private(set) var isSearching: Bool = false
+    private(set) var lastError: String? = nil
 
     // MARK: - Search & load
 

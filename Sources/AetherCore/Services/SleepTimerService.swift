@@ -30,12 +30,13 @@ public enum SleepTimerDuration: Int, CaseIterable, Identifiable, Sendable {
 /// Manages an auto-stop timer for the player.
 /// When the timer fires, calls `onExpired` (set by the caller — typically `playerCore.stop()`).
 @MainActor
-public final class SleepTimerService: ObservableObject {
+@Observable
+public final class SleepTimerService {
 
     // MARK: - Published
 
-    @Published public private(set) var isActive: Bool = false
-    @Published public private(set) var remainingSeconds: Int = 0
+    public private(set) var isActive: Bool = false
+    public private(set) var remainingSeconds: Int = 0
 
     // MARK: - Callback
 

@@ -191,19 +191,20 @@ public struct SubtitleStylingView: View {
 
 /// Subtitle styling settings.
 @MainActor
-public final class SubtitleStylingSettings: ObservableObject {
-    @Published public var fontFamily: SubtitleFont = .system
-    @Published public var fontSize: Double = 20
-    @Published public var isBold: Bool = false
-    @Published public var isItalic: Bool = false
-    @Published public var textColor: Color = .white
-    @Published public var backgroundColor: Color = .black
-    @Published public var backgroundOpacity: Double = 0.7
-    @Published public var hasOutline: Bool = true
-    @Published public var outlineColor: Color = .black
-    @Published public var outlineWidth: Double = 2
-    @Published public var verticalPosition: SubtitlePosition = .bottom
-    @Published public var bottomMargin: Double = 60
+@Observable
+public final class SubtitleStylingSettings {
+    public var fontFamily: SubtitleFont = .system
+    public var fontSize: Double = 20
+    public var isBold: Bool = false
+    public var isItalic: Bool = false
+    public var textColor: Color = .white
+    public var backgroundColor: Color = .black
+    public var backgroundOpacity: Double = 0.7
+    public var hasOutline: Bool = true
+    public var outlineColor: Color = .black
+    public var outlineWidth: Double = 2
+    public var verticalPosition: SubtitlePosition = .bottom
+    public var bottomMargin: Double = 60
 
     private let userDefaults: UserDefaults
     private let settingsKey = "aether.subtitle.styling"

@@ -3,7 +3,8 @@ import SwiftData
 
 /// Manages movie catalog, watch tracking, and filtering.
 @MainActor
-public final class MovieManager: ObservableObject {
+@Observable
+6|public final class MovieManager {
 
     private let modelContext: ModelContext
 
