@@ -2,76 +2,34 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key>
-    <string>Aether</string>
-    <key>CFBundleDisplayName</key>
-    <string>Aether</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
     <string>com.aether.iptv</string>
-    <key>CFBundleVersion</key>
-    <string>7</string>
-    <key>CFBundleShortVersionString</key>
-    <string>0.7.0</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>Aether</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
-    <key>CFBundleExecutable</key>
-    <string>AetherApp</string>
-    <key>CFBundleIconName</key>
-    <string>AppIcon</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
-    <key>NSPrincipalClass</key>
-    <string>NSApplication</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>NSSupportsAutomaticTermination</key>
-    <false/>
-    <key>NSPersistentStoreCoordinatorDescription</key>
-    <string>Aether IPTV Player for macOS</string>
-    <key>NSURLSessionHTTP3Disable</key>
-    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2026 Aether. All rights reserved.</string>
     <key>NSAppTransportSecurity</key>
     <dict>
-        <!-- Global fallback for macOS 14/15 -->
         <key>NSAllowsArbitraryLoads</key>
         <true/>
-        <key>NSAllowsArbitraryLoadsForMedia</key>
-        <true/>
-        <!-- Explicit domain exceptions for macOS 26+ where global flag may be ignored -->
-        <key>NSExceptionDomains</key>
-        <dict>
-            <key>pro.0699906.xyz</key>
-            <dict>
-                <key>NSExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-                <key>NSExceptionMinimumTLSVersion</key>
-                <string>TLSv1.0</string>
-                <key>NSIncludesSubdomains</key>
-                <true/>
-                <key>NSThirdPartyExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-                <key>NSThirdPartyExceptionMinimumTLSVersion</key>
-                <string>TLSv1.0</string>
-            </dict>
-            <key>photo-tmdb.com</key>
-            <dict>
-                <key>NSExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-                <key>NSIncludesSubdomains</key>
-                <true/>
-                <key>NSThirdPartyExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-            </dict>
-            <key>0699906.xyz</key>
-            <dict>
-                <key>NSExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-                <key>NSIncludesSubdomains</key>
-                <true/>
-                <key>NSThirdPartyExceptionAllowsInsecureHTTPLoads</key>
-                <true/>
-            </dict>
-        </dict>
     </dict>
+    <key>NSSupportsAutomaticTermination</key>
+    <true/>
+    <key>NSSupportsSuddenTermination</key>
+    <true/>
 </dict>
 </plist>
