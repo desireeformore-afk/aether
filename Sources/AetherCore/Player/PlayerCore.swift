@@ -129,6 +129,34 @@ public final class PlayerCore: ObservableObject {
     /// Tracks when the current channel started playing.
     private var watchStartTime: Date?
 
+    public init() {
+        setupMemoryPressureObserver()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private func setupMemoryPressureObserver() {
+        NotificationCenter.default.addObserver(
+            forName: .memoryPressureCritical,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleMemoryPressure()
+        }
+    }
+
+    private func handleMemoryPressure() {
+        // Reduce quality to low on critical memory pressure
+        if selectedQuality != .low {
+            selectedQuality = .low
+        }
+    }
+
+    /// Tracks when the current channel started playing (original).
+    private var watchStartTime: Date?
+
     /// Creates a new player instance.
     public init() {
         // Register HTTP bypass protocol to allow arbitrary HTTP streams (bypasses ATS)

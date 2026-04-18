@@ -32,6 +32,7 @@ struct AetherApp: App {
     @StateObject private var crashReportingService = CrashReportingService()
     @StateObject private var networkMonitor = NetworkMonitorService()
     @StateObject private var offlineQueue: OfflineQueueService
+    @StateObject private var memoryMonitor = MemoryMonitorService()
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -59,6 +60,7 @@ struct AetherApp: App {
                 .environmentObject(miniPlayerController)
                 .environmentObject(networkMonitor)
                 .environmentObject(offlineQueue)
+                .environmentObject(memoryMonitor)
                 .task {
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)

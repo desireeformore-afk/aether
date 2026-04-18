@@ -269,7 +269,9 @@ struct SettingsView: View {
     // MARK: - Advanced Tab
 
     @StateObject private var crashReportingService = CrashReportingService()
+    @StateObject private var memoryMonitor = MemoryMonitorService()
     @State private var showCrashReports = false
+    @State private var showMemoryMonitor = false
 
     private var advancedTab: some View {
         Form {
@@ -297,6 +299,30 @@ struct SettingsView: View {
                 .help("Open GitHub issues page to report a bug")
             }
 
+            Section("Memory Management") {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Memory Status")
+                            .font(.body)
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(memoryPressureColor)
+                                .frame(width: 8, height: 8)
+                            Text(memoryMonitor.memoryPressure.description)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    Button("View Details") {
+                        showMemoryMonitor = true
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+
             Section("Debug") {
                 Toggle("Enable Debug Logging", isOn: .constant(false))
                     .help("Enable verbose logging for troubleshooting")
@@ -310,6 +336,20 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .sheet(isPresented: $showCrashReports) {
             CrashReportsView(service: crashReportingService)
+        }
+        .sheet(isPresented: $showMemoryMonitor) {
+            MemoryMonitorView(memoryMonitor: memoryMonitor)
+        }
+    }
+
+    private var memoryPressureColor: Color {
+        switch memoryMonitor.memoryPressure {
+        case .normal:
+            return .green
+        case .warning:
+            return .orange
+        case .critical:
+            return .red
         }
     }
 
