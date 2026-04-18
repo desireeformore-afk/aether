@@ -55,7 +55,15 @@ public final class MemoryMonitorService: ObservableObject {
     }
 
     deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    public func stop() {
         memoryCheckTimer?.invalidate()
+        memoryCheckTimer = nil
+        // Restore original URLCache settings
+        URLCache.shared.memoryCapacity = originalCache.memoryCapacity
+        URLCache.shared.diskCapacity = originalCache.diskCapacity
     }
 
     private func setupMemoryMonitoring() {
