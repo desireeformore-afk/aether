@@ -89,7 +89,7 @@ public class iCloudSyncService: ObservableObject {
         let results = try await privateDatabase.records(matching: query)
 
         var remotePlaylists: [SyncedPlaylist] = []
-        for (recordID, result) in results.matchResults {
+        for (_, result) in results.matchResults {
             if case .success(let record) = result {
                 if let playlist = try? decodePlaylist(from: record) {
                     remotePlaylists.append(playlist)
@@ -150,7 +150,7 @@ public class iCloudSyncService: ObservableObject {
         let results = try await privateDatabase.records(matching: query)
 
         var remoteFavorites: [SyncedFavorite] = []
-        for (recordID, result) in results.matchResults {
+        for (_, result) in results.matchResults {
             if case .success(let record) = result {
                 if let favorite = try? decodeFavorite(from: record) {
                     remoteFavorites.append(favorite)
@@ -201,7 +201,7 @@ public class iCloudSyncService: ObservableObject {
         let results = try await privateDatabase.records(matching: query)
 
         var remoteHistory: [SyncedWatchHistory] = []
-        for (recordID, result) in results.matchResults {
+        for (_, result) in results.matchResults {
             if case .success(let record) = result {
                 if let history = try? decodeWatchHistory(from: record) {
                     remoteHistory.append(history)
@@ -243,7 +243,6 @@ public class iCloudSyncService: ObservableObject {
     // MARK: - Sync Settings
 
     public func syncSettings() async throws {
-        let recordType = "Settings"
         let recordID = CKRecord.ID(recordName: "user-settings")
 
         do {

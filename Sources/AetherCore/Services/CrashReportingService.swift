@@ -230,7 +230,7 @@ public final class CrashReportingService: ObservableObject {
         sysctlbyname("hw.model", nil, &size, nil, 0)
         var model = [CChar](repeating: 0, count: size)
         sysctlbyname("hw.model", &model, &size, nil, 0)
-        return String(cString: model)
+        return String(decoding: model, as: UTF8.self)
         #else
         return "iOS Device"
         #endif

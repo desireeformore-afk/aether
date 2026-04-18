@@ -68,11 +68,11 @@ public struct ThemePickerView: View {
 
     #if !os(tvOS)
     private func applyCustomGradient() {
-        let startHex = customStart.toHex()
-        let endHex   = customEnd.toHex()
+        guard let startHex = customStart.toHex(),
+              let endHex = customEnd.toHex() else { return }
         var colors   = [startHex]
-        if showMidStop, let mid = customMid {
-            colors.append(mid.toHex())
+        if showMidStop, let mid = customMid, let midHex = mid.toHex() {
+            colors.append(midHex)
         }
         colors.append(endHex)
 
@@ -315,25 +315,4 @@ private enum GradientDirection: String, CaseIterable {
     }
 }
 
-// MARK: - Color → hex helper
-
-private extension Color {
-    func toHex() -> String? {
-        #if os(macOS)
-        guard let nsColor = NSColor(self).usingColorSpace(.sRGB) else { return nil }
-        let r = Int((nsColor.redComponent * 255).rounded())
-        let g = Int((nsColor.greenComponent * 255).rounded())
-        let b = Int((nsColor.blueComponent * 255).rounded())
-        return String(format: "#%02X%02X%02X", r, g, b)
-        #else
-        let uiColor = UIColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
-        return String(format: "#%02X%02X%02X",
-                      Int((r * 255).rounded()),
-                      Int((g * 255).rounded()),
-                      Int((b * 255).rounded()))
-        #endif
-    }
-}
 #endif
