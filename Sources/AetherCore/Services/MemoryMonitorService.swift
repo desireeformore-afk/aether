@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import Darwin
+@preconcurrency import Darwin
 
 extension Notification.Name {
     public static let memoryPressureCritical = Notification.Name("memoryPressureCritical")
