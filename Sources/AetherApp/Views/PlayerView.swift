@@ -467,14 +467,16 @@ struct VideoPlayerLayer: NSViewRepresentable {
             object: nil,
             queue: .main
         ) { [weak view, weak playerCore] _ in
-            guard let view = view, view.allowsPictureInPicturePlayback else { return }
-            if playerCore?.isPiPActive == true {
-                // Exit PiP by setting player to nil temporarily
-                let player = view.player
-                view.player = nil
-                view.player = player
-            } else {
-                // Enter PiP - handled by system controls
+            Task { @MainActor in
+                guard let view = view, view.allowsPictureInPicturePlayback else { return }
+                if playerCore?.isPiPActive == true {
+                    // Exit PiP by setting player to nil temporarily
+                    let player = view.player
+                    view.player = nil
+                    view.player = player
+                } else {
+                    // Enter PiP - handled by system controls
+                }
             }
         }
 
