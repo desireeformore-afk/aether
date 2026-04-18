@@ -43,7 +43,10 @@ public final class TrackService: ObservableObject {
             let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
             if characteristics.contains(.audible),
                let audioOptions = try await asset.loadMediaSelectionGroup(for: .audible) {
-                audioTracks = audioOptions.options.map { AudioTrack.from($0) }
+                audioTracks = []
+                for option in audioOptions.options {
+                    audioTracks.append(await AudioTrack.from(option))
+                }
             }
         } catch {
             // Failed to load audio tracks
@@ -54,7 +57,10 @@ public final class TrackService: ObservableObject {
             let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
             if characteristics.contains(.legible),
                let subtitleOptions = try await asset.loadMediaSelectionGroup(for: .legible) {
-                subtitleTracks = subtitleOptions.options.map { SubtitleTrackInfo.from($0) }
+                subtitleTracks = []
+                for option in subtitleOptions.options {
+                    subtitleTracks.append(await SubtitleTrackInfo.from(option))
+                }
             }
         } catch {
             // Failed to load subtitle tracks
