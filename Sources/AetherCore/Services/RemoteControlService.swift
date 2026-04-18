@@ -113,7 +113,7 @@ public final class RemoteControlService: ObservableObject {
         case "play":
             if let channelID = message.channelID,
                let channel = findChannel(by: channelID) {
-                playerCore?.play(channel: channel)
+                playerCore?.play(channel)
             }
         case "pause":
             playerCore?.pause()
@@ -122,9 +122,9 @@ public final class RemoteControlService: ObservableObject {
         case "stop":
             playerCore?.stop()
         case "next":
-            playerCore?.nextChannel()
+            playerCore?.playNext()
         case "previous":
-            playerCore?.previousChannel()
+            playerCore?.playPrevious()
         case "volume":
             if let volume = message.volume {
                 playerCore?.setVolume(volume)
@@ -155,7 +155,7 @@ public final class RemoteControlService: ObservableObject {
     }
 }
 
-public struct RemoteClient: Identifiable {
+public struct RemoteClient: Identifiable, Sendable {
     public let id: UUID
     public let name: String
     public let connectedAt: Date

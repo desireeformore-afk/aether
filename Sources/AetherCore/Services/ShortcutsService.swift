@@ -39,16 +39,16 @@ public final class ShortcutsService: ObservableObject {
         }
         
         if let channel = matchingChannel {
-            playerCore?.play(channel: channel)
+            playerCore?.play(channel)
         }
     }
     
     public func handleNextChannel() {
-        playerCore?.nextChannel()
+        playerCore?.playNext()
     }
-    
+
     public func handlePreviousChannel() {
-        playerCore?.previousChannel()
+        playerCore?.playPrevious()
     }
     
     public func handleToggleParentalControls() {

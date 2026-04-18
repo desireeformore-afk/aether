@@ -36,13 +36,6 @@ public final class StreamQualityDetector: ObservableObject {
         isAutoDetecting = true
         defer { isAutoDetecting = false }
 
-        // Access the AVAsset to inspect HLS variants
-        let asset = item.asset
-        guard let urlAsset = asset as? AVURLAsset else {
-            availableQualities = [.auto]
-            return
-        }
-
         // For HLS streams, we can inspect the master playlist
         // In a real implementation, you'd parse the m3u8 to extract variants
         // For now, we'll provide standard presets
@@ -54,8 +47,8 @@ public final class StreamQualityDetector: ObservableObject {
     private func startBitrateMonitoring() {
         guard let player else { return }
 
-        // Observe access log events to track current bitrate
-        bitrateObserver = player.observe(\.currentItem?.accessLog, options: [.new]) { [weak self] _, _ in
+        // Observe current item changes to track bitrate
+        bitrateObserver = player.observe(\.currentItem, options: [.new]) { [weak self] _, _ in
             Task { @MainActor [weak self] in
                 self?.updateCurrentBitrate()
             }
