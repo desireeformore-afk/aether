@@ -1,5 +1,5 @@
 import AVFoundation
-import Combine
+@preconcurrency import Combine
 import Foundation
 
 /// Playback state of ``PlayerCore``.
@@ -149,8 +149,17 @@ public final class PlayerCore: ObservableObject {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+
+    /// Stops the player and cleans up resources.
+    public func stop() {
+        player.pause()
+        player.replaceCurrentItem(with: nil)
         statusObserver?.cancel()
         statusObserver = nil
+        endWatchSession()
+        currentChannel = nil
+        state = .idle
     }
 
     private func setupMemoryPressureObserver() {
