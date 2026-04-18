@@ -59,69 +59,18 @@ struct ChannelListView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("", selection: $activeTab) {
-                ForEach(ListTab.allCases, id: \.self) { tab in
-                    Label(tab.label, systemImage: tab.icon).tag(tab)
-                }
+        contentView
+            .searchable(text: $searchText, prompt: "Search channels")
+            .navigationTitle(playlist.name)
+            .toolbar { toolbarContent }
+            #if os(macOS)
+            .onKeyPress(.init("f"), phases: .down) { event in
+                guard event.modifiers.contains(.command) else { return .ignored }
+                isSearchFocused = true
+                return .handled
             }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-
-            Divider()
-
-            switch activeTab {
-            case .all:
-                allChannelsList
-            case .favorites:
-                favoritesChannelsList
-            case .recommended:
-                recommendedChannelsList
-            }
-        }
-        .searchable(text: $searchText, prompt: "Search channels")
-        .navigationTitle(playlist.name)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                // View mode toggle
-                Picker("View Mode", selection: $viewMode) {
-                    ForEach(ChannelViewMode.allCases, id: \.self) { mode in
-                        Label(mode.label, systemImage: mode.icon).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .help("Toggle View Mode")
-            }
-
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: { Task { await refresh() } }) {
-                    if isRefreshing {
-                        ProgressView().scaleEffect(0.7)
-                    } else {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                }
-                .disabled(isRefreshing)
-                .help("Refresh Playlist")
-            }
-            ToolbarItem(placement: .primaryAction) {
-                NavigationLink {
-                    PlaylistHealthView(playlist: playlist, channels: channels)
-                } label: {
-                    Image(systemName: "waveform.badge.magnifyingglass")
-                }
-                .help("Check Playlist Health")
-            }
-        }
-        #if os(macOS)
-        .onKeyPress(.init("f"), phases: .down) { event in
-            guard event.modifiers.contains(.command) else { return .ignored }
-            isSearchFocused = true
-            return .handled
-        }
-        #endif
-        .task {
+            #endif
+            .task {
             // Load saved view mode
             if let mode = ChannelViewMode(rawValue: savedViewMode) {
                 viewMode = mode
@@ -313,6 +262,73 @@ struct ChannelListView: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - Content View
+    
+    private var contentView: some View {
+        VStack(spacing: 0) {
+            tabPicker
+            Divider()
+            tabContent
+        }
+    }
+    
+    private var tabPicker: some View {
+        Picker("", selection: $activeTab) {
+            ForEach(ListTab.allCases, id: \.self) { tab in
+                Label(tab.label, systemImage: tab.icon).tag(tab)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+    
+    @ViewBuilder
+    private var tabContent: some View {
+        switch activeTab {
+        case .all:
+            allChannelsList
+        case .favorites:
+            favoritesChannelsList
+        case .recommended:
+            recommendedChannelsList
+        }
+    }
+    
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Picker("View Mode", selection: $viewMode) {
+                ForEach(ChannelViewMode.allCases, id: \.self) { mode in
+                    Label(mode.label, systemImage: mode.icon).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .help("Toggle View Mode")
+        }
+        
+        ToolbarItem(placement: .primaryAction) {
+            Button(action: { Task { await refresh() } }) {
+                if isRefreshing {
+                    ProgressView().scaleEffect(0.7)
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                }
+            }
+            .disabled(isRefreshing)
+            .help("Refresh Playlist")
+        }
+        
+        ToolbarItem(placement: .primaryAction) {
+            NavigationLink {
+                PlaylistHealthView(playlist: playlist, channels: channels)
+            } label: {
+                Image(systemName: "waveform.badge.magnifyingglass")
+            }
+            .help("Check Playlist Health")
         }
     }
 
