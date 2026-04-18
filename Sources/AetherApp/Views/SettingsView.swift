@@ -53,6 +53,10 @@ struct SettingsView: View {
                 .tabItem { Label("Analytics", systemImage: "chart.bar") }
                 .tag("analytics")
 
+            iCloudSyncView()
+                .tabItem { Label("iCloud Sync", systemImage: "icloud") }
+                .tag("icloud")
+
             advancedTab
                 .tabItem { Label("Advanced", systemImage: "gearshape.2") }
                 .tag("advanced")

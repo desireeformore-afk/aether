@@ -34,6 +34,7 @@ struct AetherApp: App {
     @StateObject private var offlineQueue: OfflineQueueService
     @StateObject private var memoryMonitor = MemoryMonitorService()
     @StateObject private var analyticsService = AnalyticsService()
+    @StateObject private var iCloudSync = iCloudSyncService()
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -77,6 +78,7 @@ struct AetherApp: App {
                 .environmentObject(offlineQueue)
                 .environmentObject(memoryMonitor)
                 .environmentObject(analyticsService)
+                .environmentObject(iCloudSync)
                 .task {
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)
