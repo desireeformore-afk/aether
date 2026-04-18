@@ -10,7 +10,7 @@ import UIKit
 /// Grid of theme cards. Tapping selects a theme.
 /// On macOS/iOS also shows a custom gradient builder section.
 public struct ThemePickerView: View {
-    @EnvironmentObject private var themeService: ThemeService
+    @Environment(ThemeService.self) private var themeService
 
     // Custom gradient state (macOS/iOS only)
     #if !os(tvOS)

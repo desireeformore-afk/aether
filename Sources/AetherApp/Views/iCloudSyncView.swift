@@ -164,7 +164,7 @@ struct SyncItemRow: View {
 }
 
 struct ConflictResolutionView: View {
-    @EnvironmentObject var syncService: iCloudSyncService
+    @Environment(iCloudSyncService.self) var syncService
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
