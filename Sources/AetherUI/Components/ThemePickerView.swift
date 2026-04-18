@@ -1,6 +1,10 @@
 import SwiftUI
 import AetherCore
 
+#if os(macOS)
+import AppKit
+#endif
+
 /// Picker for selecting a visual theme.
 public struct ThemePickerView: View {
     @EnvironmentObject private var themeService: ThemeService
@@ -48,11 +52,19 @@ private struct ThemeCard: View {
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(cardBackgroundColor)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .strokeBorder(isSelected ? theme.accentColor : .clear, lineWidth: 2)
                 )
         )
+    }
+    
+    private var cardBackgroundColor: Color {
+        #if os(macOS)
+        return Color(nsColor: .controlBackgroundColor)
+        #else
+        return Color(uiColor: .secondarySystemBackground)
+        #endif
     }
 }
