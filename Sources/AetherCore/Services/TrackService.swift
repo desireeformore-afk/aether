@@ -75,17 +75,15 @@ public final class TrackService: ObservableObject {
     // MARK: - Track Selection
 
     /// Select an audio track.
-    public func selectAudioTrack(_ track: AudioTrack, for playerItem: AVPlayerItem) async {
+    public func selectAudioTrack(_ track: AudioTrack, for playerItem: AVPlayerItem) async throws {
         guard let asset = playerItem.asset as? AVURLAsset else { return }
 
-        do {
-            let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
-            if characteristics.contains(.audible),
-               let group = try await asset.loadMediaSelectionGroup(for: .audible),
-               let option = group.options.first(where: { $0.displayName == track.id }) {
-                playerItem.select(option, in: group)
-                selectedAudioTrack = track
-            }
+        let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+        if characteristics.contains(.audible),
+           let group = try await asset.loadMediaSelectionGroup(for: .audible),
+           let option = group.options.first(where: { $0.displayName == track.id }) {
+            playerItem.select(option, in: group)
+            selectedAudioTrack = track
         }
     }
 
@@ -138,13 +136,13 @@ public final class TrackService: ObservableObject {
     }
 
     /// Load and apply track preferences for a channel.
-    public func loadPreferences(for channelId: UUID, playerItem: AVPlayerItem) {
+    public func loadPreferences(for channelId: UUID, playerItem: AVPlayerItem) async {
         guard let prefs = trackPreferences[channelId] else { return }
 
         // Apply audio preference
         if let audioLang = prefs.preferredAudioLanguage,
            let track = audioTracks.first(where: { $0.languageCode == audioLang }) {
-            selectAudioTrack(track, for: playerItem)
+            try? await selectAudioTrack(track, for: playerItem)
         }
 
         // Apply subtitle preference
@@ -152,9 +150,9 @@ public final class TrackService: ObservableObject {
         if subtitlesEnabled,
            let subtitleLang = prefs.preferredSubtitleLanguage,
            let track = subtitleTracks.first(where: { $0.languageCode == subtitleLang }) {
-            selectSubtitleTrack(track, for: playerItem)
+            await selectSubtitleTrack(track, for: playerItem)
         } else if !subtitlesEnabled {
-            selectSubtitleTrack(nil, for: playerItem)
+            await selectSubtitleTrack(nil, for: playerItem)
         }
     }
 
