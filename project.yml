@@ -3,113 +3,105 @@ options:
   bundleIdPrefix: com.aether
   deploymentTarget:
     macOS: "14.0"
-  generateEmptyDirectories: true
-  createIntermediateGroups: true
+    iOS: "17.0"
+    tvOS: "17.0"
+  developmentLanguage: en
+  xcodeVersion: "15.0"
 
 settings:
   base:
-    SWIFT_VERSION: 6.0
-    DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
-    ALWAYS_SEARCH_USER_PATHS: NO
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
 
 targets:
-
-  # ── AetherCore ─────────────────────────────────────────────────────────
-  AetherCore:
-    type: framework
-    platform: macOS
-    deploymentTarget: "14.0"
-    sources:
-      - path: Sources/AetherCore
-        excludes:
-          - "**/*.md"
-    settings:
-      base:
-        PRODUCT_NAME: AetherCore
-        DEFINES_MODULE: YES
-        SKIP_INSTALL: YES
-        GENERATE_INFOPLIST_FILE: YES
-
-  # ── AetherUI ───────────────────────────────────────────────────────────
-  AetherUI:
-    type: framework
-    platform: macOS
-    deploymentTarget: "14.0"
-    sources:
-      - path: Sources/AetherUI
-        excludes:
-          - "**/*.md"
-    dependencies:
-      - target: AetherCore
-    settings:
-      base:
-        PRODUCT_NAME: AetherUI
-        DEFINES_MODULE: YES
-        SKIP_INSTALL: YES
-        GENERATE_INFOPLIST_FILE: YES
-
-  # ── AetherApp ──────────────────────────────────────────────────────────
-  AetherApp:
+  Aether:
     type: application
     platform: macOS
     deploymentTarget: "14.0"
     sources:
       - path: Sources/AetherApp
-        excludes:
-          - "Resources/**"
-          - "**/*.md"
-    resources:
-      - path: Sources/AetherApp/Resources/Assets.xcassets
-    infoPlist: Sources/AetherApp/Resources/Info.plist
-    dependencies:
-      - target: AetherCore
-      - target: AetherUI
+      - path: Sources/AetherCore
+      - path: Sources/AetherUI
+    info:
+      path: Aether/Info.plist
+      properties:
+        CFBundleIdentifier: com.aether.iptv
+        CFBundleName: Aether
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.aether.iptv
         PRODUCT_NAME: Aether
-        EXECUTABLE_NAME: AetherApp
-        GENERATE_INFOPLIST_FILE: NO
-        CODE_SIGN_ENTITLEMENTS: Sources/AetherApp/Resources/AetherApp.entitlements
-        CODE_SIGN_STYLE: Manual
-        CODE_SIGN_IDENTITY: "-"
-        DEVELOPMENT_TEAM: ""
-        ENABLE_HARDENED_RUNTIME: NO
-        ENABLE_APP_SANDBOX: NO
-        CODE_SIGNING_REQUIRED: NO
-        CODE_SIGNING_ALLOWED: NO
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
-
-  # ── AetherTests ────────────────────────────────────────────────────────
-  AetherTests:
-    type: bundle.unit-test
-    platform: macOS
-    deploymentTarget: "14.0"
-    sources:
-      - path: Sources/AetherTests
-        excludes:
-          - "**/*.md"
+        PRODUCT_BUNDLE_IDENTIFIER: com.aether.iptv
+        INFOPLIST_FILE: Aether/Info.plist
+        SWIFT_VERSION: "6.0"
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
     dependencies:
-      - target: AetherCore
+      - framework: SwiftUI.framework
+        implicit: true
+      - framework: AVKit.framework
+        implicit: true
+      - framework: AVFoundation.framework
+        implicit: true
 
-schemes:
-  Aether:
-    build:
-      targets:
-        AetherApp: all
-        AetherCore: all
-        AetherUI: all
-    run:
-      config: Debug
-      executable: AetherApp
-    test:
-      config: Debug
-      targets:
-        - name: AetherTests
-          parallelizable: true
-    profile:
-      config: Release
-      executable: AetherApp
-    archive:
-      config: Release
+  AetheriOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Sources/AetherAppIOS
+      - path: Sources/AetherCore
+      - path: Sources/AetherUI
+    info:
+      path: AetheriOS/Info.plist
+      properties:
+        CFBundleIdentifier: com.aether.iptv.ios
+        CFBundleName: Aether
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+    settings:
+      base:
+        PRODUCT_NAME: Aether
+        PRODUCT_BUNDLE_IDENTIFIER: com.aether.iptv.ios
+        INFOPLIST_FILE: AetheriOS/Info.plist
+        SWIFT_VERSION: "6.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+    dependencies:
+      - framework: SwiftUI.framework
+        implicit: true
+      - framework: AVKit.framework
+        implicit: true
+      - framework: AVFoundation.framework
+        implicit: true
+
+  AethertvOS:
+    type: application
+    platform: tvOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Sources/AetherApptvOS
+      - path: Sources/AetherCore
+      - path: Sources/AetherUI
+    info:
+      path: AethertvOS/Info.plist
+      properties:
+        CFBundleIdentifier: com.aether.iptv.tvos
+        CFBundleName: Aether
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+    settings:
+      base:
+        PRODUCT_NAME: Aether
+        PRODUCT_BUNDLE_IDENTIFIER: com.aether.iptv.tvos
+        INFOPLIST_FILE: AethertvOS/Info.plist
+        SWIFT_VERSION: "6.0"
+        TVOS_DEPLOYMENT_TARGET: "17.0"
+    dependencies:
+      - framework: SwiftUI.framework
+        implicit: true
+      - framework: AVKit.framework
+        implicit: true
+      - framework: AVFoundation.framework
+        implicit: true
