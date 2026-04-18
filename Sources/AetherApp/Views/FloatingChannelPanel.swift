@@ -11,6 +11,7 @@ struct FloatingChannelPanel: View {
 
     @State private var showVODBrowser = false
     @State private var showSeriesBrowser = false
+    @State private var showGlobalSearch = false
     #if os(macOS)
     @State private var showSettings = false
     #endif
@@ -55,6 +56,17 @@ struct FloatingChannelPanel: View {
                                 .buttonStyle(.bordered)
                                 .sheet(isPresented: $showSeriesBrowser) {
                                     SeriesBrowserView(credentials: creds, player: player)
+                                }
+
+                                Button(action: { showGlobalSearch = true }) {
+                                    Label("Search All", systemImage: "magnifyingglass")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .sheet(isPresented: $showGlobalSearch) {
+                                    GlobalContentSearchView(
+                                        xstreamService: XstreamService(credentials: creds)
+                                    )
                                 }
                             }
                             .padding(12)
