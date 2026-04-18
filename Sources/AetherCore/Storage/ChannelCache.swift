@@ -12,12 +12,11 @@ public actor ChannelCache {
     private let cacheDir: URL
 
     private init() {
-        guard let appSupport = FileManager.default.urls(
+        let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
-        ).first else {
-            fatalError("Could not locate Application Support directory")
-        }
+        ).first ?? FileManager.default.temporaryDirectory
+
         cacheDir = appSupport.appendingPathComponent("Aether/ChannelCache", isDirectory: true)
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
     }

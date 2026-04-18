@@ -340,11 +340,13 @@ public final class PlayerCore: ObservableObject {
         // Failed to play to end
         failedObserver = center.addObserver(
             forName: .AVPlayerItemFailedToPlayToEndTime,
-            object: item,
+            object: nil,
             queue: .main
-        ) { [weak self, weak item] _ in
-            Task { @MainActor [weak self, weak item] in
-                guard let self, let item else { return }
+        ) { [weak self] notification in
+            Task { @MainActor [weak self] in
+                guard let self,
+                      let item = notification.object as? AVPlayerItem,
+                      item === self.player.currentItem else { return }
                 self.scheduleRetry(for: item)
             }
         }
@@ -352,11 +354,13 @@ public final class PlayerCore: ObservableObject {
         // Playback stalled
         stallObserver = center.addObserver(
             forName: .AVPlayerItemPlaybackStalled,
-            object: item,
+            object: nil,
             queue: .main
-        ) { [weak self, weak item] _ in
-            Task { @MainActor [weak self, weak item] in
-                guard let self, let item else { return }
+        ) { [weak self] notification in
+            Task { @MainActor [weak self] in
+                guard let self,
+                      let item = notification.object as? AVPlayerItem,
+                      item === self.player.currentItem else { return }
                 self.scheduleRetry(for: item)
             }
         }
@@ -383,6 +387,7 @@ public final class PlayerCore: ObservableObject {
     private func observePlayerItem(_ item: AVPlayerItem) {
         // Cancel previous observer to prevent memory leaks
         statusObserver?.cancel()
+        statusObserver = nil
 
         statusObserver = item.publisher(for: \.status)
             .receive(on: RunLoop.main)
@@ -402,5 +407,13 @@ public final class PlayerCore: ObservableObject {
                     break
                 }
             }
+    }
+
+    deinit {
+        statusObserver?.cancel()
+        statusObserver = nil
+        if let obs = stalledObserver { NotificationCenter.default.removeObserver(obs) }
+        if let obs = failedObserver { NotificationCenter.default.removeObserver(obs) }
+        player.replaceCurrentItem(with: nil)
     }
 }

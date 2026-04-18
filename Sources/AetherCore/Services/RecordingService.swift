@@ -230,27 +230,3 @@ public final class RecordingService: ObservableObject {
         userDefaults.set(data, forKey: settingsKey)
     }
 }
-
-/// Errors related to recording operations.
-public enum RecordingError: Error, LocalizedError {
-    case recordingNotFound
-    case scheduleNotFound
-    case insufficientSpace
-    case recordingFailed(String)
-    case exportFailed(String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .recordingNotFound:
-            return "Recording not found"
-        case .scheduleNotFound:
-            return "Schedule not found"
-        case .insufficientSpace:
-            return "Insufficient storage space"
-        case .recordingFailed(let msg):
-            return "Recording failed: \(msg)"
-        case .exportFailed(let msg):
-            return "Export failed: \(msg)"
-        }
-    }
-}

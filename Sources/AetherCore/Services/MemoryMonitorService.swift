@@ -15,6 +15,7 @@ public final class MemoryMonitorService: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let memoryWarningThreshold: Double = 0.8 // 80% of available memory
     private var memoryCheckTimer: Timer?
+    private let originalCache: URLCache
 
     public enum MemoryPressureLevel: String, Codable {
         case normal
@@ -48,7 +49,16 @@ public final class MemoryMonitorService: ObservableObject {
     private let maxEventsToKeep = 100
 
     public init() {
+        // Save original cache config to restore later
+        self.originalCache = URLCache.shared
         setupMemoryMonitoring()
+    }
+    
+    deinit {
+        memoryCheckTimer?.invalidate()
+        // Restore original cache settings
+        URLCache.shared.memoryCapacity = originalCache.memoryCapacity
+        URLCache.shared.diskCapacity = originalCache.diskCapacity
     }
 
     private func setupMemoryMonitoring() {
