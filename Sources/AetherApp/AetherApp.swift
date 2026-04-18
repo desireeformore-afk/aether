@@ -33,16 +33,31 @@ struct AetherApp: App {
     @StateObject private var networkMonitor = NetworkMonitorService()
     @StateObject private var offlineQueue: OfflineQueueService
     @StateObject private var memoryMonitor = MemoryMonitorService()
+    @StateObject private var analyticsService = AnalyticsService()
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     init() {
         let player = PlayerCore()
         let network = NetworkMonitorService()
+        let analytics = AnalyticsService()
         _playerCore = StateObject(wrappedValue: player)
         _miniPlayerController = StateObject(wrappedValue: MiniPlayerWindowController(player: player))
         _networkMonitor = StateObject(wrappedValue: network)
         _offlineQueue = StateObject(wrappedValue: OfflineQueueService(networkMonitor: network))
+        _analyticsService = StateObject(wrappedValue: analytics)
+
+        // Wire analytics to player
+        player.onWatchSessionEnd = { channel, startTime, duration in
+            Task { @MainActor in
+                analytics.recordWatchSession(
+                    channelName: channel.name,
+                    startTime: startTime,
+                    duration: TimeInterval(duration),
+                    category: channel.groupTitle
+                )
+            }
+        }
     }
 
     var body: some Scene {
@@ -61,6 +76,7 @@ struct AetherApp: App {
                 .environmentObject(networkMonitor)
                 .environmentObject(offlineQueue)
                 .environmentObject(memoryMonitor)
+                .environmentObject(analyticsService)
                 .task {
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)

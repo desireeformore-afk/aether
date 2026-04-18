@@ -49,6 +49,10 @@ struct SettingsView: View {
                 .tabItem { Label("Parental Controls", systemImage: "lock.shield") }
                 .tag("parental")
 
+            analyticsTab
+                .tabItem { Label("Analytics", systemImage: "chart.bar") }
+                .tag("analytics")
+
             advancedTab
                 .tabItem { Label("Advanced", systemImage: "gearshape.2") }
                 .tag("advanced")
@@ -264,6 +268,83 @@ struct SettingsView: View {
 
     private var parentalControlsTab: some View {
         ParentalControlsView(service: parentalService)
+    }
+
+    // MARK: - Analytics Tab
+
+    @StateObject private var analyticsService = AnalyticsService()
+    @State private var showAnalytics = false
+
+    private var analyticsTab: some View {
+        Form {
+            Section("Viewing Statistics") {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Total Watch Time")
+                            .font(.body)
+                        Text(formatDuration(analyticsService.viewingStats.totalWatchTime))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Button("View Details") {
+                        showAnalytics = true
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Total Sessions")
+                            .font(.body)
+                        Text("\(analyticsService.viewingStats.totalSessions)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+            }
+
+            Section("Actions") {
+                Button("Clear All Statistics") {
+                    analyticsService.clearAllStatistics()
+                }
+                .help("Clear all viewing statistics and analytics data")
+
+                Button("Export Statistics") {
+                    exportStatistics()
+                }
+                .help("Export statistics to JSON file")
+            }
+        }
+        .formStyle(.grouped)
+        .sheet(isPresented: $showAnalytics) {
+            AnalyticsView(analyticsService: analyticsService)
+        }
+    }
+
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let hours = Int(duration) / 3600
+        let minutes = (Int(duration) % 3600) / 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+
+    private func exportStatistics() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "aether-statistics.json"
+
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            analyticsService.exportStatistics(to: url)
+        }
     }
 
     // MARK: - Advanced Tab
