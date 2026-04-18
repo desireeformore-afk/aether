@@ -518,6 +518,7 @@ struct PlayerControls: View {
     @EnvironmentObject private var sleepTimer: SleepTimerService
     @EnvironmentObject private var recordingService: RecordingService
     @EnvironmentObject private var timeshiftService: TimeshiftService
+    @EnvironmentObject private var trackService: TrackService
     @Environment(\.modelContext) private var modelContext
     @Binding var showStats: Bool
 
@@ -643,6 +644,11 @@ struct PlayerControls: View {
 
             // Sleep timer
             SleepTimerButton()
+
+            Divider().frame(height: 24)
+
+            // Audio & Subtitle tracks
+            TrackPickerButton(trackService: trackService, player: player)
 
             Divider().frame(height: 24)
 
