@@ -1,5 +1,12 @@
 import Foundation
 
+/// Content type for a channel.
+public enum ContentType: String, Sendable, Hashable, Codable {
+    case liveTV
+    case movie
+    case series
+}
+
 /// A channel in an IPTV playlist.
 ///
 /// Represents a single IPTV channel with its stream URL, metadata, and EPG information.
@@ -38,6 +45,9 @@ public struct Channel: Identifiable, Sendable, Hashable {
     /// Age rating for parental control filtering.
     public let ageRating: AgeRating?
 
+    /// Content type of this channel.
+    public var contentType: ContentType
+
     /// Creates a new channel.
     ///
     /// - Parameters:
@@ -48,6 +58,7 @@ public struct Channel: Identifiable, Sendable, Hashable {
     ///   - groupTitle: Category or group. Defaults to "Uncategorized".
     ///   - epgId: EPG identifier for program guide matching.
     ///   - ageRating: Age rating for parental controls.
+    ///   - contentType: Type of content. Defaults to liveTV.
     public init(
         id: UUID = UUID(),
         name: String,
@@ -55,7 +66,8 @@ public struct Channel: Identifiable, Sendable, Hashable {
         logoURL: URL? = nil,
         groupTitle: String = "Uncategorized",
         epgId: String? = nil,
-        ageRating: AgeRating? = nil
+        ageRating: AgeRating? = nil,
+        contentType: ContentType = .liveTV
     ) {
         self.id = id
         self.name = name
@@ -64,5 +76,16 @@ public struct Channel: Identifiable, Sendable, Hashable {
         self.groupTitle = groupTitle
         self.epgId = epgId
         self.ageRating = ageRating
+        self.contentType = contentType
+    }
+
+    /// Returns true if this channel is a series episode.
+    public var isSeries: Bool {
+        contentType == .series
+    }
+
+    /// Returns true if this channel is a movie.
+    public var isMovie: Bool {
+        contentType == .movie
     }
 }

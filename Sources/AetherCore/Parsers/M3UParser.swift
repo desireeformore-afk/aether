@@ -106,12 +106,15 @@ public struct M3UParser: Sendable {
             let groupTitle = attrs["group-title"] ?? "Uncategorized"
             let epgId = attrs["tvg-id"]
 
+            let contentType = Self.detectContentType(name: name, groupTitle: groupTitle)
+
             let channel = Channel(
                 name: name,
                 streamURL: streamURL,
                 logoURL: logoURL,
                 groupTitle: groupTitle,
-                epgId: epgId.flatMap { $0.isEmpty ? nil : $0 }
+                epgId: epgId.flatMap { $0.isEmpty ? nil : $0 },
+                contentType: contentType
             )
             channels.append(channel)
         }
@@ -161,5 +164,106 @@ public struct M3UParser: Sendable {
         }
 
         return attrs
+    }
+
+    /// Detects content type based on channel name and group title.
+    private static func detectContentType(name: String, groupTitle: String) -> ContentType {
+        let lowercasedName = name.lowercased()
+        let lowercasedGroup = groupTitle.lowercased()
+
+        // Check group title first (most reliable)
+        if lowercasedGroup.contains("series") || lowercasedGroup.contains("tv shows") || lowercasedGroup.contains("tvshows") {
+            return .series
+        }
+        if lowercasedGroup.contains("movie") || lowercasedGroup.contains("vod") || lowercasedGroup.contains("films") {
+            return .movie
+        }
+
+        // Check name patterns for series (S01E01, season/episode indicators)
+        let seriesPatterns = [
+            #"s\d{1,2}e\d{1,2}"#,           // S01E01, s1e1
+            #"season\s*\d+"#,                // Season 1, season 01
+            #"\d{1,2}x\d{1,2}"#,            // 1x01
+            #"episode\s*\d+"#                // Episode 1
+        ]
+
+        for pattern in seriesPatterns {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
+                let range = NSRange(lowercasedName.startIndex..., in: lowercasedName)
+                if regex.firstMatch(in: lowercasedName, range: range) != nil {
+                    return .series
+                }
+            }
+        }
+
+        // Check for movie year patterns (e.g., "Movie Title (2024)")
+        let movieYearPattern = #"\(\d{4}\)"#
+        if let regex = try? NSRegularExpression(pattern: movieYearPattern) {
+            let range = NSRange(lowercasedName.startIndex..., in: lowercasedName)
+            if regex.firstMatch(in: lowercasedName, range: range) != nil {
+                return .movie
+            }
+        }
+
+        // Default to live TV
+        return .liveTV
+    }
+
+    /// Parses episode information from a channel name.
+    /// Returns (seriesName, season, episode, title) if detected, nil otherwise.
+    public static func parseEpisodeInfo(from name: String) -> (seriesName: String, season: Int, episode: Int, title: String?)? {
+        let patterns = [
+            #"^(.+?)\s+s(\d{1,2})e(\d{1,2})(?:\s+-\s+(.+))?$"#,  // "Series Name S01E01 - Title"
+            #"^(.+?)\s+(\d{1,2})x(\d{1,2})(?:\s+-\s+(.+))?$"#,   // "Series Name 1x01 - Title"
+            #"^(.+?)\s+season\s*(\d+)\s+episode\s*(\d+)(?:\s+-\s+(.+))?$"#  // "Series Name Season 1 Episode 1 - Title"
+        ]
+
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { continue }
+            let range = NSRange(name.startIndex..., in: name)
+            guard let match = regex.firstMatch(in: name, range: range) else { continue }
+
+            guard match.numberOfRanges >= 4,
+                  let seriesRange = Range(match.range(at: 1), in: name),
+                  let seasonRange = Range(match.range(at: 2), in: name),
+                  let episodeRange = Range(match.range(at: 3), in: name)
+            else { continue }
+
+            let seriesName = String(name[seriesRange]).trimmingCharacters(in: .whitespaces)
+            guard let season = Int(name[seasonRange]),
+                  let episode = Int(name[episodeRange])
+            else { continue }
+
+            var title: String?
+            if match.numberOfRanges >= 5, match.range(at: 4).location != NSNotFound,
+               let titleRange = Range(match.range(at: 4), in: name) {
+                title = String(name[titleRange]).trimmingCharacters(in: .whitespaces)
+            }
+
+            return (seriesName, season, episode, title)
+        }
+
+        return nil
+    }
+
+    /// Parses movie information from a channel name.
+    /// Returns (title, year) if detected, nil otherwise.
+    public static func parseMovieInfo(from name: String) -> (title: String, year: Int?)? {
+        // Pattern: "Movie Title (2024)"
+        let pattern = #"^(.+?)\s*\((\d{4})\)\s*$"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+
+        let range = NSRange(name.startIndex..., in: name)
+        guard let match = regex.firstMatch(in: name, range: range) else { return nil }
+
+        guard match.numberOfRanges >= 3,
+              let titleRange = Range(match.range(at: 1), in: name),
+              let yearRange = Range(match.range(at: 2), in: name)
+        else { return nil }
+
+        let title = String(name[titleRange]).trimmingCharacters(in: .whitespaces)
+        let year = Int(name[yearRange])
+
+        return (title, year)
     }
 }
