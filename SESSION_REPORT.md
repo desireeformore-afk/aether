@@ -1,50 +1,41 @@
 # Aether Development Session Report
 
-## Sprint 14 - Playlist Filters & Theme Engine (Completed)
+## Session: 2026-04-18 (16:52 - 17:15)
 
-### Completed
-1. **Category Filters** - Added TV/Movies/Series filter chips to ChannelListView
-   - ContentCategory enum (Wszystkie/TV/Filmy/Seriale)
-   - Smart categorization based on group title keywords
-   - Filter state persisted across searches
-   - Commit: f42996a
+### Problem Solved
+**Build Failure** - ChannelListView miał błędy kompilacji:
+- Duplikat `}` w linii 307 zamykał struct przedwcześnie
+- Błędna składnia SortDescriptor keypath (używał `\` zamiast `\.`)
+- Błędne użycie zmiennych w #Predicate macro (Swift 6 wymaga lokalnych zmiennych)
 
-2. **Collapsed Groups Persistence** - Store/restore collapsed state per playlist
-   - UserDefaults storage with playlist-specific key
-   - Auto-save on collapse/expand
-   - Commit: 339ccbc
-
-3. **Polish Localization** - GlobalContentSearchView fully translated
-   - Search placeholder, filter buttons, empty states
-   - Category badges (Film/Serial)
-
-4. **Theme Engine** - Full theme system with 5 built-in themes
-   - ThemePickerView with visual theme cards
-   - AppearancePickerView for Light/Dark/Auto mode
-   - Dynamic background rendering (solid + gradient support)
-   - Integrated into ContentView with ThemeService
-   - Themes: Aether, AMOLED, Nord, Catppuccin, Sunset
-   - Commit: 9b9dec3
+### Commits
+- `de8b951` - fix: remove duplicate closing brace in ChannelListView
+- `75be593` - fix: correct SortDescriptor keypath syntax  
+- `2b46c77` - fix: use local variables in #Predicate macros for Swift 6 compatibility
 
 ### Current State
-- Branch: main @ 9b9dec3
-- CI: Pending (checking in 15s)
-- All Sprint 14 core features complete
+- **Branch**: main @ de8b951
+- **Build Status**: Naprawione (brak Swift w CI env, wymaga testu w Xcode)
+- **Pushed**: Tak - gotowe do `git pull` i testu lokalnego
 
-### Remaining Tasks (Sprint 15)
-1. EPG Timeline view
-2. Better VOD/Series categorization in XstreamService
-3. "Show All Groups" / "Show Only Active" toggle
-4. Gradient picker for custom themes
+### Known TODOs (5 total)
+1. iCloudSyncService: Merge conflicts resolution
+2. PlaylistExporter: Fetch channels from SwiftData
+3. PlaylistImporter: Save channels to SwiftData
+4. GlobalContentSearchView: Navigation to player/detail
+5. iCloudSyncView: Display actual conflicts
+
+### Sprint 14 Status
+✅ **COMPLETE** - Category filters, collapsed groups persistence, theme engine, Polish localization
+
+### Next Steps (Sprint 15)
+1. **Verify build** - User testuje w Xcode po `git pull`
+2. **EPG Timeline** - Główny feature Sprint 15
+3. **Playlist filters/groups** - "Show All" / "Show Only Active" toggle
+4. **Gradient picker** - Custom theme creation UI
 
 ### Technical Notes
-- Category filter uses keyword matching: "movie"/"film"/"vod" → Movies, "series"/"serial"/"show" → Series
-- Collapsed groups stored as JSON-encoded Set<String> in UserDefaults
-- Theme backgrounds support both solid colors and linear gradients
-- ColorScheme preference: "auto" (system), "light", "dark"
-- ThemeService persists selection to UserDefaults
-
-### Next Steps
-1. Verify CI passes
-2. Start Sprint 15: EPG Timeline implementation
-3. Consider gradient picker UI for custom themes
+- Swift 6 concurrency: używaj `@preconcurrency import` dla AVFoundation/AppKit
+- #Predicate macro: wymaga lokalnych zmiennych, nie może używać `self.property`
+- SortDescriptor: keypath to `\.property` nie `\property`
+- CI: macos-14 stable, macos-15 beta (instant failures)
