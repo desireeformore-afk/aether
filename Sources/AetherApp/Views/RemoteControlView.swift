@@ -2,7 +2,7 @@ import SwiftUI
 import AetherCore
 
 struct RemoteControlView: View {
-    @StateObject private var remoteControl = RemoteControlService.shared
+    @State private var remoteControl = RemoteControlService.shared
     @State private var serverPort: String = "8080"
     @State private var showError = false
     @State private var errorMessage = ""

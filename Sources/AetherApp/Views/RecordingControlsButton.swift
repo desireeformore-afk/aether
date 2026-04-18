@@ -4,7 +4,7 @@ import AetherCore
 /// Recording controls button with menu for record, timeshift, and recordings manager.
 struct RecordingControlsButton: View {
     @Bindable var player: PlayerCore
-    @ObservedObject var recordingService: RecordingService
+    @State var recordingService: RecordingService
     @ObservedObject var timeshiftService: TimeshiftService
     @Binding var showRecordingManager: Bool
 

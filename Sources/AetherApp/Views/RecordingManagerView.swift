@@ -3,7 +3,7 @@ import AetherCore
 
 /// Recording manager view for managing recordings and schedules.
 public struct RecordingManagerView: View {
-    @ObservedObject var service: RecordingService
+    @State var service: RecordingService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedTab: RecordingTab = .active
@@ -348,7 +348,7 @@ struct ScheduledRecordingRow: View {
 // MARK: - Schedule Recording View
 
 struct ScheduleRecordingView: View {
-    @ObservedObject var service: RecordingService
+    @State var service: RecordingService
     @Environment(\.dismiss) private var dismiss
 
     @State private var channelName: String = ""
