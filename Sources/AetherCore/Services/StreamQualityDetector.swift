@@ -28,7 +28,7 @@ public final class StreamQualityDetector: ObservableObject {
 
     /// Detects available quality variants from the current HLS stream.
     public func detectAvailableQualities() async {
-        guard let player, let item = player.currentItem else {
+        guard let player, let _ = player.currentItem else {
             availableQualities = []
             return
         }

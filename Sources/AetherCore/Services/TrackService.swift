@@ -32,38 +32,29 @@ public final class TrackService: ObservableObject {
     // MARK: - Track Detection
 
     /// Detect available audio and subtitle tracks from AVPlayerItem.
-    public func detectTracks(from playerItem: AVPlayerItem) async {
+    public func detectTracks(from playerItem: AVPlayerItem) async throws {
         audioTracks = []
         subtitleTracks = []
 
         guard let asset = playerItem.asset as? AVURLAsset else { return }
 
         // Detect audio tracks
-        do {
-            let characteristics = asset.availableMediaCharacteristicsWithMediaSelectionOptions
-            if characteristics.contains(.audible),
-               let audioOptions = try await asset.loadMediaSelectionGroup(for: .audible) {
-                audioTracks = []
-                for option in audioOptions.options {
-                    audioTracks.append(AudioTrack.from(option))
-                }
+        let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+        if characteristics.contains(.audible),
+           let audioOptions = try await asset.loadMediaSelectionGroup(for: .audible) {
+            audioTracks = []
+            for option in audioOptions.options {
+                audioTracks.append(AudioTrack.from(option))
             }
-        } catch {
-            // Failed to load audio tracks
         }
 
         // Detect subtitle tracks
-        do {
-            let characteristics = asset.availableMediaCharacteristicsWithMediaSelectionOptions
-            if characteristics.contains(.legible),
-               let subtitleOptions = try await asset.loadMediaSelectionGroup(for: .legible) {
-                subtitleTracks = []
-                for option in subtitleOptions.options {
-                    subtitleTracks.append(SubtitleTrackInfo.from(option))
-                }
+        if characteristics.contains(.legible),
+           let subtitleOptions = try await asset.loadMediaSelectionGroup(for: .legible) {
+            subtitleTracks = []
+            for option in subtitleOptions.options {
+                subtitleTracks.append(SubtitleTrackInfo.from(option))
             }
-        } catch {
-            // Failed to load subtitle tracks
         }
 
         // Auto-select default tracks

@@ -138,7 +138,7 @@ public final class RecommendationService: ObservableObject {
 
         return channels.filter { channel in
             !favorites.contains(channel.name) &&
-            favoriteCategories.contains(channel.groupTitle ?? "")
+            channel.groupTitle.map { favoriteCategories.contains($0) } ?? false
         }
     }
 

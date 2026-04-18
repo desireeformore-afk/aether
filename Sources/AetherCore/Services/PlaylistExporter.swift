@@ -37,8 +37,7 @@ public enum PlaylistExporter {
         for channel in channels {
             m3uContent += "#EXTINF:-1"
 
-            let groupTitle = channel.groupTitle ?? ""
-            if !groupTitle.isEmpty {
+            if let groupTitle = channel.groupTitle, !groupTitle.isEmpty {
                 m3uContent += " group-title=\"\(groupTitle)\""
             }
 
