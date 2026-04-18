@@ -45,7 +45,7 @@ public final class TrackService: ObservableObject {
                let audioOptions = try await asset.loadMediaSelectionGroup(for: .audible) {
                 audioTracks = []
                 for option in audioOptions.options {
-                    audioTracks.append(await AudioTrack.from(option))
+                    audioTracks.append(AudioTrack.from(option))
                 }
             }
         } catch {
@@ -59,7 +59,7 @@ public final class TrackService: ObservableObject {
                let subtitleOptions = try await asset.loadMediaSelectionGroup(for: .legible) {
                 subtitleTracks = []
                 for option in subtitleOptions.options {
-                    subtitleTracks.append(await SubtitleTrackInfo.from(option))
+                    subtitleTracks.append(SubtitleTrackInfo.from(option))
                 }
             }
         } catch {
