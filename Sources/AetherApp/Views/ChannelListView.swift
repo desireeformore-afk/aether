@@ -258,44 +258,52 @@ struct ChannelListView: View {
     private var recommendedChannelsList: some View {
         VStack(spacing: 0) {
             if recommendationService.recommendations.isEmpty {
-                VStack(spacing: 12) {
-                    if recommendationService.isGenerating {
-                        ProgressView()
-                            .scaleEffect(1.2)
-                        Text("Generating recommendations...")
-                            .foregroundColor(.secondary)
-                            .padding(.top, 8)
-                    } else {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 48))
-                            .foregroundColor(.secondary)
-                        Text("No recommendations yet")
-                            .foregroundColor(.secondary)
-                        Text("Watch some channels to get personalized recommendations")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                emptyRecommendationsView
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(recommendationService.recommendations), id: \.id) { recommendation in
-                            if let channel = channels.first(where: { $0.name == recommendation.channelName }) {
-                                ChannelRow(
-                                    channel: channel,
-                                    nowPlaying: nowPlaying[channel.id],
-                                    onPlay: { play(channel) }
-                                )
-                                Divider()
-                            }
-                        }
+                recommendationsScrollView
+            }
+        }
+    }
+    
+    private var emptyRecommendationsView: some View {
+        VStack(spacing: 12) {
+            if recommendationService.isGenerating {
+                ProgressView()
+                    .scaleEffect(1.2)
+                Text("Generating recommendations...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.secondary)
+                Text("No recommendations yet")
+                    .font(.headline)
+                Text("Watch some channels to get personalized recommendations")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var recommendationsScrollView: some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(recommendationService.recommendations) { recommendation in
+                    if let channel = channels.first(where: { $0.name == recommendation.channelName }) {
+                        ChannelRow(
+                            channel: channel,
+                            nowPlaying: nowPlaying[channel.id],
+                            onPlay: { play(channel) }
+                        )
+                        Divider()
                     }
                 }
             }
         }
+    }
     }
 
     // MARK: - All Channels List
