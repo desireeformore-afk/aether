@@ -32,28 +32,32 @@ public final class TrackService: ObservableObject {
     // MARK: - Track Detection
 
     /// Detect available audio and subtitle tracks from AVPlayerItem.
-    public func detectTracks(from playerItem: AVPlayerItem) {
+    public func detectTracks(from playerItem: AVPlayerItem) async {
         audioTracks = []
         subtitleTracks = []
 
         guard let asset = playerItem.asset as? AVURLAsset else { return }
 
         // Detect audio tracks
-        Task {
-            let characteristics = await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+        do {
+            let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
             if characteristics.contains(.audible),
-               let audioOptions = await asset.loadMediaSelectionGroup(for: .audible) {
+               let audioOptions = try await asset.loadMediaSelectionGroup(for: .audible) {
                 audioTracks = audioOptions.options.map { AudioTrack.from($0) }
             }
+        } catch {
+            // Failed to load audio tracks
         }
 
         // Detect subtitle tracks
-        Task {
-            let characteristics = await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+        do {
+            let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
             if characteristics.contains(.legible),
-               let subtitleOptions = await asset.loadMediaSelectionGroup(for: .legible) {
+               let subtitleOptions = try await asset.loadMediaSelectionGroup(for: .legible) {
                 subtitleTracks = subtitleOptions.options.map { SubtitleTrackInfo.from($0) }
             }
+        } catch {
+            // Failed to load subtitle tracks
         }
 
         // Auto-select default tracks
@@ -71,13 +75,13 @@ public final class TrackService: ObservableObject {
     // MARK: - Track Selection
 
     /// Select an audio track.
-    public func selectAudioTrack(_ track: AudioTrack, for playerItem: AVPlayerItem) {
+    public func selectAudioTrack(_ track: AudioTrack, for playerItem: AVPlayerItem) async {
         guard let asset = playerItem.asset as? AVURLAsset else { return }
 
-        Task {
-            let characteristics = await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+        do {
+            let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
             if characteristics.contains(.audible),
-               let group = await asset.loadMediaSelectionGroup(for: .audible),
+               let group = try await asset.loadMediaSelectionGroup(for: .audible),
                let option = group.options.first(where: { $0.displayName == track.id }) {
                 playerItem.select(option, in: group)
                 selectedAudioTrack = track
@@ -86,13 +90,13 @@ public final class TrackService: ObservableObject {
     }
 
     /// Select a subtitle track.
-    public func selectSubtitleTrack(_ track: SubtitleTrackInfo?, for playerItem: AVPlayerItem) {
+    public func selectSubtitleTrack(_ track: SubtitleTrackInfo?, for playerItem: AVPlayerItem) async {
         guard let asset = playerItem.asset as? AVURLAsset else { return }
 
-        Task {
-            let characteristics = await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
+        do {
+            let characteristics = try await asset.load(.availableMediaCharacteristicsWithMediaSelectionOptions)
             if characteristics.contains(.legible),
-               let group = await asset.loadMediaSelectionGroup(for: .legible) {
+               let group = try await asset.loadMediaSelectionGroup(for: .legible) {
                 if let track = track,
                    let option = group.options.first(where: { $0.displayName == track.id }) {
                     playerItem.select(option, in: group)
@@ -105,15 +109,17 @@ public final class TrackService: ObservableObject {
                     subtitlesEnabled = false
                 }
             }
+        } catch {
+            // Failed to load subtitle tracks
         }
     }
 
     /// Toggle subtitles on/off.
-    public func toggleSubtitles(for playerItem: AVPlayerItem) {
+    public func toggleSubtitles(for playerItem: AVPlayerItem) async {
         if subtitlesEnabled {
-            selectSubtitleTrack(nil, for: playerItem)
+            await selectSubtitleTrack(nil, for: playerItem)
         } else if let firstSubtitle = subtitleTracks.first {
-            selectSubtitleTrack(firstSubtitle, for: playerItem)
+            await selectSubtitleTrack(firstSubtitle, for: playerItem)
         }
     }
 
