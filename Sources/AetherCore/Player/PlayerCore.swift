@@ -60,8 +60,10 @@ public enum PlayerState: Sendable, Equatable {
 ///
 /// ```swift
 /// let player = PlayerCore()
-/// let channel = Channel(name: "BBC One", streamURL: URL(string: "http://...")!)
-/// player.play(channel)
+/// if let url = URL(string: "http://...") {
+///     let channel = Channel(name: "BBC One", streamURL: url)
+///     player.play(channel)
+/// }
 /// ```
 @MainActor
 public final class PlayerCore: ObservableObject {
@@ -137,6 +139,7 @@ public final class PlayerCore: ObservableObject {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        removeNotificationObservers()
         removeRetryObservers()
         statusObserver?.cancel()
         statusObserver = nil
@@ -391,6 +394,7 @@ public final class PlayerCore: ObservableObject {
                     self.retrySourceItem = nil
                     self.state = .playing
                 case .failed:
+                    self.state = .loading  // Show user we're retrying
                     self.scheduleRetry(for: item)
                 case .unknown:
                     break
