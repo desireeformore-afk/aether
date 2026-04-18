@@ -6,6 +6,7 @@ import AetherCore
 struct ContentView: View {
     @EnvironmentObject private var epgStore: EPGStore
     @EnvironmentObject private var networkMonitor: NetworkMonitorService
+    @EnvironmentObject private var themeService: ThemeService
     @ObservedObject var playerCore: PlayerCore
 
     @State private var selectedPlaylist: PlaylistRecord?
@@ -14,6 +15,16 @@ struct ContentView: View {
     #if os(macOS)
     @State private var showCommandPalette = false
     #endif
+    
+    @AppStorage("preferredColorScheme") private var preferredScheme: String = "auto"
+    
+    private var resolvedColorScheme: ColorScheme? {
+        switch preferredScheme {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil
+        }
+    }
 
     // Keyboard handler — retained for the lifetime of this view (macOS only)
     #if os(macOS)
@@ -107,7 +118,8 @@ struct ContentView: View {
             #endif
         }
         .animation(.spring(duration: 0.3), value: showChannelPanel)
-        .background(Color.aetherBackground)
+        .background(themeService.active.backgroundView())
+        .preferredColorScheme(resolvedColorScheme)
         .onChange(of: selectedPlaylist) { _, newPlaylist in
             guard let playlist = newPlaylist else {
                 playerCore.currentXstreamCredentials = nil
