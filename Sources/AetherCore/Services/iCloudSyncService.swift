@@ -3,12 +3,13 @@ import CloudKit
 
 /// Service for syncing data via iCloud
 @MainActor
-public class iCloudSyncService: ObservableObject {
-    @Published public var isEnabled: Bool = false
-    @Published public var isSyncing: Bool = false
-    @Published public var lastSyncDate: Date?
-    @Published public var syncError: String?
-    @Published public var conflictCount: Int = 0
+@Observable
+public final class iCloudSyncService {
+    public var isEnabled: Bool = false
+    public var isSyncing: Bool = false
+    public var lastSyncDate: Date?
+    public var syncError: String?
+    public var conflictCount: Int = 0
 
     private let container: CKContainer
     private let privateDatabase: CKDatabase

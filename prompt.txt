@@ -1,0 +1,33 @@
+Fix Swift 6 compilation errors in Aether project.
+
+Context:
+- GitHub Actions CI is failing on macos-14 runner
+- All recent builds fail with "Process completed with exit code 1"
+- Cannot access CI logs without authentication
+- Local syntax check shows no obvious issues (all braces balanced, 139 Swift files)
+
+Recent fixes attempted:
+1. Fixed duplicate closing brace in ChannelListView.swift (line 307)
+2. Fixed SortDescriptor keypath syntax (changed \property to \.property)
+3. Fixed #Predicate macros to use local variables instead of self.property
+4. Switched CI runner from macos-15 to macos-14
+
+Project structure:
+- Swift 6.0 + SwiftUI + SwiftData
+- Multi-platform: macOS 14+, iOS 17+, tvOS 17+
+- Package.swift with 3 targets: AetherCore (library), AetherUI (library), AetherApp (executable)
+- CI builds only macOS targets: swift build --target AetherCore --target AetherUI --target AetherApp
+
+Task:
+1. Try to build the project locally: swift build --target AetherCore --target AetherUI --target AetherApp
+2. If build fails, identify and fix ALL compilation errors
+3. Focus on Swift 6 strict concurrency issues, SwiftData compatibility, and syntax errors
+4. Commit fixes with descriptive messages
+5. Push to main branch
+
+DO NOT:
+- Make cosmetic changes
+- Refactor working code
+- Add new features
+
+ONLY fix compilation errors that prevent the build from succeeding.

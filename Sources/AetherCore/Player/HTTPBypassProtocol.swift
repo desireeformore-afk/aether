@@ -2,9 +2,23 @@ import Foundation
 
 /// Custom URLProtocol that intercepts HTTP requests and allows them to bypass ATS restrictions.
 /// Registered in PlayerCore before creating AVURLAsset instances.
-public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
-    
-    private var dataTask: URLSessionDataTask?
+public final class HTTPBypassProtocol: URLProtocol {
+
+    private let lock = NSLock()
+    private var _dataTask: URLSessionDataTask?
+    private var dataTask: URLSessionDataTask? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _dataTask
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _dataTask = newValue
+        }
+    }
+
     private static let bypassSession: URLSession = {
         let config = URLSessionConfiguration.ephemeral
         config.tlsMinimumSupportedProtocolVersion = .TLSv12

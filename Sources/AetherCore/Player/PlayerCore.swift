@@ -66,24 +66,25 @@ public enum PlayerState: Sendable, Equatable {
 /// }
 /// ```
 @MainActor
-public final class PlayerCore: ObservableObject {
+@Observable
+public final class PlayerCore {
 
     // MARK: - Published state
 
     /// Current playback state.
-    @Published public private(set) var state: PlayerState = .idle
+    public private(set) var state: PlayerState = .idle
 
     /// Currently playing channel, if any.
-    @Published public private(set) var currentChannel: Channel?
+    public private(set) var currentChannel: Channel?
 
     /// Whether audio is muted.
-    @Published public private(set) var isMuted: Bool = false
+    public private(set) var isMuted: Bool = false
 
     /// Audio volume (0.0 to 1.0).
-    @Published public private(set) var volume: Float = 1.0
+    public private(set) var volume: Float = 1.0
 
     /// Whether Picture-in-Picture is active.
-    @Published public private(set) var isPiPActive: Bool = false
+    public private(set) var isPiPActive: Bool = false
 
     /// Current playback time in seconds.
     public var currentTime: TimeInterval {
@@ -96,12 +97,12 @@ public final class PlayerCore: ObservableObject {
     }
 
     /// Selected stream quality preset.
-    @Published public var selectedQuality: StreamQuality = StreamQuality.auto {
+    public var selectedQuality: StreamQuality = StreamQuality.auto {
         didSet { StreamQualityService().apply(selectedQuality, to: player) }
     }
 
     /// Current retry attempt count (0 = first play, >0 = retrying).
-    @Published public private(set) var retryCount: Int = 0
+    public private(set) var retryCount: Int = 0
 
     /// Maximum number of auto-retries before giving up.
     public let maxRetries: Int = 3

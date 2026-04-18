@@ -3,17 +3,18 @@ import Foundation
 /// Observable wrapper around `EPGService` for SwiftUI environment injection.
 /// Also manages per-playlist EPG loading triggered by playlist selection changes.
 @MainActor
-public final class EPGStore: ObservableObject {
+@Observable
+public final class EPGStore {
     public let service = EPGService()
 
     /// Currently loaded EPG source URL (for display in Settings)
-    @Published public private(set) var currentEPGURL: URL?
+    public private(set) var currentEPGURL: URL?
     /// Whether an EPG load is in progress.
-    @Published public private(set) var isLoading = false
+    public private(set) var isLoading = false
     /// Last error message (nil = no error).
-    @Published public private(set) var lastError: String?
+    public private(set) var lastError: String?
     /// Cached now-playing entries keyed by channelID. Refresh via `refreshNowPlayingCache`.
-    @Published public var nowPlayingCache: [String: EPGEntry] = [:]
+    public var nowPlayingCache: [String: EPGEntry] = [:]
 
     public init() {}
 
@@ -38,7 +39,6 @@ public final class EPGStore: ObservableObject {
         do {
             try await service.loadGuide(from: url, forceRefresh: forceRefresh)
             currentEPGURL = url
-            objectWillChange.send()
         } catch {
             lastError = error.localizedDescription
         }
@@ -62,6 +62,5 @@ public final class EPGStore: ObservableObject {
         await service.clearCache()
         nowPlayingCache = [:]
         currentEPGURL = nil
-        objectWillChange.send()
     }
 }
