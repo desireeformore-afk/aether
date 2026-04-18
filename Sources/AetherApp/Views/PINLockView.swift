@@ -1,4 +1,5 @@
 import SwiftUI
+import AetherCore
 
 /// PIN lock overlay for restricted content.
 public struct PINLockView: View {
