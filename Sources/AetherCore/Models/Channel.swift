@@ -36,7 +36,7 @@ public struct Channel: Identifiable, Sendable, Hashable {
     public var epgId: String?
 
     /// Age rating for parental control filtering.
-    public var ageRating: AgeRating?
+    public let ageRating: AgeRating?
 
     /// Creates a new channel.
     ///
