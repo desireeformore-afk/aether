@@ -3,7 +3,7 @@ import Foundation
 extension Foundation.Bundle {
     static let module: Bundle = {
         let mainPath = Bundle.main.bundleURL.appendingPathComponent("Aether_AetherApp.resources").path
-        let buildPath = "/workspace/.build/x86_64-unknown-linux-gnu/debug/Aether_AetherApp.resources"
+        let buildPath = "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/Aether_AetherApp.resources"
 
         let preferredBundle = Bundle(path: mainPath)
 

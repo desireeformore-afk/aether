@@ -1,17 +1,19 @@
 {
   "": {
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/master.swiftdeps"
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/primary.swiftdeps"
   },
-  "/workspace/Sources/AetherAppTV/AetherAppTV.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV.swiftdeps"
+  "/home/hermes/aether/Sources/AetherAppTV/AetherAppTV.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/AetherAppTV.dia"
   },
-  "/workspace/Sources/AetherAppTV/Views/TVContentView.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView.swiftdeps"
+  "/home/hermes/aether/Sources/AetherAppTV/Views/TVContentView.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/TVContentView.dia"
   }
 }

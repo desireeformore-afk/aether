@@ -1,0 +1,3 @@
+module AetherAppIOS {
+    header "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppIOS.build/include/AetherAppIOS-Swift.h"
+}

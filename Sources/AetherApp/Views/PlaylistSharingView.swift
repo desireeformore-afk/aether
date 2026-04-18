@@ -255,7 +255,7 @@ struct ImportPlaylistSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Import") {
+                Section {
                     TextField("Share Code", text: $shareCode)
                         .textCase(.uppercase)
                         .font(.system(.body, design: .monospaced))

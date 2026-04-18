@@ -1,53 +1,61 @@
 {
   "": {
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/master.swiftdeps"
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/primary.swiftdeps"
   },
-  "/workspace/Sources/AetherUI/AetherUI.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.swiftdeps"
+  "/home/hermes/aether/Sources/AetherUI/AetherUI.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.dia"
   },
-  "/workspace/Sources/AetherUI/Views/AppearancePickerView.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.swiftdeps"
+  "/home/hermes/aether/Sources/AetherUI/Views/AppearancePickerView.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.dia"
   },
-  "/workspace/Sources/AetherUI/Views/ChannelRowView.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.swiftdeps"
+  "/home/hermes/aether/Sources/AetherUI/Views/ChannelRowView.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.dia"
   },
-  "/workspace/Sources/AetherUI/Views/EPGTimelineView.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.swiftdeps"
+  "/home/hermes/aether/Sources/AetherUI/Views/EPGTimelineView.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.dia"
   },
-  "/workspace/Sources/AetherUI/Views/EmptyStateView.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView.swiftdeps"
+  "/home/hermes/aether/Sources/AetherUI/Views/EmptyStateView.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EmptyStateView.dia"
   },
-  "/workspace/Sources/AetherUI/Views/OnboardingView.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView.swiftdeps"
+  "/home/hermes/aether/Sources/AetherUI/Views/OnboardingView.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/OnboardingView.dia"
   },
-  "/workspace/Sources/AetherUI/Views/PlayerControlsView.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView.swiftdeps"
+  "/home/hermes/aether/Sources/AetherUI/Views/PlayerControlsView.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/PlayerControlsView.dia"
   },
-  "/workspace/Sources/AetherUI/Views/ThemePickerView.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.swiftdeps"
+  "/home/hermes/aether/Sources/AetherUI/Views/ThemePickerView.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.dia"
   }
 }

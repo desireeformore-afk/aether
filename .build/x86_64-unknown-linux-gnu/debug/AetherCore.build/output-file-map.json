@@ -1,413 +1,481 @@
 {
   "": {
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/master.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Design/Colors.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Design/Typography.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/AgeRating.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/AppearanceMode.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/AudioTrack.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/Channel.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Channel.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Channel.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Channel~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Channel.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/EPGEntry.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGEntry.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGEntry.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGEntry~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGEntry.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/Episode.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Episode.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Episode.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Episode~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Episode.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/Movie.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Movie.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Movie.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Movie~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Movie.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/ParentalControlError.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlError.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlError.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlError~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlError.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/ParentalSettings.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalSettings.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalSettings.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalSettings~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalSettings.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/Playlist.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Playlist.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Playlist.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Playlist~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Playlist.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/Recording.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Recording.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Recording.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Recording~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Recording.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/RecordingError.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingError.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingError.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingError~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingError.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/Series.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Series.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Series.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Series~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Series.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/ShareablePlaylist.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShareablePlaylist.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShareablePlaylist.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShareablePlaylist~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShareablePlaylist.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/SubtitleTrack.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleTrack.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleTrack.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleTrack~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleTrack.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/SyncableItem.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Models/Theme.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Parsers/M3UParser.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/M3UParser.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/M3UParser.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/M3UParser~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/M3UParser.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Parsers/SRTParser.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SRTParser.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SRTParser.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SRTParser~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SRTParser.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Parsers/XMLTVParser.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XMLTVParser.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XMLTVParser.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XMLTVParser~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XMLTVParser.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Player/BufferingConfig.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BufferingConfig.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BufferingConfig.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BufferingConfig~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BufferingConfig.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Player/HTTPBypassProtocol.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/HTTPBypassProtocol.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/HTTPBypassProtocol.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/HTTPBypassProtocol~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/HTTPBypassProtocol.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Player/PlayerCore.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlayerCore.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlayerCore.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlayerCore~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlayerCore.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/AirPlayService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AirPlayService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AirPlayService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AirPlayService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AirPlayService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/AnalyticsService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AnalyticsService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AnalyticsService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AnalyticsService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AnalyticsService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/BackgroundEPGRefreshService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BackgroundEPGRefreshService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BackgroundEPGRefreshService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BackgroundEPGRefreshService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BackgroundEPGRefreshService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/ChannelFilterService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelFilterService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelFilterService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelFilterService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelFilterService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/CloudKitManager.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/CrashReportingService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CrashReportingService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CrashReportingService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CrashReportingService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CrashReportingService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/EPGService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/EPGStore.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGStore.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGStore.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGStore~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGStore.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/MemoryMonitorService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MemoryMonitorService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MemoryMonitorService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MemoryMonitorService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MemoryMonitorService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/MovieManager.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieManager.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieManager.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieManager~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieManager.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/NetworkMonitorService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/NetworkMonitorService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/NetworkMonitorService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/NetworkMonitorService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/NetworkMonitorService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/ParentalControlService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/PlaylistExporter.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistExporter.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistExporter.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistExporter~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistExporter.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/PlaylistImporter.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistImporter.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistImporter.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistImporter~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistImporter.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/PlaylistService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/PlaylistSharingService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistSharingService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistSharingService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistSharingService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistSharingService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/PlaylistValidator.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistValidator.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistValidator.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistValidator~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistValidator.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/RecommendationService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecommendationService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecommendationService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecommendationService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecommendationService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/RecordingService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/RemoteControlService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RemoteControlService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RemoteControlService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RemoteControlService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RemoteControlService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/SeriesGrouper.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesGrouper.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesGrouper.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesGrouper~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesGrouper.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/SeriesManager.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesManager.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesManager.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesManager~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesManager.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/ShortcutsService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShortcutsService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShortcutsService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShortcutsService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShortcutsService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/SleepTimerService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SleepTimerService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SleepTimerService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SleepTimerService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SleepTimerService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/StreamQualityDetector.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityDetector.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityDetector.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityDetector~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityDetector.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/StreamQualityService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/SubtitleService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/ThemeService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/TimeshiftService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TimeshiftService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TimeshiftService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TimeshiftService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TimeshiftService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/TrackService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/VoiceCommandService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/VoiceCommandService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/VoiceCommandService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/VoiceCommandService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/VoiceCommandService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/WatchPartyService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchPartyService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchPartyService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchPartyService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchPartyService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/XstreamService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XstreamService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XstreamService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XstreamService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XstreamService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Services/iCloudSyncService.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/iCloudSyncService.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/iCloudSyncService.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/iCloudSyncService~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/iCloudSyncService.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Storage/ChannelCache.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelCache.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelCache.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelCache~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelCache.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Storage/ChannelRecord.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelRecord.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelRecord.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelRecord~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelRecord.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Storage/FavoriteRecord.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/FavoriteRecord.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/FavoriteRecord.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/FavoriteRecord~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/FavoriteRecord.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Storage/LastChannelStore.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/LastChannelStore.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/LastChannelStore.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/LastChannelStore~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/LastChannelStore.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Storage/MovieRecord.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieRecord.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieRecord.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieRecord~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieRecord.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Storage/PlaylistRecord.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistRecord.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistRecord.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistRecord~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistRecord.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Storage/SeriesRecord.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesRecord.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesRecord.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesRecord~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesRecord.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Storage/WatchHistoryRecord.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchHistoryRecord.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchHistoryRecord.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchHistoryRecord~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchHistoryRecord.swiftdeps"
-  },
-  "/workspace/Sources/AetherCore/Storage/WatchProgressRecord.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchProgressRecord.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchProgressRecord.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchProgressRecord~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchProgressRecord.swiftdeps"
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/primary.swiftdeps"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Design/Colors.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Design/Typography.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/AgeRating.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/AppearanceMode.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/AudioTrack.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/Channel.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Channel.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Channel.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Channel~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Channel.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Channel.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/EPGEntry.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGEntry.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGEntry.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGEntry~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGEntry.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGEntry.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/Episode.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Episode.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Episode.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Episode~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Episode.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Episode.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/Movie.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Movie.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Movie.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Movie~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Movie.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Movie.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/ParentalControlError.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlError.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlError.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlError~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlError.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlError.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/ParentalSettings.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalSettings.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalSettings.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalSettings~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalSettings.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalSettings.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/Playlist.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Playlist.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Playlist.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Playlist~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Playlist.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Playlist.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/Recording.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Recording.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Recording.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Recording~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Recording.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Recording.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/RecordingError.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingError.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingError.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingError~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingError.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingError.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/Series.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Series.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Series.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Series~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Series.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Series.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/ShareablePlaylist.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShareablePlaylist.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShareablePlaylist.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShareablePlaylist~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShareablePlaylist.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShareablePlaylist.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/SubtitleTrack.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleTrack.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleTrack.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleTrack~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleTrack.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleTrack.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/SyncableItem.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Models/Theme.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Parsers/M3UParser.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/M3UParser.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/M3UParser.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/M3UParser~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/M3UParser.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/M3UParser.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Parsers/SRTParser.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SRTParser.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SRTParser.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SRTParser~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SRTParser.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SRTParser.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Parsers/XMLTVParser.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XMLTVParser.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XMLTVParser.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XMLTVParser~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XMLTVParser.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XMLTVParser.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Player/BufferingConfig.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BufferingConfig.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BufferingConfig.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BufferingConfig~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BufferingConfig.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BufferingConfig.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Player/HTTPBypassProtocol.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/HTTPBypassProtocol.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/HTTPBypassProtocol.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/HTTPBypassProtocol~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/HTTPBypassProtocol.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/HTTPBypassProtocol.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Player/PlayerCore.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlayerCore.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlayerCore.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlayerCore~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlayerCore.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlayerCore.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/AirPlayService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AirPlayService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AirPlayService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AirPlayService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AirPlayService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AirPlayService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/AnalyticsService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AnalyticsService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AnalyticsService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AnalyticsService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AnalyticsService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AnalyticsService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/BackgroundEPGRefreshService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BackgroundEPGRefreshService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BackgroundEPGRefreshService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BackgroundEPGRefreshService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BackgroundEPGRefreshService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/BackgroundEPGRefreshService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/ChannelFilterService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelFilterService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelFilterService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelFilterService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelFilterService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelFilterService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/CloudKitManager.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/CrashReportingService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CrashReportingService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CrashReportingService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CrashReportingService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CrashReportingService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CrashReportingService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/EPGService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/EPGStore.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGStore.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGStore.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGStore~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGStore.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGStore.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/MemoryMonitorService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MemoryMonitorService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MemoryMonitorService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MemoryMonitorService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MemoryMonitorService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MemoryMonitorService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/MovieManager.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieManager.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieManager.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieManager~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieManager.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieManager.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/NetworkMonitorService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/NetworkMonitorService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/NetworkMonitorService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/NetworkMonitorService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/NetworkMonitorService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/NetworkMonitorService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/ParentalControlService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ParentalControlService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/PlaylistExporter.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistExporter.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistExporter.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistExporter~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistExporter.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistExporter.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/PlaylistImporter.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistImporter.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistImporter.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistImporter~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistImporter.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistImporter.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/PlaylistService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/PlaylistSharingService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistSharingService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistSharingService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistSharingService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistSharingService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistSharingService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/PlaylistValidator.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistValidator.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistValidator.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistValidator~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistValidator.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistValidator.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/RecommendationService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecommendationService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecommendationService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecommendationService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecommendationService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecommendationService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/RecordingService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RecordingService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/RemoteControlService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RemoteControlService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RemoteControlService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RemoteControlService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RemoteControlService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/RemoteControlService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/SeriesGrouper.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesGrouper.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesGrouper.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesGrouper~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesGrouper.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesGrouper.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/SeriesManager.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesManager.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesManager.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesManager~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesManager.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesManager.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/ShortcutsService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShortcutsService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShortcutsService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShortcutsService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShortcutsService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShortcutsService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/SleepTimerService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SleepTimerService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SleepTimerService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SleepTimerService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SleepTimerService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SleepTimerService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/StreamQualityDetector.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityDetector.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityDetector.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityDetector~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityDetector.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityDetector.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/StreamQualityService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/StreamQualityService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/SubtitleService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/ThemeService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/TimeshiftService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TimeshiftService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TimeshiftService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TimeshiftService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TimeshiftService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TimeshiftService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/TrackService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/VoiceCommandService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/VoiceCommandService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/VoiceCommandService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/VoiceCommandService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/VoiceCommandService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/VoiceCommandService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/WatchPartyService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchPartyService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchPartyService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchPartyService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchPartyService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchPartyService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/XstreamService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XstreamService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XstreamService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XstreamService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XstreamService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XstreamService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Services/iCloudSyncService.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/iCloudSyncService.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/iCloudSyncService.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/iCloudSyncService~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/iCloudSyncService.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/iCloudSyncService.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Storage/ChannelCache.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelCache.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelCache.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelCache~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelCache.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelCache.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Storage/ChannelRecord.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelRecord.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelRecord.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelRecord~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelRecord.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ChannelRecord.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Storage/FavoriteRecord.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/FavoriteRecord.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/FavoriteRecord.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/FavoriteRecord~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/FavoriteRecord.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/FavoriteRecord.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Storage/LastChannelStore.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/LastChannelStore.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/LastChannelStore.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/LastChannelStore~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/LastChannelStore.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/LastChannelStore.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Storage/MovieRecord.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieRecord.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieRecord.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieRecord~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieRecord.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/MovieRecord.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Storage/PlaylistRecord.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistRecord.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistRecord.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistRecord~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistRecord.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/PlaylistRecord.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Storage/SeriesRecord.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesRecord.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesRecord.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesRecord~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesRecord.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SeriesRecord.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Storage/WatchHistoryRecord.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchHistoryRecord.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchHistoryRecord.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchHistoryRecord~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchHistoryRecord.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchHistoryRecord.dia"
+  },
+  "/home/hermes/aether/Sources/AetherCore/Storage/WatchProgressRecord.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchProgressRecord.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchProgressRecord.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchProgressRecord~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchProgressRecord.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/WatchProgressRecord.dia"
   }
 }

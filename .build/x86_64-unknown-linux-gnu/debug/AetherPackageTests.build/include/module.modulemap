@@ -1,0 +1,3 @@
+module AetherPackageTests {
+    header "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageTests.build/include/AetherPackageTests-Swift.h"
+}

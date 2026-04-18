@@ -1,0 +1,3 @@
+module AetherAppTV {
+    header "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherAppTV.build/include/AetherAppTV-Swift.h"
+}

@@ -1,17 +1,19 @@
 {
   "": {
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/master.swiftdeps"
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/primary.swiftdeps"
   },
-  "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.derived/AetherTests.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/AetherTests.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/AetherTests.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/AetherTests~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/AetherTests.swiftdeps"
+  "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.derived/AetherTests.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/AetherTests.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/AetherTests.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/AetherTests~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/AetherTests.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/AetherTests.dia"
   },
-  "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.derived/all-discovered-tests.swift": {
-    "dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/all-discovered-tests.d",
-    "object": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/all-discovered-tests.swift.o",
-    "swiftmodule": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/all-discovered-tests~partial.swiftmodule",
-    "swift-dependencies": "/workspace/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/all-discovered-tests.swiftdeps"
+  "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.derived/all-discovered-tests.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/all-discovered-tests.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/all-discovered-tests.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/all-discovered-tests~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/all-discovered-tests.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherPackageDiscoveredTests.build/all-discovered-tests.dia"
   }
 }
