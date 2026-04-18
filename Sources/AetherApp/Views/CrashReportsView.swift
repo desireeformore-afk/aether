@@ -3,7 +3,7 @@ import AetherCore
 
 /// Crash reports view for viewing and exporting crash logs.
 public struct CrashReportsView: View {
-    @State var service: CrashReportingService
+    @Bindable var service: CrashReportingService
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedReport: CrashReport?
