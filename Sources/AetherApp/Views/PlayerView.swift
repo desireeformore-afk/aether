@@ -473,25 +473,6 @@ struct VideoPlayerLayer: NSViewRepresentable {
         view.showsFullScreenToggleButton = true
         view.pictureInPictureDelegate = context.coordinator
 
-        // Listen for PiP toggle notification
-        context.coordinator.pipObserver = NotificationCenter.default.addObserver(
-            forName: .togglePiP,
-            object: nil,
-            queue: .main
-        ) { [weak view] _ in
-            Task { @MainActor in
-                guard let view = view, view.allowsPictureInPicturePlayback else { return }
-                if view.player != nil {
-                    // Exit PiP by setting player to nil temporarily
-                    let player = view.player
-                    view.player = nil
-                    view.player = player
-                } else {
-                    // Enter PiP - handled by system controls
-                }
-            }
-        }
-
         return view
     }
 
@@ -500,20 +481,14 @@ struct VideoPlayerLayer: NSViewRepresentable {
     }
 
     static func dismantleNSView(_ nsView: AVPlayerView, coordinator: Coordinator) {
-        if let observer = coordinator.pipObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
     }
 
     // MARK: - Coordinator
 
-    @MainActor
     final class Coordinator: NSObject, AVPlayerViewPictureInPictureDelegate {
-        var pipObserver: NSObjectProtocol?
-        
-        func playerViewWillStartPictureInPicture(_ playerView: AVPlayerView) {}
-        func playerViewDidStartPictureInPicture(_ playerView: AVPlayerView) {}
-        func playerViewWillStopPictureInPicture(_ playerView: AVPlayerView) {}
-        func playerViewDidStopPictureInPicture(_ playerView: AVPlayerView) {}
+        nonisolated func playerViewWillStartPicture(inPicture playerView: AVPlayerView) {}
+        nonisolated func playerViewDidStartPicture(inPicture playerView: AVPlayerView) {}
+        nonisolated func playerViewWillStopPicture(inPicture playerView: AVPlayerView) {}
+        nonisolated func playerViewDidStopPicture(inPicture playerView: AVPlayerView) {}
     }
 }

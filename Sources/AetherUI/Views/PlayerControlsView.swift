@@ -5,8 +5,12 @@ import AetherCore
 /// Shared across macOS, iOS, tvOS — layout adapts via environment.
 public struct PlayerControlsView: View {
     @Bindable public var player: PlayerCore
+    @Binding public var showStats: Bool
 
-    public init(player: PlayerCore) { self.player = player }
+    public init(player: PlayerCore, showStats: Binding<Bool>) { 
+        self.player = player 
+        self._showStats = showStats
+    }
 
     private var isPlaying: Bool { player.state == .playing }
 
