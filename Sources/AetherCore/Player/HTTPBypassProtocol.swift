@@ -2,7 +2,7 @@ import Foundation
 
 /// Custom URLProtocol that intercepts HTTP requests and allows them to bypass ATS restrictions.
 /// Registered in PlayerCore before creating AVURLAsset instances.
-public final class HTTPBypassProtocol: URLProtocol {
+public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
 
     private let lock = NSLock()
     private var _dataTask: URLSessionDataTask?
@@ -66,34 +66,34 @@ public final class HTTPBypassProtocol: URLProtocol {
         print("[HTTPBypassProtocol] Starting load: \(request.url?.absoluteString ?? "unknown")")
         #endif
 
-        let task = Self.bypassSession.dataTask(with: mutableRequest) { data, response, error in
-            MainActor.assumeIsolated {
-                if let error = error {
-                    #if DEBUG
-                    print("[HTTPBypassProtocol] Error: \(error.localizedDescription)")
-                    #endif
-                    client.urlProtocol(protocolInstance, didFailWithError: error)
-                    return
-                }
-
-                if let response = response {
-                    #if DEBUG
-                    if let httpResponse = response as? HTTPURLResponse {
-                        print("[HTTPBypassProtocol] Response: \(httpResponse.statusCode)")
-                    }
-                    #endif
-                    client.urlProtocol(protocolInstance, didReceive: response, cacheStoragePolicy: .notAllowed)
-                }
-
-                if let data = data {
-                    #if DEBUG
-                    print("[HTTPBypassProtocol] Loaded \(data.count) bytes")
-                    #endif
-                    client.urlProtocol(protocolInstance, didLoad: data)
-                }
-
-                client.urlProtocolDidFinishLoading(protocolInstance)
+        let task = Self.bypassSession.dataTask(with: mutableRequest) { [weak protocolInstance] data, response, error in
+            guard let protocolInstance = protocolInstance else { return }
+            
+            if let error = error {
+                #if DEBUG
+                print("[HTTPBypassProtocol] Error: \(error.localizedDescription)")
+                #endif
+                client.urlProtocol(protocolInstance, didFailWithError: error)
+                return
             }
+
+            if let response = response {
+                #if DEBUG
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("[HTTPBypassProtocol] Response: \(httpResponse.statusCode)")
+                }
+                #endif
+                client.urlProtocol(protocolInstance, didReceive: response, cacheStoragePolicy: .notAllowed)
+            }
+
+            if let data = data {
+                #if DEBUG
+                print("[HTTPBypassProtocol] Loaded \(data.count) bytes")
+                #endif
+                client.urlProtocol(protocolInstance, didLoad: data)
+            }
+
+            client.urlProtocolDidFinishLoading(protocolInstance)
         }
         
         dataTask = task

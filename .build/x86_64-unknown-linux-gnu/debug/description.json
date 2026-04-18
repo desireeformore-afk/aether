@@ -765,19 +765,7 @@
       "inputs" : [
         {
           "kind" : "file",
-          "name" : "/home/hermes/aether/Sources/AetherCore/Design/Colors.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/Sources/AetherCore/Design/Typography.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/home/hermes/aether/Sources/AetherCore/Models/AgeRating.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/Sources/AetherCore/Models/AppearanceMode.swift"
         },
         {
           "kind" : "file",
@@ -834,10 +822,6 @@
         {
           "kind" : "file",
           "name" : "/home/hermes/aether/Sources/AetherCore/Models/SyncableItem.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/Sources/AetherCore/Models/Theme.swift"
         },
         {
           "kind" : "file",
@@ -1048,10 +1032,7 @@
       "moduleName" : "AetherCore",
       "moduleOutputPath" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/Modules/AetherCore.swiftmodule",
       "objects" : [
-        "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.swift.o",
-        "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating.swift.o",
-        "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Channel.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/EPGEntry.swift.o",
@@ -1066,7 +1047,6 @@
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ShareablePlaylist.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SubtitleTrack.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem.swift.o",
-        "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/M3UParser.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SRTParser.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/XMLTVParser.swift.o",
@@ -1154,19 +1134,7 @@
       "outputs" : [
         {
           "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AgeRating.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.swift.o"
         },
         {
           "kind" : "file",
@@ -1223,10 +1191,6 @@
         {
           "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/SyncableItem.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.swift.o"
         },
         {
           "kind" : "file",
@@ -1431,10 +1395,7 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
-        "/home/hermes/aether/Sources/AetherCore/Design/Colors.swift",
-        "/home/hermes/aether/Sources/AetherCore/Design/Typography.swift",
         "/home/hermes/aether/Sources/AetherCore/Models/AgeRating.swift",
-        "/home/hermes/aether/Sources/AetherCore/Models/AppearanceMode.swift",
         "/home/hermes/aether/Sources/AetherCore/Models/AudioTrack.swift",
         "/home/hermes/aether/Sources/AetherCore/Models/Channel.swift",
         "/home/hermes/aether/Sources/AetherCore/Models/EPGEntry.swift",
@@ -1449,7 +1410,6 @@
         "/home/hermes/aether/Sources/AetherCore/Models/ShareablePlaylist.swift",
         "/home/hermes/aether/Sources/AetherCore/Models/SubtitleTrack.swift",
         "/home/hermes/aether/Sources/AetherCore/Models/SyncableItem.swift",
-        "/home/hermes/aether/Sources/AetherCore/Models/Theme.swift",
         "/home/hermes/aether/Sources/AetherCore/Parsers/M3UParser.swift",
         "/home/hermes/aether/Sources/AetherCore/Parsers/SRTParser.swift",
         "/home/hermes/aether/Sources/AetherCore/Parsers/XMLTVParser.swift",
@@ -1894,6 +1854,22 @@
         },
         {
           "kind" : "file",
+          "name" : "/home/hermes/aether/Sources/AetherUI/Design/Colors.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/Sources/AetherUI/Design/Typography.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/Sources/AetherUI/Models/AppearanceMode.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/Sources/AetherUI/Models/Theme.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/home/hermes/aether/Sources/AetherUI/Views/AppearancePickerView.swift"
         },
         {
@@ -1938,6 +1914,10 @@
       "moduleOutputPath" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/Modules/AetherUI.swiftmodule",
       "objects" : [
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.swift.o",
+        "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Colors.swift.o",
+        "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Typography.swift.o",
+        "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearanceMode.swift.o",
+        "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Theme.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.swift.o",
         "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/EPGTimelineView.swift.o",
@@ -1987,6 +1967,22 @@
         },
         {
           "kind" : "file",
+          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Colors.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Typography.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearanceMode.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Theme.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.swift.o"
         },
         {
@@ -2021,6 +2017,10 @@
       "prepareForIndexing" : false,
       "sources" : [
         "/home/hermes/aether/Sources/AetherUI/AetherUI.swift",
+        "/home/hermes/aether/Sources/AetherUI/Design/Colors.swift",
+        "/home/hermes/aether/Sources/AetherUI/Design/Typography.swift",
+        "/home/hermes/aether/Sources/AetherUI/Models/AppearanceMode.swift",
+        "/home/hermes/aether/Sources/AetherUI/Models/Theme.swift",
         "/home/hermes/aether/Sources/AetherUI/Views/AppearancePickerView.swift",
         "/home/hermes/aether/Sources/AetherUI/Views/ChannelRowView.swift",
         "/home/hermes/aether/Sources/AetherUI/Views/EPGTimelineView.swift",
@@ -2224,10 +2224,7 @@
       "-package-name",
       "aether",
       "-c",
-      "/home/hermes/aether/Sources/AetherCore/Design/Colors.swift",
-      "/home/hermes/aether/Sources/AetherCore/Design/Typography.swift",
       "/home/hermes/aether/Sources/AetherCore/Models/AgeRating.swift",
-      "/home/hermes/aether/Sources/AetherCore/Models/AppearanceMode.swift",
       "/home/hermes/aether/Sources/AetherCore/Models/AudioTrack.swift",
       "/home/hermes/aether/Sources/AetherCore/Models/Channel.swift",
       "/home/hermes/aether/Sources/AetherCore/Models/EPGEntry.swift",
@@ -2242,7 +2239,6 @@
       "/home/hermes/aether/Sources/AetherCore/Models/ShareablePlaylist.swift",
       "/home/hermes/aether/Sources/AetherCore/Models/SubtitleTrack.swift",
       "/home/hermes/aether/Sources/AetherCore/Models/SyncableItem.swift",
-      "/home/hermes/aether/Sources/AetherCore/Models/Theme.swift",
       "/home/hermes/aether/Sources/AetherCore/Parsers/M3UParser.swift",
       "/home/hermes/aether/Sources/AetherCore/Parsers/SRTParser.swift",
       "/home/hermes/aether/Sources/AetherCore/Parsers/XMLTVParser.swift",
@@ -2481,6 +2477,10 @@
       "aether",
       "-c",
       "/home/hermes/aether/Sources/AetherUI/AetherUI.swift",
+      "/home/hermes/aether/Sources/AetherUI/Design/Colors.swift",
+      "/home/hermes/aether/Sources/AetherUI/Design/Typography.swift",
+      "/home/hermes/aether/Sources/AetherUI/Models/AppearanceMode.swift",
+      "/home/hermes/aether/Sources/AetherUI/Models/Theme.swift",
       "/home/hermes/aether/Sources/AetherUI/Views/AppearancePickerView.swift",
       "/home/hermes/aether/Sources/AetherUI/Views/ChannelRowView.swift",
       "/home/hermes/aether/Sources/AetherUI/Views/EPGTimelineView.swift",
@@ -3034,10 +3034,6 @@
         },
         {
           "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack.swift.o"
         },
         {
@@ -3067,10 +3063,6 @@
         {
           "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.swift.o"
         },
         {
           "kind" : "file",
@@ -3246,10 +3238,6 @@
         },
         {
           "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService.swift.o"
         },
         {
@@ -3259,10 +3247,6 @@
         {
           "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.swift.o"
         },
         {
           "kind" : "file",
@@ -3302,11 +3286,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearanceMode.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ChannelRowView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Colors.swift.o"
         },
         {
           "kind" : "file",
@@ -3326,7 +3318,15 @@
         },
         {
           "kind" : "file",
+          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Theme.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/ThemePickerView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Typography.swift.o"
         }
       ],
       "outputFilePath" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherApp.product/Objects.LinkFileList"
@@ -3388,19 +3388,7 @@
         },
         {
           "kind" : "file",
-          "name" : "/home/hermes/aether/Sources/AetherCore/Design/Colors.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/Sources/AetherCore/Design/Typography.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/home/hermes/aether/Sources/AetherCore/Models/AgeRating.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/Sources/AetherCore/Models/AppearanceMode.swift"
         },
         {
           "kind" : "file",
@@ -3457,10 +3445,6 @@
         {
           "kind" : "file",
           "name" : "/home/hermes/aether/Sources/AetherCore/Models/SyncableItem.swift"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/Sources/AetherCore/Models/Theme.swift"
         },
         {
           "kind" : "file",
@@ -3718,10 +3702,6 @@
         },
         {
           "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AppearanceMode.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/AudioTrack.swift.o"
         },
         {
@@ -3751,10 +3731,6 @@
         {
           "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/CloudKitManager.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Colors.swift.o"
         },
         {
           "kind" : "file",
@@ -3930,10 +3906,6 @@
         },
         {
           "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Theme.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/ThemeService.swift.o"
         },
         {
@@ -3943,10 +3915,6 @@
         {
           "kind" : "file",
           "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/TrackService.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherCore.build/Typography.swift.o"
         },
         {
           "kind" : "file",
@@ -4135,6 +4103,22 @@
         {
           "kind" : "file",
           "name" : "/home/hermes/aether/Sources/AetherUI/AetherUI.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/Sources/AetherUI/Design/Colors.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/Sources/AetherUI/Design/Typography.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/Sources/AetherUI/Models/AppearanceMode.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/home/hermes/aether/Sources/AetherUI/Models/Theme.swift"
         },
         {
           "kind" : "file",

@@ -1,7 +1,4 @@
-/home/hermes/aether/Sources/AetherCore/Design/Colors.swift
-/home/hermes/aether/Sources/AetherCore/Design/Typography.swift
 /home/hermes/aether/Sources/AetherCore/Models/AgeRating.swift
-/home/hermes/aether/Sources/AetherCore/Models/AppearanceMode.swift
 /home/hermes/aether/Sources/AetherCore/Models/AudioTrack.swift
 /home/hermes/aether/Sources/AetherCore/Models/Channel.swift
 /home/hermes/aether/Sources/AetherCore/Models/EPGEntry.swift
@@ -16,7 +13,6 @@
 /home/hermes/aether/Sources/AetherCore/Models/ShareablePlaylist.swift
 /home/hermes/aether/Sources/AetherCore/Models/SubtitleTrack.swift
 /home/hermes/aether/Sources/AetherCore/Models/SyncableItem.swift
-/home/hermes/aether/Sources/AetherCore/Models/Theme.swift
 /home/hermes/aether/Sources/AetherCore/Parsers/M3UParser.swift
 /home/hermes/aether/Sources/AetherCore/Parsers/SRTParser.swift
 /home/hermes/aether/Sources/AetherCore/Parsers/XMLTVParser.swift
