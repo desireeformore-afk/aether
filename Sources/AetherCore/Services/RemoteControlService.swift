@@ -3,7 +3,7 @@ import Foundation
 import Network
 #endif
 
-6|@MainActor
+@MainActor
 @Observable
 public final class RemoteControlService {
     public static let shared = RemoteControlService()

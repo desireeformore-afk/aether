@@ -3,12 +3,12 @@ import CloudKit
 
 @MainActor
 @Observable
-5|public final class CloudKitManager {
+public final class CloudKitManager {
     public static let shared = CloudKitManager()
     
-9|    public private(set) var isSyncing = false
-10|    public private(set) var lastSyncDate: Date?
-11|    public private(set) var syncError: Error?
+    public private(set) var isSyncing = false
+    public private(set) var lastSyncDate: Date?
+    public private(set) var syncError: Error?
     
     private let container: CKContainer
     private let privateDatabase: CKDatabase

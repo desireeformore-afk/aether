@@ -4,7 +4,7 @@ import CryptoKit
 /// Service for managing parental controls and content restrictions.
 ///
 /// Handles PIN validation, content filtering, and time-based restrictions.
-7|@MainActor
+@MainActor
 @Observable
 public final class ParentalControlService {
     @Published public private(set) var settings: ParentalSettings

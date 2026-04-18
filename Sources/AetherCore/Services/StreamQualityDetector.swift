@@ -4,10 +4,10 @@ import Foundation
 /// Detects available quality variants from HLS manifests and monitors stream quality.
 @MainActor
 @Observable
-6|public final class StreamQualityDetector {
-8|    public private(set) var availableQualities: [StreamQuality] = []
-9|    public private(set) var currentBitrate: Double = 0
-10|    public private(set) var isAutoDetecting: Bool = false
+public final class StreamQualityDetector {
+    public private(set) var availableQualities: [StreamQuality] = []
+    public private(set) var currentBitrate: Double = 0
+    public private(set) var isAutoDetecting: Bool = false
 
     private weak var player: AVPlayer?
     private var bitrateObserver: NSKeyValueObservation?

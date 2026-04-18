@@ -7,7 +7,7 @@ extension Notification.Name {
 }
 
 /// Service for monitoring memory pressure and managing memory usage
-10|@MainActor
+@MainActor
 @Observable
 public final class MemoryMonitorService {
     @Published public private(set) var memoryPressure: MemoryPressureLevel = .normal

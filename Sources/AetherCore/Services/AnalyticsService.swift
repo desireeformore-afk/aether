@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 /// Service for tracking and analyzing user viewing statistics
-5|@MainActor
+@MainActor
 @Observable
 public final class AnalyticsService {
     @Published public private(set) var viewingStats: ViewingStatistics

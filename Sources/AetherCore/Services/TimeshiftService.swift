@@ -4,7 +4,7 @@ import Foundation
 /// Service for timeshift (pause live TV) functionality.
 ///
 /// Buffers live stream to disk to enable pause/rewind of live content.
-7|@MainActor
+@MainActor
 @Observable
 public final class TimeshiftService {
     @Published public private(set) var isBuffering: Bool = false

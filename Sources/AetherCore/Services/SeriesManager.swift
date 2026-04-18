@@ -4,7 +4,7 @@ import SwiftData
 /// Manages series episodes, watch progress, and viewing recommendations.
 @MainActor
 @Observable
-6|public final class SeriesManager {
+public final class SeriesManager {
 
     private let modelContext: ModelContext
 

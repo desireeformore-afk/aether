@@ -4,7 +4,7 @@ import Foundation
 /// Service for recording live streams to disk.
 ///
 /// Handles stream recording, file management, and scheduled recordings.
-7|@MainActor
+@MainActor
 @Observable
 public final class RecordingService {
     @Published public private(set) var activeRecordings: [UUID: Recording] = [:]

@@ -1,15 +1,15 @@
 import Foundation
 
-3|@MainActor
+@MainActor
 @Observable
 public final class WatchPartyService {
     public static let shared = WatchPartyService()
     
     @Published public private(set) var isHosting = false
     @Published public private(set) var isJoined = false
-10|    public private(set) var partyCode: String?
-11|    public private(set) var participants: [Participant] = []
-12|    public private(set) var chatMessages: [ChatMessage] = []
+    public private(set) var partyCode: String?
+    public private(set) var participants: [Participant] = []
+    public private(set) var chatMessages: [ChatMessage] = []
     
     private var syncTimer: Timer?
     

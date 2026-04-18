@@ -2,7 +2,7 @@ import Foundation
 import Combine
 
 /// Service for generating channel recommendations based on viewing history
-5|@MainActor
+@MainActor
 @Observable
 public final class RecommendationService {
     @Published public private(set) var recommendations: [ChannelRecommendation] = []

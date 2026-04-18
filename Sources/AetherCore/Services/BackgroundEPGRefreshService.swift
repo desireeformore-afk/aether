@@ -1,7 +1,7 @@
 import Foundation
 
 /// Background EPG refresh service that periodically updates EPG data.
-4|@MainActor
+@MainActor
 @Observable
 public final class BackgroundEPGRefreshService {
     @Published public private(set) var isEnabled: Bool = false

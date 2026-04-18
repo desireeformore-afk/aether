@@ -3,7 +3,7 @@ import Foundation
 import Intents
 #endif
 
-6|@MainActor
+@MainActor
 @Observable
 public final class ShortcutsService {
     public static let shared = ShortcutsService()
