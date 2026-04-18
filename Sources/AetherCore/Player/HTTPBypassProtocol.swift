@@ -66,33 +66,36 @@ public final class HTTPBypassProtocol: URLProtocol {
 
         dataTask = Self.bypassSession.dataTask(with: mutableRequest) { [weak self] data, response, error in
             guard let self = self else { return }
-            guard let client = self.client else { return }
+            
+            DispatchQueue.main.async {
+                guard let client = self.client else { return }
 
-            if let error = error {
-                #if DEBUG
-                print("[HTTPBypassProtocol] Error: \(error.localizedDescription)")
-                #endif
-                client.urlProtocol(self, didFailWithError: error)
-                return
-            }
-
-            if let response = response {
-                #if DEBUG
-                if let httpResponse = response as? HTTPURLResponse {
-                    print("[HTTPBypassProtocol] Response: \(httpResponse.statusCode)")
+                if let error = error {
+                    #if DEBUG
+                    print("[HTTPBypassProtocol] Error: \(error.localizedDescription)")
+                    #endif
+                    client.urlProtocol(self, didFailWithError: error)
+                    return
                 }
-                #endif
-                client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            }
 
-            if let data = data {
-                #if DEBUG
-                print("[HTTPBypassProtocol] Loaded \(data.count) bytes")
-                #endif
-                client.urlProtocol(self, didLoad: data)
-            }
+                if let response = response {
+                    #if DEBUG
+                    if let httpResponse = response as? HTTPURLResponse {
+                        print("[HTTPBypassProtocol] Response: \(httpResponse.statusCode)")
+                    }
+                    #endif
+                    client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+                }
 
-            client.urlProtocolDidFinishLoading(self)
+                if let data = data {
+                    #if DEBUG
+                    print("[HTTPBypassProtocol] Loaded \(data.count) bytes")
+                    #endif
+                    client.urlProtocol(self, didLoad: data)
+                }
+
+                client.urlProtocolDidFinishLoading(self)
+            }
         }
 
         dataTask?.resume()
