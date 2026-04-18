@@ -35,6 +35,7 @@ struct AetherApp: App {
     @StateObject private var memoryMonitor = MemoryMonitorService()
     @StateObject private var analyticsService = AnalyticsService()
     @StateObject private var iCloudSync = iCloudSyncService()
+    @StateObject private var statusBarController: StatusBarController
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -47,6 +48,7 @@ struct AetherApp: App {
         _networkMonitor = StateObject(wrappedValue: network)
         _offlineQueue = StateObject(wrappedValue: OfflineQueueService(networkMonitor: network))
         _analyticsService = StateObject(wrappedValue: analytics)
+        _statusBarController = StateObject(wrappedValue: StatusBarController(player: player))
 
         // Wire analytics to player
         player.onWatchSessionEnd = { channel, startTime, duration in
@@ -86,6 +88,8 @@ struct AetherApp: App {
                     sleepTimer.onExpired = { [weak playerCore] in
                         playerCore?.stop()
                     }
+                    // Setup status bar
+                    statusBarController.setup()
                 }
                 .sheet(isPresented: .constant(!hasCompletedOnboarding)) {
                     OnboardingView(isPresented: Binding(
