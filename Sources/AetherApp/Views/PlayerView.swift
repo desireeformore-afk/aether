@@ -516,8 +516,12 @@ struct VideoPlayerLayer: NSViewRepresentable {
 struct PlayerControls: View {
     @ObservedObject var player: PlayerCore
     @EnvironmentObject private var sleepTimer: SleepTimerService
+    @EnvironmentObject private var recordingService: RecordingService
+    @EnvironmentObject private var timeshiftService: TimeshiftService
     @Environment(\.modelContext) private var modelContext
     @Binding var showStats: Bool
+
+    @State private var showRecordingManager = false
 
     var body: some View {
         HStack(spacing: 20) {
@@ -627,6 +631,16 @@ struct PlayerControls: View {
 
             Divider().frame(height: 24)
 
+            // Recording controls
+            RecordingControlsButton(
+                player: player,
+                recordingService: recordingService,
+                timeshiftService: timeshiftService,
+                showRecordingManager: $showRecordingManager
+            )
+
+            Divider().frame(height: 24)
+
             // Sleep timer
             SleepTimerButton()
 
@@ -658,6 +672,9 @@ struct PlayerControls: View {
         }
         .padding(12)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .sheet(isPresented: $showRecordingManager) {
+            RecordingManagerView(service: recordingService)
+        }
     }
 
     private var isPlaying: Bool { player.state == .playing }

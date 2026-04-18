@@ -25,6 +25,8 @@ struct AetherApp: App {
     @StateObject private var subtitleStore = SubtitleStore()
     @StateObject private var themeService = ThemeService()
     @StateObject private var parentalService = ParentalControlService()
+    @StateObject private var recordingService = RecordingService()
+    @StateObject private var timeshiftService = TimeshiftService()
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -37,6 +39,8 @@ struct AetherApp: App {
                 .environmentObject(subtitleStore)
                 .environmentObject(themeService)
                 .environmentObject(parentalService)
+                .environmentObject(recordingService)
+                .environmentObject(timeshiftService)
                 .task {
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)
