@@ -1,7 +1,7 @@
 import Foundation
 
 /// An IPTV playlist containing a collection of channels.
-public struct Playlist: Identifiable, Sendable {
+public struct Playlist: Identifiable, Sendable, Hashable {
     public let id: UUID
     public var name: String
     public var url: URL

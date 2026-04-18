@@ -231,8 +231,11 @@ struct ActiveRecordingRow: View {
     }
 
     private func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            elapsedTime = Date().timeIntervalSince(recording.startTime)
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.elapsedTime = Date().timeIntervalSince(recording.startTime)
+            }
         }
     }
 

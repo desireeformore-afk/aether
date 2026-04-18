@@ -466,9 +466,9 @@ struct VideoPlayerLayer: NSViewRepresentable {
             forName: .togglePiP,
             object: nil,
             queue: .main
-        ) { [weak view] _ in
+        ) { [weak view, weak playerCore] _ in
             if let view = view, view.allowsPictureInPicturePlayback {
-                if view.isPictureInPictureActive {
+                if playerCore?.isPiPActive == true {
                     view.exitPictureInPicture()
                 } else {
                     view.enterPictureInPicture()

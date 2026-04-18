@@ -23,6 +23,22 @@ struct PlaylistSidebar: View {
     }
 
     var body: some View {
+        listContent
+            .navigationTitle("Aether")
+            .toolbar { toolbarContent }
+            .sheet(isPresented: $showHistory) { historySheet }
+            .sheet(isPresented: $showAddSheet) { addPlaylistSheet }
+            #if os(macOS)
+            .sheet(isPresented: $showSettings) { settingsSheet }
+            #endif
+            .onChange(of: playlists) { _, newList in
+                if selectedPlaylist == nil, let first = newList.first {
+                    selectedPlaylist = first
+                }
+            }
+    }
+    
+    private var listContent: some View {
         List(selection: $selectedPlaylist) {
             // Recently Watched
             if !recentChannels.isEmpty {
@@ -46,54 +62,53 @@ struct PlaylistSidebar: View {
                 .onMove(perform: movePlaylists)
             }
         }
-        .navigationTitle("Aether")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: { showAddSheet = true }) {
-                    Image(systemName: "plus")
-                }
-                .help("Add Playlist  ⌘N")
-                .keyboardShortcut("n", modifiers: .command)
+    }
+    
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Button(action: { showAddSheet = true }) {
+                Image(systemName: "plus")
             }
-            ToolbarItem(placement: .secondaryAction) {
-                Button(action: { showHistory = true }) {
-                    Image(systemName: "clock.arrow.circlepath")
-                }
-                .help("Watch History")
-                .disabled(history.isEmpty)
-            }
-            #if os(macOS)
-            ToolbarItem(placement: .secondaryAction) {
-                Button(action: { showSettings = true }) {
-                    Image(systemName: "gearshape")
-                }
-                .help("Settings  ⌘,")
-            }
-            #endif
+            .help("Add Playlist  ⌘N")
+            .keyboardShortcut("n", modifiers: .command)
         }
-        .sheet(isPresented: $showHistory) {
-            WatchHistoryView()
-                .environmentObject(playerCore)
-        }
-        .sheet(isPresented: $showAddSheet) {
-            AddPlaylistSheet { record in
-                record.sortIndex = (playlists.last?.sortIndex ?? -1) + 1
-                selectedPlaylist = record
+        ToolbarItem(placement: .secondaryAction) {
+            Button(action: { showHistory = true }) {
+                Image(systemName: "clock.arrow.circlepath")
             }
+            .help("Watch History")
+            .disabled(history.isEmpty)
         }
         #if os(macOS)
-        .sheet(isPresented: $showSettings) {
-            SettingsView()
-                .environmentObject(playerCore.epgStore ?? EPGStore())
-                .frame(width: 600, height: 500)
+        ToolbarItem(placement: .secondaryAction) {
+            Button(action: { showSettings = true }) {
+                Image(systemName: "gearshape")
+            }
+            .help("Settings  ⌘,")
         }
         #endif
-        .onChange(of: playlists) { _, newList in
-            if selectedPlaylist == nil, let first = newList.first {
-                selectedPlaylist = first
-            }
+    }
+    
+    private var historySheet: some View {
+        WatchHistoryView()
+            .environmentObject(playerCore)
+    }
+    
+    private var addPlaylistSheet: some View {
+        AddPlaylistSheet { record in
+            record.sortIndex = (playlists.last?.sortIndex ?? -1) + 1
+            selectedPlaylist = record
         }
     }
+    
+    #if os(macOS)
+    private var settingsSheet: some View {
+        SettingsView()
+            .environmentObject(playerCore.epgStore ?? EPGStore())
+            .frame(width: 600, height: 500)
+    }
+    #endif
 
     // MARK: - Actions
 
