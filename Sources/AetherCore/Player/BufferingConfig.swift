@@ -13,9 +13,9 @@ public enum BufferingConfig {
         // Allow network stalls to be retried by the system before we get notified
         item.canUseNetworkResourcesForLiveStreamingWhilePaused = false
         #if os(iOS) || os(tvOS)
-        item.audioTimePitchAlgorithm = .lowQualityZeroLatency
-        #else
-        item.audioTimePitchAlgorithm = .timePitch
+        item.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.lowQualityZeroLatency
+        #elseif os(macOS)
+        item.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithm.timePitch
         #endif
     }
 
