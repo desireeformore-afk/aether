@@ -143,7 +143,7 @@ struct VODBrowserView: View {
         isLoadingCategories = true
         defer { isLoadingCategories = false }
         do {
-            categories = try await service.getVODCategories()
+            categories = try await service.vodCategories()
         } catch {
             print("Failed to load VOD categories: \(error)")
         }
@@ -153,7 +153,7 @@ struct VODBrowserView: View {
         isLoadingStreams = true
         defer { isLoadingStreams = false }
         do {
-            streams = try await service.getVODStreams(categoryID: category.id)
+            streams = try await service.vodStreams(categoryID: category.id)
         } catch {
             print("Failed to load VOD streams: \(error)")
         }
@@ -212,16 +212,7 @@ private struct VODCard: View {
                             .clipShape(Capsule())
                         }
                         
-                        if let year = extractYear(from: vod.added) {
-                            Text(year)
-                                .font(.caption2)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.white.opacity(0.9))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(.black.opacity(0.6))
-                                .clipShape(Capsule())
-                        }
+
                         
                         Spacer()
                     }
@@ -252,13 +243,6 @@ private struct VODCard: View {
         }
     }
 
-    private func extractYear(from dateString: String?) -> String? {
-        guard let dateString = dateString else { return nil }
-        // Format: "YYYY-MM-DD HH:mm:ss"
-        let components = dateString.split(separator: "-")
-        guard let firstComponent = components.first else { return nil }
-        return String(firstComponent)
-    }
 }
 
 // MARK: - ShimmerView
