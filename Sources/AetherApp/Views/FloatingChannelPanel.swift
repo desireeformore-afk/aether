@@ -24,7 +24,7 @@ struct FloatingChannelPanel: View {
             HStack(spacing: 0) {
                 // Left: Playlist selector
                 PlaylistSidebar(selectedPlaylist: $selectedPlaylist)
-                    .frame(width: 200)
+                    .frame(width: 180)
 
                 Divider()
 
@@ -82,11 +82,12 @@ struct FloatingChannelPanel: View {
                     .foregroundStyle(activeTab == tab ? Color.aetherPrimary : Color.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
                     .background(
                         activeTab == tab
-                            ? Color.aetherPrimary.opacity(0.1)
+                            ? Color.aetherPrimary.opacity(0.15)
                             : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 6)
+                        in: Capsule()
                     )
                 }
                 .buttonStyle(.plain)
@@ -111,7 +112,9 @@ struct FloatingChannelPanel: View {
                 .help("Search All Content  ⌘F")
                 .sheet(isPresented: $showGlobalSearch) {
                     GlobalContentSearchView(
-                        xstreamService: XstreamService(credentials: creds)
+                        xstreamService: XstreamService(credentials: creds),
+                        credentials: creds,
+                        player: player
                     )
                 }
             }
@@ -132,10 +135,12 @@ struct FloatingChannelPanel: View {
                 selectedChannel: $selectedChannel,
                 player: player
             )
+            .contentTransition(.opacity)
 
         case .movies:
             if let creds = playlist.xstreamCredentials {
                 VODBrowserView(credentials: creds, player: player, isEmbedded: true)
+                    .contentTransition(.opacity)
             } else {
                 unavailableView("Movies unavailable", systemImage: "film", description: "Movies require an Xtream Codes playlist.")
             }
@@ -143,6 +148,7 @@ struct FloatingChannelPanel: View {
         case .series:
             if let creds = playlist.xstreamCredentials {
                 SeriesBrowserView(credentials: creds, player: player, isEmbedded: true)
+                    .contentTransition(.opacity)
             } else {
                 unavailableView("Series unavailable", systemImage: "tv.and.mediabox", description: "Series require an Xtream Codes playlist.")
             }
