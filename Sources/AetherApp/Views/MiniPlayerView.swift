@@ -104,6 +104,12 @@ public struct MiniPlayerView: View {
                 isHovering = hovering
             }
         }
+        #if os(macOS)
+        .onScrollWheel { event in
+            let delta = Float(event.scrollingDeltaY) * 0.005
+            player.adjustVolume(delta: -delta)
+        }
+        #endif
         .onChange(of: player.currentChannel) { _, newChannel in
             Task {
                 await loadEPG(for: newChannel)

@@ -139,6 +139,9 @@ public final class PlayerCore {
     /// when both .status == .failed and AVPlayerItemFailedToPlayToEndTime fire for the same item).
     private weak var retrySourceItem: AVPlayerItem?
 
+    /// Blocks retry when HTTP 400 error is detected.
+    private var shouldBlockRetry: Bool = false
+
     /// FFmpeg HLS proxy — remuxes TS/MKV to local HLS segments for AVPlayer
     private var hlsProxy: LocalHLSProxy?
 
@@ -204,6 +207,7 @@ public final class PlayerCore {
         retryCount = 0
         isRetrying = false
         retrySourceItem = nil
+        shouldBlockRetry = false
 
         let url = channel.streamURL
         let ext = url.pathExtension.lowercased()
@@ -293,6 +297,7 @@ public final class PlayerCore {
         retryCount = 0
         isRetrying = false
         retrySourceItem = nil
+        shouldBlockRetry = false
         state = .idle
     }
 
@@ -328,7 +333,11 @@ public final class PlayerCore {
         play(channelList[idx - 1])
     }
 
-    // MARK: - PiP state callback (set by VideoPlayerLayer coordinator)
+    /// Adjusts volume by delta (-1.0 to +1.0), clamped to 0–1.
+    /// Used by scroll wheel gesture over the player.
+    public func adjustVolume(delta: Float) {
+        setVolume(volume + delta)
+    }
 
     /// Called by the AVPlayerView coordinator when PiP state changes.
     public func setPiPActive(_ active: Bool) {
@@ -338,8 +347,13 @@ public final class PlayerCore {
     // MARK: - Auto-retry
 
     /// Schedules a retry with exponential backoff (2s, 4s, 6s).
+    /// On retry, increases the forward buffer to help with weak-signal streams.
     /// `item` identifies the failing item — duplicate calls for the same item are ignored.
     private func scheduleRetry(for item: AVPlayerItem) {
+        guard !shouldBlockRetry else {
+            state = .error("HTTP 400 - invalid request")
+            return
+        }
         // De-duplicate: if we're already retrying because of this exact item, skip.
         guard retrySourceItem !== item else { return }
         guard !isRetrying else { return }
@@ -352,6 +366,12 @@ public final class PlayerCore {
         retryCount += 1
         let delay = Double(retryCount) * 2.0
         state = .loading
+
+        // Increase buffer on retry — weak signal likely
+        if let currentItem = player.currentItem {
+            BufferingConfig.applyAdaptive(to: currentItem)
+        }
+
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(delay))
             // Only retry if we're still on the same channel
@@ -434,11 +454,17 @@ public final class PlayerCore {
                     self.retryCount = 0
                     self.retrySourceItem = nil
                     self.state = .playing
+                    // Reset buffer to normal after successful recovery
+                    BufferingConfig.resetToNormal(for: item)
                 case .failed:
                     let err = item.error?.localizedDescription ?? "unknown"
                     print("[PlayerCore] ❌ FAILED: \(err)")
                     if let underlying = (item.error as NSError?)?.userInfo[NSUnderlyingErrorKey] as? NSError {
                         print("[PlayerCore]   Underlying: \(underlying.domain) \(underlying.code) \(underlying.localizedDescription)")
+                        if underlying.code == 400 {
+                            print("[PlayerCore] 🚫 HTTP 400 detected — blocking retry")
+                            self.shouldBlockRetry = true
+                        }
                     }
                     self.state = .error(err)
                     // Don't auto-retry — show error to user for debugging

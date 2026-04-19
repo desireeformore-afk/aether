@@ -58,6 +58,13 @@ struct PlayerView: View {
                                 showEPGOverlayWithAutoHide()
                             }
                         }
+                        #if os(macOS)
+                        .onScrollWheel { event in
+                            // Scroll wheel up/down → volume ±5%
+                            let delta = Float(event.scrollingDeltaY) * 0.005
+                            player.adjustVolume(delta: -delta)
+                        }
+                        #endif
 
                     // Subtitle overlay — non-interactive
                     SubtitleOverlayView(store: subtitleStore)
