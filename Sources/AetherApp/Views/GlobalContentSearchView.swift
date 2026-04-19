@@ -11,11 +11,17 @@ struct GlobalContentSearchView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var filterType: ContentType? = nil
+    @State private var searchTask: Task<Void, Never>?
+    @State private var selectedSeries: XstreamSeries?
 
     private let xstreamService: XstreamService
+    private let credentials: XstreamCredentials
+    @Bindable var player: PlayerCore
 
-    init(xstreamService: XstreamService) {
+    init(xstreamService: XstreamService, credentials: XstreamCredentials, player: PlayerCore) {
         self.xstreamService = xstreamService
+        self.credentials = credentials
+        self.player = player
     }
 
     private func loadContent() async {
@@ -81,6 +87,13 @@ struct GlobalContentSearchView: View {
                 TextField("Szukaj filmów i seriali...", text: $searchText)
                     .textFieldStyle(.plain)
                     .foregroundStyle(Color.aetherText)
+                    .onChange(of: searchText) { _, _ in
+                        searchTask?.cancel()
+                        searchTask = Task {
+                            try? await Task.sleep(for: .milliseconds(300))
+                            guard !Task.isCancelled else { return }
+                        }
+                    }
                 
                 if !searchText.isEmpty {
                     Button {
@@ -159,6 +172,19 @@ struct GlobalContentSearchView: View {
                             ContentCard(
                                 title: item.title,
                                 type: item.type,
+                                coverURL: {
+                                    switch item.type {
+                                    case .movie:
+                                        if let vod = item.item as? XstreamVOD {
+                                            return vod.streamIcon.flatMap(URL.init(string:))
+                                        }
+                                    case .series:
+                                        if let series = item.item as? XstreamSeries {
+                                            return series.cover.flatMap(URL.init(string:))
+                                        }
+                                    }
+                                    return nil
+                                }(),
                                 action: {
                                     handleSelection(item)
                                 }
@@ -173,11 +199,40 @@ struct GlobalContentSearchView: View {
         .task {
             await loadContent()
         }
+        .sheet(item: $selectedSeries) { series in
+            SeriesDetailView(series: series, credentials: credentials, player: player)
+        }
     }
 
     private func handleSelection(_ item: (id: String, title: String, type: ContentType, item: Any)) {
-        // TODO: Implement navigation to player or detail view
-        dismiss()
+        switch item.type {
+        case .movie:
+            guard let vod = item.item as? XstreamVOD else { return }
+            playVOD(vod)
+            dismiss()
+        case .series:
+            guard let series = item.item as? XstreamSeries else { return }
+            selectedSeries = series
+        }
+    }
+
+    private func playVOD(_ vod: XstreamVOD) {
+        let ext = vod.containerExtension ?? "mp4"
+        let streamURL = credentials.baseURL
+            .appendingPathComponent("movie")
+            .appendingPathComponent(credentials.username)
+            .appendingPathComponent(credentials.password)
+            .appendingPathComponent("\(vod.id).\(ext)")
+
+        let channel = Channel(
+            id: UUID(),
+            name: vod.name,
+            streamURL: streamURL,
+            logoURL: vod.streamIcon.flatMap(URL.init(string:)),
+            groupTitle: "VOD",
+            epgId: nil
+        )
+        player.play(channel)
     }
 }
 
@@ -208,28 +263,59 @@ enum ContentType {
 struct ContentCard: View {
     let title: String
     let type: ContentType
+    let coverURL: URL?
     let action: () -> Void
-    
+    @State private var isHovered = false
+
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 8) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
+                    Rectangle()
                         .fill(Color.aetherSecondary.opacity(0.3))
-                        .aspectRatio(2/3, contentMode: .fit)
-                    
-                    Image(systemName: type == .movie ? "film" : "tv")
-                        .font(.system(size: 32))
-                        .foregroundStyle(Color.aetherText.opacity(0.5))
+
+                    if let coverURL {
+                        AsyncImage(url: coverURL) { phase in
+                            switch phase {
+                            case .empty:
+                                ShimmerView()
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            case .failure:
+                                Image(systemName: type == .movie ? "film" : "tv")
+                                    .font(.system(size: 32))
+                                    .foregroundStyle(Color.aetherText.opacity(0.5))
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
+                    } else {
+                        Image(systemName: type == .movie ? "film" : "tv")
+                            .font(.system(size: 32))
+                            .foregroundStyle(Color.aetherText.opacity(0.5))
+                    }
+
+                    if isHovered {
+                        LinearGradient(
+                            colors: [.clear, Color.black.opacity(0.7)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
                 }
                 .frame(height: 180)
-                
+                .aspectRatio(2.0/3.0, contentMode: .fit)
+                .clipped()
+                .cornerRadius(6)
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.aetherCaption)
                         .foregroundStyle(Color.aetherText)
                         .lineLimit(2)
-                    
+
                     Text(type == .movie ? "Film" : "Serial")
                         .font(.system(size: 10))
                         .foregroundStyle(Color.aetherText.opacity(0.6))
@@ -244,17 +330,45 @@ struct ContentCard: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.aetherPrimary.opacity(0.3), lineWidth: 1)
         )
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovered = hovering
+            }
+        }
+    }
+}
+
+private struct ShimmerView: View {
+    @State private var phase: CGFloat = 0
+
+    var body: some View {
+        LinearGradient(
+            colors: [
+                Color.aetherSurface,
+                Color.aetherSurface.opacity(0.7),
+                Color.aetherSurface
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .offset(x: phase)
+        .onAppear {
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                phase = 300
+            }
+        }
     }
 }
 
 #Preview {
+    let credentials = XstreamCredentials(
+        baseURL: URL(string: "http://example.com")!,
+        username: "test",
+        password: "test"
+    )
     GlobalContentSearchView(
-        xstreamService: XstreamService(
-            credentials: XstreamCredentials(
-                baseURL: URL(string: "http://example.com")!,
-                username: "test",
-                password: "test"
-            )
-        )
+        xstreamService: XstreamService(credentials: credentials),
+        credentials: credentials,
+        player: PlayerCore()
     )
 }
