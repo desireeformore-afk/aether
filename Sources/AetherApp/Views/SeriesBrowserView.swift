@@ -4,6 +4,7 @@ import AetherCore
 struct SeriesBrowserView: View {
     let credentials: XstreamCredentials
     @Bindable var player: PlayerCore
+    var isEmbedded: Bool = false
 
     @State private var categories: [XstreamSeriesCategory] = []
     @State private var seriesList: [XstreamSeries] = []
@@ -15,27 +16,62 @@ struct SeriesBrowserView: View {
 
     private let service: XstreamService
 
-    init(credentials: XstreamCredentials, player: PlayerCore) {
+    init(credentials: XstreamCredentials, player: PlayerCore, isEmbedded: Bool = false) {
         self.credentials = credentials
         self.player = player
+        self.isEmbedded = isEmbedded
         self.service = XstreamService(credentials: credentials)
     }
 
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationSplitView {
-            categoryList
-        } detail: {
-            seriesGrid
-        }
-        .navigationTitle("Series")
-        .frame(minWidth: 720, minHeight: 500)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Close") { dismiss() }
-                    .keyboardShortcut(.cancelAction)
+        if isEmbedded {
+            embeddedLayout
+        } else {
+            NavigationSplitView {
+                categoryList
+            } detail: {
+                seriesGrid
             }
+            .navigationTitle("Series")
+            .frame(minWidth: 720, minHeight: 500)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                        .keyboardShortcut(.cancelAction)
+                }
+            }
+            .task { await loadCategories() }
+            .sheet(item: $selectedSeries) { series in
+                SeriesDetailView(series: series, credentials: credentials, player: player)
+            }
+        }
+    }
+
+    // Inline layout for panel embedding (no NavigationSplitView)
+    private var embeddedLayout: some View {
+        HSplitView {
+            // Category rail
+            List(selection: $selectedCategory) {
+                if isLoadingCategories {
+                    ProgressView()
+                } else {
+                    ForEach(categories) { cat in
+                        Text(cat.name)
+                            .font(.system(size: 12))
+                            .tag(cat)
+                    }
+                }
+            }
+            .listStyle(.sidebar)
+            .frame(minWidth: 120, maxWidth: 150)
+            .onChange(of: selectedCategory) { _, cat in
+                guard let cat else { return }
+                Task { await loadList(for: cat) }
+            }
+
+            seriesGrid
         }
         .task { await loadCategories() }
         .sheet(item: $selectedSeries) { series in

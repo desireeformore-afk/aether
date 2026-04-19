@@ -95,7 +95,7 @@ struct PlayerView: View {
             }
 
             // PIN Lock Overlay
-            if showPINLock, let channel = blockedChannel, let reason = blockReason {
+            if showPINLock, blockedChannel != nil, let reason = blockReason {
                 PINLockView(
                     reason: reason,
                     service: parentalService,

@@ -4,8 +4,18 @@ import AetherCore
 import AetherUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // Must be called before any windows are created — sets app as regular GUI app
+        NSApp.setActivationPolicy(.regular)
+    }
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.activate(ignoringOtherApps: true)
+        // Force SwiftUI windows to appear (skip status bar windows)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            NSApp.windows
+                .filter { $0.canBecomeKey }
+                .forEach { $0.makeKeyAndOrderFront(nil) }
+        }
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         true
@@ -99,11 +109,12 @@ struct AetherApp: App {
                     .interactiveDismissDisabled()
                 }
         }
-        .modelContainer(for: [
-            PlaylistRecord.self,
-            FavoriteRecord.self,
-            WatchHistoryRecord.self,
-        ])
+        .modelContainer(AetherApp.sharedModelContainer)
+        .defaultSize(width: 1280, height: 800)
+        #if os(macOS)
+        .windowStyle(.titleBar)
+        .windowToolbarStyle(.unified(showsTitle: false))
+        #endif
 
         #if os(macOS)
         Settings {
@@ -114,6 +125,33 @@ struct AetherApp: App {
         }
         #endif
     }
+}
+
+// MARK: - Shared SwiftData Container
+
+extension AetherApp {
+    /// Explicit store path — stable regardless of bundle ID (SPM dev-build workaround).
+    static let sharedModelContainer: ModelContainer = {
+        let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first!.appendingPathComponent("Aether")
+        try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
+        let storeURL = appSupport.appendingPathComponent("aether.store")
+        let config = ModelConfiguration(url: storeURL)
+        do {
+            return try ModelContainer(
+                for: PlaylistRecord.self, FavoriteRecord.self, WatchHistoryRecord.self,
+                configurations: config
+            )
+        } catch {
+            print("[Aether] SwiftData store failed: \(error) — using in-memory fallback")
+            let fallback = ModelConfiguration(isStoredInMemoryOnly: true)
+            return try! ModelContainer(
+                for: PlaylistRecord.self, FavoriteRecord.self, WatchHistoryRecord.self,
+                configurations: fallback
+            )
+        }
+    }()
 }
 
 // MARK: - HistoryCoordinator

@@ -139,6 +139,9 @@ public final class PlayerCore {
     /// when both .status == .failed and AVPlayerItemFailedToPlayToEndTime fire for the same item).
     private weak var retrySourceItem: AVPlayerItem?
 
+    /// FFmpeg HLS proxy — remuxes TS/MKV to local HLS segments for AVPlayer
+    private var hlsProxy: LocalHLSProxy?
+
     /// Tracks when the current channel started playing.
     private var watchStartTime: Date?
 
@@ -190,6 +193,7 @@ public final class PlayerCore {
         endWatchSession()
 
         // Clean up previous player item and observers
+        hlsProxy?.stop()
         removeRetryObservers()
         statusObserver?.cancel()
         statusObserver = nil
@@ -201,32 +205,52 @@ public final class PlayerCore {
         isRetrying = false
         retrySourceItem = nil
 
-        // Build URLRequest with HTTP/1.1 forced — IPTV streams don't support QUIC/HTTP3
-        var request = URLRequest(url: channel.streamURL)
-        request.setValue("close", forHTTPHeaderField: "Connection")
-        request.setValue(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-            forHTTPHeaderField: "User-Agent"
-        )
+        let url = channel.streamURL
+        let ext = url.pathExtension.lowercased()
+        print("[PlayerCore] Playing: \(channel.name)")
+        print("[PlayerCore]   URL: \(url.absoluteString)")
+        print("[PlayerCore]   Extension: \(ext)")
 
-        let asset = AVURLAsset(
-            url: channel.streamURL,
-            options: [
-                "AVURLAssetHTTPHeaderFieldsKey": request.allHTTPHeaderFields ?? [:],
-                AVURLAssetPreferPreciseDurationAndTimingKey: false,
-                // Disable QUIC — forces TCP/HTTP which IPTV servers actually support
-                "AVURLAssetAllowsCellularAccessKey": true,
-                // Use our custom URLProtocol for HTTP bypass
-                "AVURLAssetURLSessionClientKey": URLProtocol.self,
-            ]
-        )
+        // Formats that need FFmpeg remux: TS (live), MKV, AVI
+        let needsProxy = ext == "ts" || ext == "mkv" || ext == "avi" || ext == "wmv"
+            || url.path.contains("/live/")
 
+        if needsProxy {
+            guard LocalHLSProxy.isAvailable else {
+                print("[PlayerCore] FFmpeg not found")
+                state = .error("FFmpeg required. Install: brew install ffmpeg")
+                return
+            }
+
+            let proxy = LocalHLSProxy()
+            self.hlsProxy = proxy
+
+            print("[PlayerCore]   Using FFmpeg HLS proxy")
+
+            Task { [weak self] in
+                do {
+                    try await proxy.start(from: url)
+                    guard let self, self.currentChannel?.id == channel.id else { return }
+
+                    let item = AVPlayerItem(url: proxy.playlistURL)
+                    item.preferredForwardBufferDuration = 4
+                    self.player.replaceCurrentItem(with: item)
+                    self.player.play()
+                    self.observePlayerItem(item)
+                    self.registerRetryObservers(for: item)
+                } catch {
+                    guard let self, self.currentChannel?.id == channel.id else { return }
+                    print("[PlayerCore] HLS proxy error: \(error.localizedDescription)")
+                    self.state = .error(error.localizedDescription)
+                }
+            }
+            return
+        }
+
+        // Direct playback for MP4 and other AVPlayer-compatible formats
+        let asset = AVURLAsset(url: url)
         let item = AVPlayerItem(asset: asset)
-        item.preferredPeakBitRate = selectedQuality.peakBitRate
-
-        // Apply buffering settings
-        BufferingConfig.apply(to: item)
-        BufferingConfig.apply(to: player)
+        item.preferredForwardBufferDuration = 4
 
         player.replaceCurrentItem(with: item)
         player.play()
@@ -406,14 +430,20 @@ public final class PlayerCore {
                 guard let self, let item else { return }
                 switch status {
                 case .readyToPlay:
+                    print("[PlayerCore] ✅ readyToPlay")
                     self.retryCount = 0
                     self.retrySourceItem = nil
                     self.state = .playing
                 case .failed:
-                    self.state = .loading  // Show user we're retrying
-                    self.scheduleRetry(for: item)
+                    let err = item.error?.localizedDescription ?? "unknown"
+                    print("[PlayerCore] ❌ FAILED: \(err)")
+                    if let underlying = (item.error as NSError?)?.userInfo[NSUnderlyingErrorKey] as? NSError {
+                        print("[PlayerCore]   Underlying: \(underlying.domain) \(underlying.code) \(underlying.localizedDescription)")
+                    }
+                    self.state = .error(err)
+                    // Don't auto-retry — show error to user for debugging
                 case .unknown:
-                    break
+                    print("[PlayerCore] ⏳ status unknown (waiting...)")
                 @unknown default:
                     break
                 }

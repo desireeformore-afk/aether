@@ -32,7 +32,14 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
     
     public override class func canInit(with request: URLRequest) -> Bool {
         // Intercept both HTTP and HTTPS requests for IPTV streams
-        guard let scheme = request.url?.scheme?.lowercased() else { return false }
+        guard let url = request.url,
+              let scheme = url.scheme?.lowercased() else { return false }
+
+        // NEVER intercept localhost — our local HLS server lives there
+        if let host = url.host, host == "127.0.0.1" || host == "localhost" {
+            return false
+        }
+
         let shouldIntercept = scheme == "http" || scheme == "https"
         
         #if DEBUG

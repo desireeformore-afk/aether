@@ -11,34 +11,47 @@ public final class iCloudSyncService {
     public var syncError: String?
     public var conflictCount: Int = 0
 
-    private let container: CKContainer
-    private let privateDatabase: CKDatabase
+    private var container: CKContainer?
+    private var privateDatabase: CKDatabase?
     private var syncTimer: Timer?
 
     public init() {
-        self.container = CKContainer(identifier: "iCloud.com.aether.iptv")
-        self.privateDatabase = container.privateCloudDatabase
-
-        // Check iCloud availability
-        Task {
-            await checkiCloudStatus()
+        // CKContainer requires com.apple.developer.icloud-services entitlement.
+        // Guard against crash when running via SPM without a provisioning profile.
+        let hasEntitlement = (Bundle.main.object(forInfoDictionaryKey: "com.apple.developer.icloud-services") != nil)
+            || (ProcessInfo.processInfo.environment["CLOUDKIT_ENABLED"] == "1")
+        if hasEntitlement {
+            let ck = CKContainer(identifier: "iCloud.com.aether.iptv")
+            self.container = ck
+            self.privateDatabase = ck.privateCloudDatabase
+            Task { await checkiCloudStatus() }
+        } else {
+            self.container = nil
+            self.privateDatabase = nil
+            // iCloud not available in this environment — sync stays disabled
         }
     }
 
     // MARK: - iCloud Status
 
     public func checkiCloudStatus() async {
+        guard let container else { isEnabled = false; return }
         do {
             let status = try await container.accountStatus()
             isEnabled = (status == .available)
-
-            if isEnabled {
-                startAutoSync()
-            }
+            if isEnabled { startAutoSync() }
         } catch {
             syncError = "iCloud not available: \(error.localizedDescription)"
             isEnabled = false
         }
+    }
+
+    private func requireDatabase() throws -> CKDatabase {
+        guard let db = privateDatabase else {
+            throw NSError(domain: "iCloudSync", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "CloudKit not available in this environment"])
+        }
+        return db
     }
 
     // MARK: - Auto Sync
@@ -60,7 +73,7 @@ public final class iCloudSyncService {
     // MARK: - Sync All
 
     public func syncAll() async {
-        guard isEnabled else { return }
+        guard isEnabled, container != nil else { return }
 
         isSyncing = true
         syncError = nil
@@ -87,7 +100,7 @@ public final class iCloudSyncService {
 
         // Fetch remote playlists
         let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
-        let results = try await privateDatabase.records(matching: query)
+        let results = try await requireDatabase().records(matching: query)
 
         var remotePlaylists: [SyncedPlaylist] = []
         for (_, result) in results.matchResults {
@@ -111,11 +124,11 @@ public final class iCloudSyncService {
         record["password"] = playlist.password
         record["lastModified"] = playlist.lastModified
 
-        _ = try await privateDatabase.save(record)
+        _ = try await requireDatabase().save(record)
     }
 
     public func deletePlaylist(_ playlistId: UUID) async throws {
-        _ = try await privateDatabase.deleteRecord(withID: CKRecord.ID(recordName: playlistId.uuidString))
+        _ = try await requireDatabase().deleteRecord(withID: CKRecord.ID(recordName: playlistId.uuidString))
     }
 
     private func decodePlaylist(from record: CKRecord) throws -> SyncedPlaylist {
@@ -147,7 +160,7 @@ public final class iCloudSyncService {
         let recordType = "Favorite"
 
         let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
-        let results = try await privateDatabase.records(matching: query)
+        let results = try await requireDatabase().records(matching: query)
 
         var remoteFavorites: [SyncedFavorite] = []
         for (_, result) in results.matchResults {
@@ -166,11 +179,11 @@ public final class iCloudSyncService {
         record["addedAt"] = favorite.addedAt
         record["lastModified"] = favorite.lastModified
 
-        _ = try await privateDatabase.save(record)
+        _ = try await requireDatabase().save(record)
     }
 
     public func deleteFavorite(_ favoriteId: UUID) async throws {
-        _ = try await privateDatabase.deleteRecord(withID: CKRecord.ID(recordName: favoriteId.uuidString))
+        _ = try await requireDatabase().deleteRecord(withID: CKRecord.ID(recordName: favoriteId.uuidString))
     }
 
     private func decodeFavorite(from record: CKRecord) throws -> SyncedFavorite {
@@ -197,7 +210,7 @@ public final class iCloudSyncService {
         let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
         query.sortDescriptors = [NSSortDescriptor(key: "watchedAt", ascending: false)]
 
-        let results = try await privateDatabase.records(matching: query)
+        let results = try await requireDatabase().records(matching: query)
 
         var remoteHistory: [SyncedWatchHistory] = []
         for (_, result) in results.matchResults {
@@ -218,7 +231,7 @@ public final class iCloudSyncService {
         record["position"] = history.position
         record["lastModified"] = history.lastModified
 
-        _ = try await privateDatabase.save(record)
+        _ = try await requireDatabase().save(record)
     }
 
     private func decodeWatchHistory(from record: CKRecord) throws -> SyncedWatchHistory {
@@ -243,7 +256,7 @@ public final class iCloudSyncService {
 
     public func syncSettings() async throws {
         do {
-            let record = try await privateDatabase.record(for: CKRecord.ID(recordName: "user-settings"))
+            let record = try await requireDatabase().record(for: CKRecord.ID(recordName: "user-settings"))
             // Settings exist, fetch them
             _ = try decodeSettings(from: record)
         } catch {
@@ -261,7 +274,7 @@ public final class iCloudSyncService {
         record["parentalControlsEnabled"] = settings.parentalControlsEnabled ? 1 : 0
         record["lastModified"] = settings.lastModified
 
-        _ = try await privateDatabase.save(record)
+        _ = try await requireDatabase().save(record)
     }
 
     private func decodeSettings(from record: CKRecord) throws -> SyncedSettings {

@@ -2,126 +2,186 @@ import SwiftUI
 import SwiftData
 import AetherCore
 
-/// Floating sidebar panel that slides in from the left, containing playlist selector and channel list.
+/// Floating sidebar panel that slides in from the left.
+/// Contains playlist selector, and content tabs: Live TV / Movies (VOD) / Series.
 struct FloatingChannelPanel: View {
     @Binding var isVisible: Bool
     @Binding var selectedPlaylist: PlaylistRecord?
     @Binding var selectedChannel: Channel?
     @Bindable var player: PlayerCore
 
-    @State private var showVODBrowser = false
-    @State private var showSeriesBrowser = false
+    @State private var activeTab: PanelTab = .tv
     @State private var showGlobalSearch = false
+
     #if os(macOS)
     @State private var showSettings = false
     #endif
 
+    // MARK: - Body
+
     var body: some View {
         HStack(spacing: 0) {
-            // Panel content - side-by-side layout
             HStack(spacing: 0) {
-                // Playlist selector on left
+                // Left: Playlist selector
                 PlaylistSidebar(selectedPlaylist: $selectedPlaylist)
-                    .frame(width: 280)
+                    .frame(width: 200)
 
                 Divider()
 
-                // Channel list on right
-                if let playlist = selectedPlaylist {
-                    VStack(spacing: 0) {
-                        // Search All button at top for Xtream playlists
-                        if playlist.playlistType == .xtream,
-                           let creds = playlist.xstreamCredentials {
-                            Button(action: { showGlobalSearch = true }) {
-                                Label("Search All Content", systemImage: "magnifyingglass.circle")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .sheet(isPresented: $showGlobalSearch) {
-                                GlobalContentSearchView(
-                                    xstreamService: XstreamService(credentials: creds)
-                                )
-                            }
+                // Right: Content area
+                VStack(spacing: 0) {
+                    if let playlist = selectedPlaylist {
+                        // Tab bar
+                        tabBar(for: playlist)
 
-                            Divider()
-                        }
+                        Divider()
 
-                        ChannelListView(
-                            playlist: playlist,
-                            selectedChannel: $selectedChannel,
-                            player: player
+                        // Tab content
+                        tabContent(for: playlist)
+                    } else {
+                        ContentUnavailableView(
+                            "No Playlist Selected",
+                            systemImage: "list.bullet.rectangle",
+                            description: Text("Add a playlist to get started.")
                         )
-
-                        // VOD/Series/Search buttons at bottom if Xtream Codes
-                        if playlist.playlistType == .xtream,
-                           let creds = playlist.xstreamCredentials {
-                            Divider()
-                            HStack(spacing: 12) {
-                                Button(action: { showGlobalSearch = true }) {
-                                    Label("Search", systemImage: "magnifyingglass.circle")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .sheet(isPresented: $showGlobalSearch) {
-                                    GlobalContentSearchView(
-                                        xstreamService: XstreamService(credentials: creds)
-                                    )
-                                }
-                                
-                                Button(action: { showVODBrowser = true }) {
-                                    Label("VOD", systemImage: "film.stack")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .sheet(isPresented: $showVODBrowser) {
-                                    VODBrowserView(credentials: creds, player: player)
-                                }
-
-                                Button(action: { showSeriesBrowser = true }) {
-                                    Label("Series", systemImage: "tv.and.mediabox")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .sheet(isPresented: $showSeriesBrowser) {
-                                    SeriesBrowserView(credentials: creds, player: player)
-                                }
-
-                                Button(action: { showGlobalSearch = true }) {
-                                    Label("Search All", systemImage: "magnifyingglass")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .sheet(isPresented: $showGlobalSearch) {
-                                    GlobalContentSearchView(
-                                        xstreamService: XstreamService(credentials: creds)
-                                    )
-                                }
-                            }
-                            .padding(12)
-                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.aetherBackground)
                     }
-                    .frame(width: 360)
-                } else {
-                    ContentUnavailableView(
-                        "No Playlist Selected",
-                        systemImage: "list.bullet.rectangle",
-                        description: Text("Add a playlist to get started.")
-                    )
-                    .frame(width: 360)
-                    .background(Color.aetherBackground)
                 }
+                .frame(width: 420)
             }
             .frame(maxHeight: .infinity)
-            .background(Color.aetherBackground.opacity(0.95))
+            .background(Color.aetherBackground.opacity(0.97))
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: .black.opacity(0.3), radius: 20, x: 5, y: 0)
+            .shadow(color: .black.opacity(0.35), radius: 20, x: 5, y: 0)
 
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .padding(.leading, 16)
         .padding(.vertical, 16)
+    }
+
+    // MARK: - Tab Bar
+
+    @ViewBuilder
+    private func tabBar(for playlist: PlaylistRecord) -> some View {
+        HStack(spacing: 0) {
+            ForEach(availableTabs(for: playlist), id: \.self) { tab in
+                Button {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                        activeTab = tab
+                    }
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 14, weight: activeTab == tab ? .semibold : .regular))
+                        Text(tab.label)
+                            .font(.system(size: 10, weight: activeTab == tab ? .semibold : .regular))
+                    }
+                    .foregroundStyle(activeTab == tab ? Color.aetherPrimary : Color.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(
+                        activeTab == tab
+                            ? Color.aetherPrimary.opacity(0.1)
+                            : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 6)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Search icon at the right end (Xtream only)
+            if playlist.playlistType == .xtream, let creds = playlist.xstreamCredentials {
+                Divider()
+                    .frame(height: 20)
+                    .padding(.horizontal, 4)
+
+                Button {
+                    showGlobalSearch = true
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.secondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+                .help("Search All Content  ⌘F")
+                .sheet(isPresented: $showGlobalSearch) {
+                    GlobalContentSearchView(
+                        xstreamService: XstreamService(credentials: creds)
+                    )
+                }
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.aetherSurface)
+    }
+
+    // MARK: - Tab Content
+
+    @ViewBuilder
+    private func tabContent(for playlist: PlaylistRecord) -> some View {
+        switch activeTab {
+        case .tv:
+            ChannelListView(
+                playlist: playlist,
+                selectedChannel: $selectedChannel,
+                player: player
+            )
+
+        case .movies:
+            if let creds = playlist.xstreamCredentials {
+                VODBrowserView(credentials: creds, player: player, isEmbedded: true)
+            } else {
+                unavailableView("Movies unavailable", systemImage: "film", description: "Movies require an Xtream Codes playlist.")
+            }
+
+        case .series:
+            if let creds = playlist.xstreamCredentials {
+                SeriesBrowserView(credentials: creds, player: player, isEmbedded: true)
+            } else {
+                unavailableView("Series unavailable", systemImage: "tv.and.mediabox", description: "Series require an Xtream Codes playlist.")
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func availableTabs(for playlist: PlaylistRecord) -> [PanelTab] {
+        if playlist.playlistType == .xtream {
+            return PanelTab.allCases
+        }
+        return [.tv]
+    }
+
+    private func unavailableView(_ title: String, systemImage: String, description: String) -> some View {
+        ContentUnavailableView(
+            title,
+            systemImage: systemImage,
+            description: Text(description)
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - PanelTab
+
+enum PanelTab: String, CaseIterable {
+    case tv = "TV"
+    case movies = "Movies"
+    case series = "Series"
+
+    var label: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .tv:      return "tv"
+        case .movies:  return "film.stack"
+        case .series:  return "tv.and.mediabox"
+        }
     }
 }

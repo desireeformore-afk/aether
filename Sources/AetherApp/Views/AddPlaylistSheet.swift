@@ -325,6 +325,7 @@ struct AddPlaylistSheet: View {
         }
 
         modelContext.insert(record)
+        try? modelContext.save()
         onAdded(record)
         dismiss()
     }

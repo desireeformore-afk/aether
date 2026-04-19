@@ -126,10 +126,10 @@ public struct TrackPickerView: View {
                             Task {
                                 if enabled {
                                     if let firstTrack = trackService.subtitleTracks.first {
-                                        try? await trackService.selectSubtitleTrack(firstTrack, for: item)
+                                        await trackService.selectSubtitleTrack(firstTrack, for: item)
                                     }
                                 } else {
-                                    try? await trackService.selectSubtitleTrack(nil, for: item)
+                                    await trackService.selectSubtitleTrack(nil, for: item)
                                 }
                             }
                         }
@@ -160,7 +160,7 @@ public struct TrackPickerView: View {
                     Button(action: {
                         if let item = playerItem {
                             Task {
-                                try? await trackService.selectSubtitleTrack(track, for: item)
+                                await trackService.selectSubtitleTrack(track, for: item)
                             }
                         }
                     }) {

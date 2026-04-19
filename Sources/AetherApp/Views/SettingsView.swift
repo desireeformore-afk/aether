@@ -63,6 +63,12 @@ struct SettingsView: View {
         }
         .padding(20)
         .frame(width: 480)
+        .toolbar {
+            ToolbarItem(placement: .destructiveAction) {
+                Button("Close") { NSApp.keyWindow?.close() }
+                    .keyboardShortcut("w", modifiers: .command)
+            }
+        }
         .onAppear { refreshCacheSize() }
     }
 

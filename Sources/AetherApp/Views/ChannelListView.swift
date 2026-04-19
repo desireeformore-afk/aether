@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AetherCore
+import AetherUI
 
 /// Middle column: channels grouped by `groupTitle`, with search, genre filter chips,
 /// collapsible sections, and Favorites tab.
@@ -29,6 +30,7 @@ struct ChannelListView: View {
     @State private var viewMode: ChannelViewMode = .list
     @FocusState private var isSearchFocused: Bool
     @State private var recommendationService: RecommendationService
+    @State private var showPINLock = false
 
     @AppStorage("channelViewMode") private var savedViewMode: String = ChannelViewMode.list.rawValue
     
@@ -105,6 +107,19 @@ struct ChannelListView: View {
         .onChange(of: searchText)    { _, _ in debouncedRecompute() }
         .onChange(of: selectedGroup) { _, _ in recomputeFiltered() }
         .onChange(of: selectedCategory) { _, _ in recomputeFiltered() }
+        // KEY FIX: macOS List consumes tap events — onTapGesture in rows is unreliable.
+        // Use onChange(of: selectedChannel) — the List's native selection IS reliable.
+        .onChange(of: selectedChannel) { _, newChannel in
+            guard let ch = newChannel else { return }
+            // Parental control check
+            let isBlocked = parentalService.settings.isEnabled && !parentalService.isChannelAllowed(ch)
+            if isBlocked {
+                showPINLock = true
+            } else {
+                player.play(ch)
+                analyticsService.recordChannelSwitch()
+            }
+        }
     }
 
     // MARK: - Search debouncing
@@ -372,11 +387,12 @@ struct ChannelListView: View {
             LazyVStack(spacing: 0) {
                 ForEach(recommendationService.recommendations) { recommendation in
                     if let channel = channels.first(where: { $0.name == recommendation.channelName }) {
-                        ChannelRow(
+                        ChannelRowView(
                             channel: channel,
-                            nowPlaying: nowPlaying[channel.id],
-                            onPlay: { play(channel) }
+                            isSelected: player.currentChannel == channel,
+                            epgTitle: nowPlaying[channel.epgId ?? channel.name]?.title
                         )
+                        .onTapGesture { play(channel) }
                         Divider()
                     }
                 }
@@ -432,11 +448,39 @@ struct ChannelListView: View {
             }
 
             if let err = errorMessage {
-                errorBanner(err)
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
+                    Text(err).font(.caption)
+                    Spacer()
+                    Button("Dismiss") { errorMessage = nil }.font(.caption)
+                }
+                .padding(.horizontal, 12).padding(.vertical, 8)
+                .background(Color.red.opacity(0.1))
             }
 
+            // Empty state: channels loaded but active filter returns nothing
+            let filteredEmpty = !channels.isEmpty && !isRefreshing && cachedGrouped.isEmpty
             if channels.isEmpty && !isRefreshing {
-                emptyState
+                VStack(spacing: 12) {
+                    Image(systemName: "tv").font(.system(size: 48)).foregroundStyle(.secondary)
+                    Text("No channels").font(.headline)
+                    Text("Refresh the playlist or check your URL")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if filteredEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: selectedCategory == .movies ? "film" : selectedCategory == .series ? "tv.and.mediabox" : "magnifyingglass")
+                        .font(.system(size: 40)).foregroundStyle(.secondary)
+                    Text(selectedCategory == .movies ? "No movie channels in live TV" : selectedCategory == .series ? "No series channels in live TV" : "No results")
+                        .font(.headline)
+                    if selectedCategory == .movies || selectedCategory == .series {
+                        Text("Use the \(selectedCategory == .movies ? "VOD" : "Series") button below to browse \(selectedCategory == .movies ? "movies" : "series")")
+                            .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 switch viewMode {
                 case .list:
@@ -524,7 +568,12 @@ struct ChannelListView: View {
     }
 
     private var shouldShowLoadMore: Bool {
-        searchText.isEmpty && selectedGroup == nil && displayedChannelCount < channels.count
+        // Only show when no search, no group filter, no category filter active,
+        // and there are more channels than currently displayed
+        searchText.isEmpty
+            && selectedGroup == nil
+            && selectedCategory == .all
+            && displayedChannelCount < channels.count
     }
 
     private func loadMoreChannels() {
@@ -567,11 +616,10 @@ struct ChannelListView: View {
         let isBlocked = parentalService.settings.isEnabled && !parentalService.isChannelAllowed(ch)
 
         return HStack {
-            ChannelRow(
+            ChannelRowView(
                 channel: ch,
-                isPlaying: player.currentChannel == ch,
-                epgEntry: nowPlaying[epgKey],
-                showFavoriteButton: true
+                isSelected: player.currentChannel == ch,
+                epgTitle: nowPlaying[epgKey]?.title
             )
 
             if isBlocked {
@@ -583,13 +631,24 @@ struct ChannelListView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             if isBlocked {
-                parentalService.requestUnlock()
+                showPINLock = true
             } else {
-                selectedChannel = ch
-                player.play(ch)
-                analyticsService.trackChannelPlay(ch)
+                play(ch)
             }
         }
+        .sheet(isPresented: $showPINLock) {
+            PINLockView(
+                reason: "This channel is restricted by parental controls",
+                service: parentalService,
+                onUnlock: { showPINLock = false },
+                onCancel: { showPINLock = false }
+            )
+        }
+    }
+
+    private func play(_ channel: Channel) {
+        selectedChannel = channel  // triggers onChange above which calls player.play()
+        analyticsService.recordChannelSwitch()
     }
 }
 
@@ -598,12 +657,42 @@ struct ChannelListView: View {
 enum ListTab: String, CaseIterable {
     case all = "All"
     case favorites = "Favorites"
-    
+    case recommended = "Recommended"
+
+    var label: String { rawValue }
+
     var icon: String {
         switch self {
-        case .all: return "list.bullet"
-        case .favorites: return "star.fill"
+        case .all:         return "list.bullet"
+        case .favorites:   return "star.fill"
+        case .recommended: return "sparkles"
         }
+    }
+}
+
+// MARK: - FilterChip (local copy — shared via AetherUI in future)
+
+private struct FilterChip: View {
+    let label: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(isSelected ? .white : Color.aetherText)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(isSelected ? Color.aetherPrimary : Color.aetherSurface, in: Capsule())
+                .overlay(
+                    Capsule().strokeBorder(
+                        isSelected ? Color.clear : Color.aetherText.opacity(0.2),
+                        lineWidth: 1
+                    )
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 
