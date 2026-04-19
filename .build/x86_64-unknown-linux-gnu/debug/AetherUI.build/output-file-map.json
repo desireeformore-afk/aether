@@ -9,34 +9,6 @@
     "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.swiftdeps",
     "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AetherUI.dia"
   },
-  "/home/hermes/aether/Sources/AetherUI/Design/Colors.swift": {
-    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Colors.d",
-    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Colors.swift.o",
-    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Colors~partial.swiftmodule",
-    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Colors.swiftdeps",
-    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Colors.dia"
-  },
-  "/home/hermes/aether/Sources/AetherUI/Design/Typography.swift": {
-    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Typography.d",
-    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Typography.swift.o",
-    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Typography~partial.swiftmodule",
-    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Typography.swiftdeps",
-    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Typography.dia"
-  },
-  "/home/hermes/aether/Sources/AetherUI/Models/AppearanceMode.swift": {
-    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearanceMode.d",
-    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearanceMode.swift.o",
-    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearanceMode~partial.swiftmodule",
-    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearanceMode.swiftdeps",
-    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearanceMode.dia"
-  },
-  "/home/hermes/aether/Sources/AetherUI/Models/Theme.swift": {
-    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Theme.d",
-    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Theme.swift.o",
-    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Theme~partial.swiftmodule",
-    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Theme.swiftdeps",
-    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/Theme.dia"
-  },
   "/home/hermes/aether/Sources/AetherUI/Views/AppearancePickerView.swift": {
     "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.d",
     "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/AppearancePickerView.swift.o",

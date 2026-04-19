@@ -16,9 +16,9 @@ public struct EPGEntry: Sendable, Identifiable, Hashable {
         id: UUID = UUID(),
         channelID: String,
         title: String,
-        description: String? = nil,
         start: Date,
         end: Date,
+        description: String? = nil,
         category: String? = nil,
         iconURL: URL? = nil
     ) {

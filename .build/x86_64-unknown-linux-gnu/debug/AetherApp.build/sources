@@ -1,4 +1,5 @@
 /home/hermes/aether/Sources/AetherApp/AetherApp.swift
+/home/hermes/aether/Sources/AetherApp/Extensions/View+ScrollWheel.swift
 /home/hermes/aether/Sources/AetherApp/KeyboardShortcutHandler.swift
 /home/hermes/aether/Sources/AetherApp/StatusBar/StatusBarController.swift
 /home/hermes/aether/Sources/AetherApp/SubtitleStore.swift

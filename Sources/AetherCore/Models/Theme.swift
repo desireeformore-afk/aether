@@ -1,5 +1,3 @@
-import SwiftUI
-
 // MARK: - ThemeBackground
 
 /// Defines the visual background style for a theme.
@@ -81,6 +79,9 @@ public struct ThemeDefinition: Identifiable, Sendable {
 
 // MARK: - SwiftUI Helpers
 
+#if canImport(SwiftUI)
+import SwiftUI
+
 extension ThemeDefinition {
     /// Converts `accentHex` to a SwiftUI Color.
     public var accentColor: Color { Color(hex: accentHex) ?? .accentColor }
@@ -119,3 +120,4 @@ extension ThemeDefinition {
 }
 
 // Color(hex:) is defined in AetherCore/Design/Colors.swift — no redeclaration needed.
+#endif // canImport(SwiftUI)

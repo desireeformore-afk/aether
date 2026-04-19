@@ -143,9 +143,9 @@ private final class XMLTVDelegate: NSObject, XMLParserDelegate {
                 entries.append(EPGEntry(
                     channelID: cid,
                     title: title,
-                    description: currentDesc,
                     start: start,
                     end: end,
+                    description: currentDesc,
                     category: currentCategory,
                     iconURL: currentIconURL
                 ))

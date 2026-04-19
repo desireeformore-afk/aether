@@ -4,6 +4,7 @@ import XCTest
 final class iCloudSyncTests: XCTestCase {
     var syncService: iCloudSyncService!
 
+    @MainActor
     override func setUp() {
         super.setUp()
         syncService = iCloudSyncService()

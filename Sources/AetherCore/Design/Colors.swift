@@ -1,3 +1,4 @@
+#if canImport(SwiftUI)
 import SwiftUI
 
 #if os(macOS)
@@ -50,3 +51,5 @@ public extension Color {
         return String(format: "#%02X%02X%02X", r, g, b)
     }
 }
+
+#endif // canImport(SwiftUI)

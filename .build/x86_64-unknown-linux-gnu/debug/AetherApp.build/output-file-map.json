@@ -9,6 +9,13 @@
     "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AetherApp.swiftdeps",
     "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/AetherApp.dia"
   },
+  "/home/hermes/aether/Sources/AetherApp/Extensions/View+ScrollWheel.swift": {
+    "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/View+ScrollWheel.d",
+    "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/View+ScrollWheel.swift.o",
+    "swiftmodule": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/View+ScrollWheel~partial.swiftmodule",
+    "swift-dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/View+ScrollWheel.swiftdeps",
+    "diagnostics": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/View+ScrollWheel.dia"
+  },
   "/home/hermes/aether/Sources/AetherApp/KeyboardShortcutHandler.swift": {
     "dependencies": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/KeyboardShortcutHandler.d",
     "object": "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherApp.build/KeyboardShortcutHandler.swift.o",

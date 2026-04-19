@@ -1,4 +1,7 @@
+/home/hermes/aether/Sources/AetherCore/Design/Colors.swift
+/home/hermes/aether/Sources/AetherCore/Design/Typography.swift
 /home/hermes/aether/Sources/AetherCore/Models/AgeRating.swift
+/home/hermes/aether/Sources/AetherCore/Models/AppearanceMode.swift
 /home/hermes/aether/Sources/AetherCore/Models/AudioTrack.swift
 /home/hermes/aether/Sources/AetherCore/Models/Channel.swift
 /home/hermes/aether/Sources/AetherCore/Models/EPGEntry.swift
@@ -13,12 +16,15 @@
 /home/hermes/aether/Sources/AetherCore/Models/ShareablePlaylist.swift
 /home/hermes/aether/Sources/AetherCore/Models/SubtitleTrack.swift
 /home/hermes/aether/Sources/AetherCore/Models/SyncableItem.swift
+/home/hermes/aether/Sources/AetherCore/Models/Theme.swift
 /home/hermes/aether/Sources/AetherCore/Parsers/M3UParser.swift
 /home/hermes/aether/Sources/AetherCore/Parsers/SRTParser.swift
 /home/hermes/aether/Sources/AetherCore/Parsers/XMLTVParser.swift
 /home/hermes/aether/Sources/AetherCore/Player/BufferingConfig.swift
 /home/hermes/aether/Sources/AetherCore/Player/HTTPBypassProtocol.swift
+/home/hermes/aether/Sources/AetherCore/Player/LocalHLSProxy.swift
 /home/hermes/aether/Sources/AetherCore/Player/PlayerCore.swift
+/home/hermes/aether/Sources/AetherCore/Player/StreamProxyLoader.swift
 /home/hermes/aether/Sources/AetherCore/Services/AirPlayService.swift
 /home/hermes/aether/Sources/AetherCore/Services/AnalyticsService.swift
 /home/hermes/aether/Sources/AetherCore/Services/BackgroundEPGRefreshService.swift

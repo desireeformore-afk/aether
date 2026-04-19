@@ -1,3 +1,4 @@
+#if canImport(SwiftUI)
 import SwiftUI
 
 public extension Font {
@@ -7,3 +8,5 @@ public extension Font {
     static let aetherCaption: Font = .system(.caption, design: .default, weight: .regular)
     static let aetherMono: Font = .system(.body, design: .monospaced, weight: .regular)
 }
+
+#endif // canImport(SwiftUI)
