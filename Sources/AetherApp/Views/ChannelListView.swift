@@ -17,6 +17,8 @@ struct ChannelListView: View {
     let playlist: PlaylistRecord
     @Binding var selectedChannel: Channel?
     @Bindable var player: PlayerCore
+    /// Incremented externally (e.g., keyboard shortcut /) to activate search field.
+    var searchActivationToken: Int = 0
 
     @State private var channels: [Channel] = []
     @State private var searchText = ""
@@ -47,10 +49,11 @@ struct ChannelListView: View {
     @State private var cachedGrouped: [(group: String, channels: [Channel])] = []
     @State private var cachedAllGroups: [String] = []
 
-    init(playlist: PlaylistRecord, selectedChannel: Binding<Channel?>, player: PlayerCore) {
+    init(playlist: PlaylistRecord, selectedChannel: Binding<Channel?>, player: PlayerCore, searchActivationToken: Int = 0) {
         self.playlist = playlist
         self._selectedChannel = selectedChannel
         self.player = player
+        self.searchActivationToken = searchActivationToken
         // Initialize recommendation service with analytics - will be set from environment
         self.recommendationService = RecommendationService(analyticsService: AnalyticsService())
     }
@@ -72,6 +75,9 @@ struct ChannelListView: View {
                 return .handled
             }
             #endif
+            .onChange(of: searchActivationToken) { _, _ in
+                isSearchFocused = true
+            }
             .task {
             // Load saved view mode
             if let mode = ChannelViewMode(rawValue: savedViewMode) {
@@ -614,8 +620,9 @@ struct ChannelListView: View {
     private func channelRow(_ ch: Channel) -> some View {
         let epgKey = ch.epgId ?? ch.name
         let isBlocked = parentalService.settings.isEnabled && !parentalService.isChannelAllowed(ch)
+        let isFavorite = isFavoriteChannel(ch)
 
-        return HStack {
+        return HStack(spacing: 0) {
             ChannelRowView(
                 channel: ch,
                 isSelected: player.currentChannel == ch,
@@ -626,7 +633,20 @@ struct ChannelListView: View {
                 Image(systemName: "lock.fill")
                     .font(.caption)
                     .foregroundStyle(.red)
+                    .padding(.trailing, 6)
             }
+
+            // Inline favorite toggle — one tap, no confirmation
+            Button {
+                toggleFavorite(channel: ch)
+            } label: {
+                Image(systemName: isFavorite ? "star.fill" : "star")
+                    .font(.system(size: 12))
+                    .foregroundStyle(isFavorite ? .yellow : Color.secondary.opacity(0.5))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 8)
+            .contentShape(Rectangle())
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -644,6 +664,27 @@ struct ChannelListView: View {
                 onCancel: { showPINLock = false }
             )
         }
+    }
+
+    private func isFavoriteChannel(_ channel: Channel) -> Bool {
+        let channelID = channel.id
+        let records = (try? modelContext.fetch(
+            FetchDescriptor<FavoriteRecord>(predicate: #Predicate { $0.channelID == channelID })
+        )) ?? []
+        return !records.isEmpty
+    }
+
+    private func toggleFavorite(channel: Channel) {
+        let channelID = channel.id
+        let existing = (try? modelContext.fetch(
+            FetchDescriptor<FavoriteRecord>(predicate: #Predicate { $0.channelID == channelID })
+        )) ?? []
+        if let record = existing.first {
+            modelContext.delete(record)
+        } else {
+            modelContext.insert(FavoriteRecord(channel: channel))
+        }
+        try? modelContext.save()
     }
 
     private func play(_ channel: Channel) {

@@ -9,6 +9,8 @@ struct FloatingChannelPanel: View {
     @Binding var selectedPlaylist: PlaylistRecord?
     @Binding var selectedChannel: Channel?
     @Bindable var player: PlayerCore
+    /// Incremented by ContentView keyboard handler to activate search in the channel list.
+    var searchActivationToken: Int = 0
 
     @State private var activeTab: PanelTab = .tv
     @State private var showGlobalSearch = false
@@ -133,7 +135,8 @@ struct FloatingChannelPanel: View {
             ChannelListView(
                 playlist: playlist,
                 selectedChannel: $selectedChannel,
-                player: player
+                player: player,
+                searchActivationToken: searchActivationToken
             )
             .contentTransition(.opacity)
 

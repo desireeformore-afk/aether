@@ -9,6 +9,15 @@ final class KeyboardShortcutHandler {
     private var monitor: Any?
     private weak var playerCore: PlayerCore?
 
+    /// Called when user presses F to toggle favorite on current channel.
+    var onToggleFavorite: (() -> Void)?
+    /// Called when user presses / to activate search.
+    var onActivateSearch: (() -> Void)?
+    /// Called when user presses R to restore last channel.
+    var onRestoreLastChannel: (() -> Void)?
+    /// Called when user presses Escape to close channel panel.
+    var onClosePanel: (() -> Void)?
+
     init(playerCore: PlayerCore) { self.playerCore = playerCore }
 
     func startMonitoring() {
@@ -26,13 +35,39 @@ final class KeyboardShortcutHandler {
 
     private func handle(event: NSEvent, player: PlayerCore) -> NSEvent? {
         guard !isTypingInTextField() else { return event }
+        let cmd = event.modifierFlags.contains(.command)
+        let noMod = event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty
         switch event.keyCode {
-        case 49: player.togglePlayPause(); return nil
-        case 123: player.playPrevious(); return nil
-        case 124: player.playNext(); return nil
-        case 46 where !event.modifierFlags.contains(.command):
+        // Space → play/pause
+        case 49 where noMod:
+            player.togglePlayPause(); return nil
+        // ← → → prev/next channel
+        case 123 where noMod:
+            player.playPrevious(); return nil
+        case 124 where noMod:
+            player.playNext(); return nil
+        // ↑ ↓ → also prev/next channel
+        case 126 where noMod:
+            player.playPrevious(); return nil
+        case 125 where noMod:
+            player.playNext(); return nil
+        // M → mute
+        case 46 where noMod:
             player.toggleMute(); return nil
-        default: return event
+        // F → toggle favorite (no ⌘, that's search)
+        case 3 where noMod:
+            onToggleFavorite?(); return nil
+        // / → activate search
+        case 44 where noMod:
+            onActivateSearch?(); return nil
+        // R / ⌘R → restore last channel
+        case 15 where noMod, 15 where cmd:
+            onRestoreLastChannel?(); return nil
+        // Escape → close panel
+        case 53 where noMod:
+            onClosePanel?(); return nil
+        default:
+            return event
         }
     }
 

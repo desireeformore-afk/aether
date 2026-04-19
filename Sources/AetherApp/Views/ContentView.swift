@@ -7,6 +7,7 @@ struct ContentView: View {
     @Environment(EPGStore.self) private var epgStore
     @Environment(NetworkMonitorService.self) private var networkMonitor
     @Environment(ThemeService.self) private var themeService
+    @Environment(\.modelContext) private var modelContext
     @Bindable var playerCore: PlayerCore
 
     @State private var selectedPlaylist: PlaylistRecord?
@@ -14,10 +15,12 @@ struct ContentView: View {
     @State private var showChannelPanel = false
     #if os(macOS)
     @State private var showCommandPalette = false
+    /// Search activation signal forwarded to ChannelListView inside the panel
+    @State private var searchActivationToken: Int = 0
     #endif
-    
+
     @AppStorage("preferredColorScheme") private var preferredScheme: String = "auto"
-    
+
     private var resolvedColorScheme: ColorScheme? {
         switch preferredScheme {
         case "light": return .light
@@ -63,7 +66,8 @@ struct ContentView: View {
                         isVisible: $showChannelPanel,
                         selectedPlaylist: $selectedPlaylist,
                         selectedChannel: $selectedChannel,
-                        player: playerCore
+                        player: playerCore,
+                        searchActivationToken: searchActivationToken
                     )
                 }
                 .transition(.asymmetric(
@@ -130,9 +134,13 @@ struct ContentView: View {
         }
         .onAppear {
             #if os(macOS)
+            setupKeyboardHandlerCallbacks()
             keyboardHandler.startMonitoring()
             #endif
-            // Do not auto-restore last channel on launch — user picks manually
+            // Auto-restore last channel on launch
+            if let channel = playerCore.restoreLastChannel() {
+                playerCore.play(channel)
+            }
         }
         .onDisappear {
             #if os(macOS)
@@ -148,9 +156,46 @@ struct ContentView: View {
         }
         .onKeyPress(.init("l"), phases: .down) { event in
             guard event.modifiers.contains(.command) else { return .ignored }
-            showChannelPanel.toggle()
+            withAnimation(.spring(duration: 0.3)) { showChannelPanel.toggle() }
             return .handled
         }
         #endif
     }
+
+    #if os(macOS)
+    private func setupKeyboardHandlerCallbacks() {
+        keyboardHandler.onClosePanel = {
+            withAnimation(.spring(duration: 0.3)) { showChannelPanel = false }
+        }
+        keyboardHandler.onActivateSearch = {
+            if !showChannelPanel {
+                withAnimation(.spring(duration: 0.3)) { showChannelPanel = true }
+            }
+            searchActivationToken += 1
+        }
+        keyboardHandler.onToggleFavorite = {
+            guard let channel = playerCore.currentChannel else { return }
+            toggleFavorite(channel: channel)
+        }
+        keyboardHandler.onRestoreLastChannel = {
+            if let channel = playerCore.restoreLastChannel() {
+                playerCore.play(channel)
+            }
+        }
+    }
+
+    private func toggleFavorite(channel: Channel) {
+        let channelID = channel.id
+        let existing = try? modelContext.fetch(
+            FetchDescriptor<FavoriteRecord>(predicate: #Predicate { $0.channelID == channelID })
+        )
+        if let record = existing?.first {
+            modelContext.delete(record)
+        } else {
+            let record = FavoriteRecord(channel: channel)
+            modelContext.insert(record)
+        }
+        try? modelContext.save()
+    }
+    #endif
 }
