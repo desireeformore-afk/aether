@@ -115,13 +115,13 @@ struct SeriesBrowserView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 16)], spacing: 16) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 16)], spacing: 16) {
                         ForEach(filteredList) { series in
                             SeriesCard(series: series)
                                 .onTapGesture { selectedSeries = series }
                         }
                     }
-                    .padding()
+                    .padding(20)
                 }
                 .searchable(text: $searchText, prompt: "Search series")
             }
@@ -152,32 +152,89 @@ struct SeriesBrowserView: View {
 
 private struct SeriesCard: View {
     let series: XstreamSeries
+    @State private var isHovered = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            AsyncImage(url: series.cover.flatMap(URL.init(string:))) { phase in
-                switch phase {
-                case .success(let img):
-                    img.resizable().scaledToFill()
-                case .failure, .empty:
-                    ZStack {
-                        Color.aetherSurface
-                        Image(systemName: "tv")
-                            .font(.largeTitle)
-                            .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack(alignment: .bottom) {
+                AsyncImage(url: series.cover.flatMap(URL.init(string:))) { phase in
+                    switch phase {
+                    case .success(let img):
+                        img.resizable().scaledToFill()
+                    case .failure, .empty:
+                        ZStack {
+                            Color.aetherSurface
+                            Image(systemName: "tv")
+                                .font(.largeTitle)
+                                .foregroundStyle(.secondary)
+                        }
+                    @unknown default:
+                        ShimmerView()
                     }
-                @unknown default:
-                    Color.aetherSurface
+                }
+                .frame(width: 160, height: 240)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                if isHovered {
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.7)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(width: 160, height: 240)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
-            .frame(width: 140, height: 200)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .onHover { isHovered = $0 }
 
-            Text(series.name)
-                .font(.aetherCaption)
-                .foregroundStyle(Color.aetherText)
-                .lineLimit(2)
-                .frame(width: 140, alignment: .leading)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(series.name)
+                    .font(.aetherCaption)
+                    .foregroundStyle(Color.aetherText)
+                    .lineLimit(2)
+
+                HStack(spacing: 6) {
+                    if let year = series.releaseDate?.prefix(4) {
+                        Text(String(year))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    if let rating = series.rating, let ratingValue = Double(rating), ratingValue > 0 {
+                        HStack(spacing: 2) {
+                            Text("⭐")
+                                .font(.system(size: 10))
+                            Text(String(format: "%.1f", ratingValue))
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .frame(width: 160, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - ShimmerView
+
+private struct ShimmerView: View {
+    @State private var phase: CGFloat = 0
+
+    var body: some View {
+        LinearGradient(
+            colors: [
+                Color.aetherSurface,
+                Color.aetherSurface.opacity(0.7),
+                Color.aetherSurface
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .offset(x: phase)
+        .onAppear {
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                phase = 300
+            }
         }
     }
 }
