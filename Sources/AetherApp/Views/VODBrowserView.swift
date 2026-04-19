@@ -106,36 +106,34 @@ struct VODBrowserView: View {
     private var vodGrid: some View {
         Group {
             if isLoadingStreams {
-                ProgressView("Loading titles…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if filteredStreams.isEmpty && selectedCategory != nil {
-                ContentUnavailableView("No Titles", systemImage: "film")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if selectedCategory == nil {
+                ProgressView("Loading streams…")
+            } else if filteredStreams.isEmpty {
                 ContentUnavailableView(
-                    "Pick a Category",
-                    systemImage: "rectangle.stack.fill",
-                    description: Text("Select a category from the sidebar.")
+                    "No VOD content",
+                    systemImage: "film",
+                    description: Text("Select a category to browse")
                 )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 16)], spacing: 16) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 16)], spacing: 16) {
                         ForEach(filteredStreams) { vod in
                             VODCard(vod: vod)
-                                .onTapGesture { selectedVOD = vod }
+                                .onTapGesture {
+                                    selectedVOD = vod
+                                }
                         }
                     }
-                    .padding()
+                    .padding(20)
                 }
-                .searchable(text: $searchText, prompt: "Search titles")
             }
         }
-        .background(Color.aetherBackground)
+        .searchable(text: $searchText, prompt: "Search VOD")
     }
 
     private var filteredStreams: [XstreamVOD] {
-        guard !searchText.isEmpty else { return streams }
+        if searchText.isEmpty {
+            return streams
+        }
         return streams.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
 
@@ -145,20 +143,19 @@ struct VODBrowserView: View {
         isLoadingCategories = true
         defer { isLoadingCategories = false }
         do {
-            categories = try await service.vodCategories()
+            categories = try await service.getVODCategories()
         } catch {
-            // silent — categories list stays empty
+            print("Failed to load VOD categories: \(error)")
         }
     }
 
     private func loadStreams(for category: XstreamCategory) async {
-        streams = []
         isLoadingStreams = true
         defer { isLoadingStreams = false }
         do {
-            streams = try await service.vodStreams(categoryID: category.id)
+            streams = try await service.getVODStreams(categoryID: category.id)
         } catch {
-            // silent
+            print("Failed to load VOD streams: \(error)")
         }
     }
 }
@@ -167,14 +164,20 @@ struct VODBrowserView: View {
 
 private struct VODCard: View {
     let vod: XstreamVOD
+    @State private var isHovered = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        ZStack(alignment: .bottom) {
+            // Poster image
             AsyncImage(url: vod.streamIcon.flatMap(URL.init(string:))) { phase in
                 switch phase {
-                case .success(let img):
-                    img.resizable().scaledToFill()
-                case .failure, .empty:
+                case .empty:
+                    ShimmerView()
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .failure:
                     ZStack {
                         Color.aetherSurface
                         Image(systemName: "film")
@@ -185,14 +188,105 @@ private struct VODCard: View {
                     Color.aetherSurface
                 }
             }
-            .frame(width: 140, height: 200)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .frame(width: 160, height: 240)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            Text(vod.name)
-                .font(.aetherCaption)
-                .foregroundStyle(Color.aetherText)
-                .lineLimit(2)
-                .frame(width: 140, alignment: .leading)
+            // Hover overlay
+            if isHovered {
+                VStack(alignment: .leading, spacing: 4) {
+                    Spacer()
+                    
+                    HStack(spacing: 4) {
+                        if let rating = vod.rating, !rating.isEmpty, let ratingValue = Double(rating) {
+                            HStack(spacing: 2) {
+                                Image(systemName: "star.fill")
+                                    .font(.caption2)
+                                Text(String(format: "%.1f", ratingValue))
+                                    .font(.caption2)
+                                    .fontWeight(.semibold)
+                            }
+                            .foregroundStyle(.yellow)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.black.opacity(0.6))
+                            .clipShape(Capsule())
+                        }
+                        
+                        if let year = extractYear(from: vod.added) {
+                            Text(year)
+                                .font(.caption2)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.white.opacity(0.9))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.black.opacity(0.6))
+                                .clipShape(Capsule())
+                        }
+                        
+                        Spacer()
+                    }
+                    
+                    Text(vod.name)
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+                .padding(12)
+                .frame(width: 160, height: 240, alignment: .bottom)
+                .background(
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.8)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovered = hovering
+            }
+        }
+    }
+
+    private func extractYear(from dateString: String?) -> String? {
+        guard let dateString = dateString else { return nil }
+        // Format: "YYYY-MM-DD HH:mm:ss"
+        let components = dateString.split(separator: "-")
+        guard let firstComponent = components.first else { return nil }
+        return String(firstComponent)
+    }
+}
+
+// MARK: - ShimmerView
+
+private struct ShimmerView: View {
+    @State private var phase: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Color.aetherSurface
+                
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        .white.opacity(0.3),
+                        .clear
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .offset(x: phase * geometry.size.width * 2 - geometry.size.width)
+            }
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                phase = 1
+            }
         }
     }
 }
