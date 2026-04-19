@@ -20,7 +20,7 @@ final class RecordingServiceTests: XCTestCase {
 
     override func tearDown() async throws {
         // Clean up test recordings
-        let recordingsDir = service.settings.recordingsDirectory
+        let recordingsDir = await service.settings.recordingsDirectory
         try? FileManager.default.removeItem(at: recordingsDir)
 
         userDefaults.removePersistentDomain(forName: "test.aether.recordings")
