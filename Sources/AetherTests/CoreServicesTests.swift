@@ -101,7 +101,7 @@ final class ChannelTests: XCTestCase {
         XCTAssertEqual(channel.streamURL, url)
         XCTAssertNil(channel.logoURL)
         XCTAssertEqual(channel.groupTitle, "Uncategorized")
-        XCTAssertEqual(channel.epgId, "")
+        XCTAssertNil(channel.epgId)
     }
 
     func testChannelEquality() {

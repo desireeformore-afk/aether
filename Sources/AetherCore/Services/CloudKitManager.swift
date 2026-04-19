@@ -1,6 +1,24 @@
 import Foundation
 import CloudKit
 
+public enum CloudKitError: Error, LocalizedError {
+    case accountNotAvailable
+    case accountCheckFailed(Error)
+    case setupFailed(Error)
+    case syncFailed(Error)
+    case invalidRecord
+
+    public var errorDescription: String? {
+        switch self {
+        case .accountNotAvailable: return "iCloud account not available"
+        case .accountCheckFailed(let e): return "Account check failed: \(e.localizedDescription)"
+        case .setupFailed(let e): return "CloudKit setup failed: \(e.localizedDescription)"
+        case .syncFailed(let e): return "Sync failed: \(e.localizedDescription)"
+        case .invalidRecord: return "Invalid CloudKit record"
+        }
+    }
+}
+
 @MainActor
 @Observable
 public final class CloudKitManager {

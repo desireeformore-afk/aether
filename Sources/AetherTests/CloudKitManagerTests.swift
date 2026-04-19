@@ -98,11 +98,13 @@ final class CloudKitManagerTests: XCTestCase {
 
     // MARK: - CloudKitManager shared instance
 
+    @MainActor
     func testSharedInstanceExists() {
         let manager = CloudKitManager.shared
         XCTAssertNotNil(manager)
     }
 
+    @MainActor
     func testManagerHasSyncState() {
         let manager = CloudKitManager.shared
         // isSyncing defaults to false
