@@ -19,7 +19,28 @@ Możesz użyć `swiftc --parse [plik].swift` do sprawdzenia składni pojedynczeg
 Testy kompilacyjne robi Kajetan lokalnie w Xcode (Cmd+B).
 
 ## Używaj Claude Code
-Do edycji plików używaj `claude code` jako subagenta — lepiej rozumie strukturę projektu i edytuje precyzyjnie.
+Do edycji plików używaj `claude` jako subagenta. Wywołanie ZAWSZE z flagą `--max-turns 80` żeby nie skończyć za wcześnie.
+
+### Prawidłowe wywołanie Claude Code:
+```bash
+cd ~/aether && claude --max-turns 80 -p "ZADANIE: [opis zadania]. 
+Plik do edycji: [nazwa pliku].
+Po edycji sprawdź składnię: swiftc --parse Sources/AetherApp/Views/[plik].swift 2>&1 | head -20
+Jeśli błędy — napraw je. Jeśli czysto — zakończ."
+```
+
+### Weryfikacja PRZED każdym git push (OBOWIĄZKOWE):
+```bash
+# Sprawdź składnię zmienionych plików
+swiftc --parse [zmieniony_plik.swift] 2>&1 | head -20
+
+# Dopiero jak nie ma błędów:
+git add [zmieniony_plik]
+git commit -m "feat/fix: [opis]"
+git push
+```
+
+**NIE pushuj jeśli swiftc --parse zwraca błędy.**
 
 ## Architektura
 ```
