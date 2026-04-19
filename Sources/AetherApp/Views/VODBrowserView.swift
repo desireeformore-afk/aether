@@ -52,28 +52,72 @@ struct VODBrowserView: View {
 
     // Inline layout for panel embedding
     private var embeddedLayout: some View {
-        HSplitView {
+        HStack(spacing: 0) {
             // Category rail
-            List(selection: $selectedCategory) {
+            VStack(spacing: 0) {
+                Text("Categories")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+
+                Divider()
+
                 if isLoadingCategories {
                     ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    ForEach(categories) { cat in
-                        Text(cat.name)
-                            .font(.system(size: 12))
-                            .tag(cat)
+                    List(selection: $selectedCategory) {
+                        ForEach(categories) { cat in
+                            Text(cat.name)
+                                .font(.system(size: 12))
+                                .lineLimit(2)
+                                .tag(cat)
+                        }
                     }
+                    .listStyle(.plain)
                 }
             }
-            .listStyle(.sidebar)
-            .frame(minWidth: 120, maxWidth: 150)
+            .frame(width: 140)
+            .background(Color.aetherSurface)
             .onChange(of: selectedCategory) { _, cat in
                 guard let cat else { return }
                 Task { await loadStreams(for: cat) }
             }
 
-            vodGrid
+            Divider()
+
+            // Content area
+            VStack(spacing: 0) {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12))
+                    TextField("Search VOD…", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+                    if !searchText.isEmpty {
+                        Button { searchText = "" } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .font(.system(size: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Color.aetherSurface)
+
+                Divider()
+
+                vodGridContent
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { await loadCategories() }
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
@@ -101,33 +145,37 @@ struct VODBrowserView: View {
         }
     }
 
-    // MARK: - VOD grid
-
+    // MARK: - VOD grid (standalone)
     private var vodGrid: some View {
+        vodGridContent
+            .searchable(text: $searchText, prompt: "Search VOD")
+    }
+
+    // MARK: - VOD grid content
+    private var vodGridContent: some View {
         Group {
             if isLoadingStreams {
-                ProgressView("Loading streams…")
+                ProgressView("Loading…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if filteredStreams.isEmpty {
                 ContentUnavailableView(
-                    "No VOD content",
+                    selectedCategory == nil ? "Select a category" : "No VOD content",
                     systemImage: "film",
-                    description: Text("Select a category to browse")
+                    description: Text(selectedCategory == nil ? "Choose a category on the left" : "No streams in this category")
                 )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 16)], spacing: 16) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
                         ForEach(filteredStreams) { vod in
                             VODCard(vod: vod)
-                                .onTapGesture {
-                                    selectedVOD = vod
-                                }
+                                .onTapGesture { selectedVOD = vod }
                         }
                     }
-                    .padding(20)
+                    .padding(12)
                 }
             }
         }
-        .searchable(text: $searchText, prompt: "Search VOD")
     }
 
     private var filteredStreams: [XstreamVOD] {
@@ -188,14 +236,14 @@ private struct VODCard: View {
                     Color.aetherSurface
                 }
             }
-            .frame(width: 160, height: 240)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(width: 110, height: 165)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
 
             // Hover overlay
             if isHovered {
                 VStack(alignment: .leading, spacing: 4) {
                     Spacer()
-                    
+
                     HStack(spacing: 4) {
                         if let rating = vod.rating, !rating.isEmpty, let ratingValue = Double(rating) {
                             HStack(spacing: 2) {
@@ -211,21 +259,18 @@ private struct VODCard: View {
                             .background(.black.opacity(0.6))
                             .clipShape(Capsule())
                         }
-                        
-
-                        
                         Spacer()
                     }
-                    
+
                     Text(vod.name)
-                        .font(.subheadline)
+                        .font(.caption)
                         .fontWeight(.bold)
                         .foregroundStyle(.white)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                 }
-                .padding(12)
-                .frame(width: 160, height: 240, alignment: .bottom)
+                .padding(8)
+                .frame(width: 110, height: 165, alignment: .bottom)
                 .background(
                     LinearGradient(
                         colors: [.clear, .black.opacity(0.8)],
@@ -233,7 +278,7 @@ private struct VODCard: View {
                         endPoint: .bottom
                     )
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
         .onHover { hovering in

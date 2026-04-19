@@ -51,28 +51,72 @@ struct SeriesBrowserView: View {
 
     // Inline layout for panel embedding (no NavigationSplitView)
     private var embeddedLayout: some View {
-        HSplitView {
+        HStack(spacing: 0) {
             // Category rail
-            List(selection: $selectedCategory) {
+            VStack(spacing: 0) {
+                Text("Categories")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+
+                Divider()
+
                 if isLoadingCategories {
                     ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    ForEach(categories) { cat in
-                        Text(cat.name)
-                            .font(.system(size: 12))
-                            .tag(cat)
+                    List(selection: $selectedCategory) {
+                        ForEach(categories) { cat in
+                            Text(cat.name)
+                                .font(.system(size: 12))
+                                .lineLimit(2)
+                                .tag(cat)
+                        }
                     }
+                    .listStyle(.plain)
                 }
             }
-            .listStyle(.sidebar)
-            .frame(minWidth: 120, maxWidth: 150)
+            .frame(width: 140)
+            .background(Color.aetherSurface)
             .onChange(of: selectedCategory) { _, cat in
                 guard let cat else { return }
                 Task { await loadList(for: cat) }
             }
 
-            seriesGrid
+            Divider()
+
+            // Content area
+            VStack(spacing: 0) {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12))
+                    TextField("Search series…", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+                    if !searchText.isEmpty {
+                        Button { searchText = "" } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .font(.system(size: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Color.aetherSurface)
+
+                Divider()
+
+                seriesGridContent
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { await loadCategories() }
         .sheet(item: $selectedSeries) { series in
             SeriesDetailView(series: series, credentials: credentials, player: player)
@@ -99,31 +143,36 @@ struct SeriesBrowserView: View {
     }
 
     private var seriesGrid: some View {
+        seriesGridContent
+            .searchable(text: $searchText, prompt: "Search series")
+            .background(Color.aetherBackground)
+    }
+
+    private var seriesGridContent: some View {
         Group {
             if isLoadingList {
-                ProgressView("Loading series…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if filteredList.isEmpty && selectedCategory != nil {
-                ContentUnavailableView("No Series", systemImage: "tv")
+                ProgressView("Loading…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if selectedCategory == nil {
                 ContentUnavailableView(
                     "Pick a Category",
                     systemImage: "rectangle.stack.fill",
-                    description: Text("Select a category from the sidebar.")
+                    description: Text("Select a category on the left.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if filteredList.isEmpty {
+                ContentUnavailableView("No Series", systemImage: "tv")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 16)], spacing: 16) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
                         ForEach(filteredList) { series in
                             SeriesCard(series: series)
                                 .onTapGesture { selectedSeries = series }
                         }
                     }
-                    .padding(20)
+                    .padding(12)
                 }
-                .searchable(text: $searchText, prompt: "Search series")
             }
         }
         .background(Color.aetherBackground)
@@ -172,8 +221,8 @@ private struct SeriesCard: View {
                         ShimmerView()
                     }
                 }
-                .frame(width: 160, height: 240)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .frame(width: 110, height: 165)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
 
                 if isHovered {
                     LinearGradient(
@@ -181,8 +230,8 @@ private struct SeriesCard: View {
                         startPoint: .top,
                         endPoint: .bottom
                     )
-                    .frame(width: 160, height: 240)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(width: 110, height: 165)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
             }
             .onHover { isHovered = $0 }
@@ -210,7 +259,7 @@ private struct SeriesCard: View {
                     }
                 }
             }
-            .frame(width: 160, alignment: .leading)
+            .frame(width: 110, alignment: .leading)
         }
     }
 }
