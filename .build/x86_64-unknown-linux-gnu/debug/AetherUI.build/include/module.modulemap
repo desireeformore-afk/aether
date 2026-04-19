@@ -1,3 +1,0 @@
-module AetherUI {
-    header "/home/hermes/aether/.build/x86_64-unknown-linux-gnu/debug/AetherUI.build/include/AetherUI-Swift.h"
-}
