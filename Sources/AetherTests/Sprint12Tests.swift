@@ -132,28 +132,28 @@ final class SRTParserTests: XCTestCase {
 final class BufferingConfigTests: XCTestCase {
 
     func testForwardBufferDurationIsPositive() {
-        XCTAssertGreaterThan(BufferingConfig.preferredForwardBufferDuration, 0)
+        XCTAssertGreaterThan(BufferingConfig.normalForwardBuffer, 0)
     }
 
     func testForwardBufferIsReasonable() {
-        // Forward buffer should be between 5s and 120s
-        XCTAssertGreaterThanOrEqual(BufferingConfig.preferredForwardBufferDuration, 5)
-        XCTAssertLessThanOrEqual(BufferingConfig.preferredForwardBufferDuration, 120)
+        // Normal buffer: 4s (low latency); adaptive: up to 16s
+        XCTAssertGreaterThanOrEqual(BufferingConfig.normalForwardBuffer, 1)
+        XCTAssertLessThanOrEqual(BufferingConfig.adaptiveForwardBuffer, 120)
     }
 
-    func testForwardBufferIs10Seconds() {
-        // Updated: 10s for low latency on live IPTV streams
-        XCTAssertEqual(BufferingConfig.preferredForwardBufferDuration, 10, accuracy: 0.001)
+    func testForwardBufferValues() {
+        // Normal = 4s for low latency; adaptive = 16s for weak signal recovery
+        XCTAssertEqual(BufferingConfig.normalForwardBuffer, 4, accuracy: 0.001)
+        XCTAssertEqual(BufferingConfig.adaptiveForwardBuffer, 16, accuracy: 0.001)
     }
 
     func testApplyToItemDoesNotCrash() {
         // Smoke test: verify apply() runs without crashing
-        // (AVPlayerItem needs a valid URL but we just test the API surface)
         let url = URL(string: "https://example.com/stream.m3u8")!
         let item = AVPlayerItem(url: url)
         BufferingConfig.apply(to: item)
         XCTAssertEqual(item.preferredForwardBufferDuration,
-                       BufferingConfig.preferredForwardBufferDuration,
+                       BufferingConfig.normalForwardBuffer,
                        accuracy: 0.001)
     }
 }
