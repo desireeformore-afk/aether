@@ -87,12 +87,14 @@ final class Sprint14Tests: XCTestCase {
         XCTAssertTrue(ids.contains("nord"))
     }
 
+    #if canImport(SwiftUI)
     func testThemeAccentColor_notClear() {
         for theme in ThemeDefinition.allBuiltIn {
             let color = theme.accentColor
             XCTAssertNotNil(color)
         }
     }
+    #endif
 
     func testSunsetThemeHasGradientBackground() {
         let sunset = ThemeDefinition.allBuiltIn.first { $0.id == "sunset" }
