@@ -6,32 +6,37 @@ final class ThemeServiceTests: XCTestCase {
 
     @MainActor
     func testThemeServiceInitialization() {
-        let service = ThemeService()
+        let ud = UserDefaults(suiteName: "core.init.\(UUID().uuidString)")!
+        let service = ThemeService(defaults: ud)
         XCTAssertNotNil(service)
-        XCTAssertNotNil(service.currentTheme)
+        XCTAssertNotNil(service.active)
     }
 
     @MainActor
     func testThemeSelection() {
-        let service = ThemeService()
-        let initialTheme = service.currentTheme
+        let ud = UserDefaults(suiteName: "core.select.\(UUID().uuidString)")!
+        let service = ThemeService(defaults: ud)
+        let themes = ThemeDefinition.allBuiltIn
+        XCTAssertFalse(themes.isEmpty)
 
-        // Get all available themes
-        let themes = AetherTheme.allCases
+        let first = themes[0]
+        service.select(first)
+        XCTAssertEqual(service.active.id, first.id)
 
-        // Select a different theme
-        if let differentTheme = themes.first(where: { $0 != initialTheme }) {
-            service.selectTheme(differentTheme)
-            XCTAssertEqual(service.currentTheme, differentTheme)
+        if themes.count > 1 {
+            let second = themes[1]
+            service.select(second)
+            XCTAssertEqual(service.active.id, second.id)
         }
     }
 
-    func testThemeProperties() {
-        for theme in AetherTheme.allCases {
+    @MainActor
+    func testAllBuiltInThemes() {
+        let themes = ThemeDefinition.allBuiltIn
+        XCTAssertFalse(themes.isEmpty)
+        for theme in themes {
+            XCTAssertFalse(theme.id.isEmpty)
             XCTAssertFalse(theme.name.isEmpty)
-            XCTAssertNotNil(theme.primaryColor)
-            XCTAssertNotNil(theme.accentColor)
-            XCTAssertNotNil(theme.backgroundColor)
         }
     }
 }

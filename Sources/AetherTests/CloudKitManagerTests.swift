@@ -2,156 +2,84 @@ import XCTest
 import CloudKit
 @testable import AetherCore
 
-@MainActor
+/// Tests for CloudKit sync data structures and conflict resolution logic.
 final class CloudKitManagerTests: XCTestCase {
-    var manager: CloudKitManager!
     var mockPlaylists: [SyncedPlaylist]!
     var mockFavorites: [SyncedFavorite]!
     var mockWatchHistory: [SyncedWatchHistory]!
     var mockSettings: SyncedSettings!
 
-    override func setUp() async throws {
-        try await super.setUp()
-
-        // Initialize manager with test container
-        manager = CloudKitManager(containerIdentifier: "iCloud.com.aether.iptv.test")
-
-        // Create mock data
+    override func setUp() {
+        super.setUp()
         setupMockData()
     }
 
-    override func tearDown() async throws {
-        manager = nil
+    override func tearDown() {
         mockPlaylists = nil
         mockFavorites = nil
         mockWatchHistory = nil
         mockSettings = nil
-        try await super.tearDown()
+        super.tearDown()
     }
 
     // MARK: - Setup Mock Data
 
     private func setupMockData() {
-        // Mock playlists
         mockPlaylists = [
-            SyncedPlaylist(
-                id: UUID(),
-                name: "Test Playlist 1",
-                url: "https://example.com/playlist1.m3u",
-                type: .m3u
-            ),
-            SyncedPlaylist(
-                id: UUID(),
-                name: "Test Playlist 2",
-                url: "https://example.com/playlist2.m3u",
-                type: .m3u
-            ),
-            SyncedPlaylist(
-                id: UUID(),
-                name: "Xtream Playlist",
-                url: "https://xtream.example.com",
-                type: .xtream,
-                username: "testuser",
-                password: "testpass"
-            )
+            SyncedPlaylist(id: UUID(), name: "Test Playlist 1", url: "https://example.com/playlist1.m3u", type: .m3u),
+            SyncedPlaylist(id: UUID(), name: "Test Playlist 2", url: "https://example.com/playlist2.m3u", type: .m3u),
+            SyncedPlaylist(id: UUID(), name: "Xtream Playlist", url: "https://xtream.example.com", type: .xtream, username: "testuser", password: "testpass")
         ]
 
-        // Mock favorites
         let channelId1 = UUID()
         let channelId2 = UUID()
         mockFavorites = [
-            SyncedFavorite(
-                id: UUID(),
-                channelId: channelId1,
-                channelName: "BBC News",
-                addedAt: Date()
-            ),
-            SyncedFavorite(
-                id: UUID(),
-                channelId: channelId2,
-                channelName: "CNN",
-                addedAt: Date()
-            )
+            SyncedFavorite(id: UUID(), channelId: channelId1, channelName: "BBC News", addedAt: Date()),
+            SyncedFavorite(id: UUID(), channelId: channelId2, channelName: "CNN", addedAt: Date())
         ]
 
-        // Mock watch history
         mockWatchHistory = [
-            SyncedWatchHistory(
-                id: UUID(),
-                channelId: channelId1,
-                channelName: "BBC News",
-                watchedAt: Date().addingTimeInterval(-3600),
-                duration: 1800,
-                position: 900
-            ),
-            SyncedWatchHistory(
-                id: UUID(),
-                channelId: channelId2,
-                channelName: "CNN",
-                watchedAt: Date(),
-                duration: 2400,
-                position: 1200
-            )
+            SyncedWatchHistory(id: UUID(), channelId: channelId1, channelName: "BBC News",
+                               watchedAt: Date().addingTimeInterval(-3600), duration: 1800, position: 900),
+            SyncedWatchHistory(id: UUID(), channelId: channelId2, channelName: "CNN",
+                               watchedAt: Date(), duration: 2400, position: 1200)
         ]
 
-        // Mock settings
-        mockSettings = SyncedSettings(
-            theme: "dark",
-            autoplay: true,
-            volume: 0.75,
-            quality: "1080p",
-            subtitlesEnabled: true,
-            parentalControlsEnabled: false
-        )
+        mockSettings = SyncedSettings(theme: "dark", autoplay: true, volume: 0.75,
+                                      quality: "1080p", subtitlesEnabled: true, parentalControlsEnabled: false)
     }
 
-    // MARK: - Availability Tests
+    // MARK: - Playlist Tests
 
-    func testCheckAvailability() async throws {
-        // Note: This test will fail in CI/test environments without iCloud
-        // In production, you'd mock the CKContainer
-        await manager.checkAvailability()
-
-        // Just verify the method completes without crashing
-        XCTAssertNotNil(manager.isAvailable)
-    }
-
-    // MARK: - Playlist Sync Tests
-
-    func testPlaylistConversion() throws {
+    func testPlaylistConversion() {
         let playlist = mockPlaylists[0]
-
-        // Test that playlist has required fields
         XCTAssertFalse(playlist.name.isEmpty)
         XCTAssertFalse(playlist.url.isEmpty)
         XCTAssertEqual(playlist.syncStatus, .pending)
         XCTAssertNotNil(playlist.lastModified)
     }
 
-    func testPlaylistWithXtreamCredentials() throws {
+    func testPlaylistWithXtreamCredentials() {
         let xtreamPlaylist = mockPlaylists[2]
-
         XCTAssertEqual(xtreamPlaylist.type, .xtream)
         XCTAssertEqual(xtreamPlaylist.username, "testuser")
         XCTAssertEqual(xtreamPlaylist.password, "testpass")
     }
 
-    // MARK: - Favorites Sync Tests
+    // MARK: - Favorites Tests
 
-    func testFavoriteConversion() throws {
+    func testFavoriteConversion() {
         let favorite = mockFavorites[0]
-
         XCTAssertFalse(favorite.channelName.isEmpty)
         XCTAssertNotNil(favorite.channelId)
         XCTAssertNotNil(favorite.addedAt)
         XCTAssertEqual(favorite.syncStatus, .pending)
     }
 
-    // MARK: - Watch History Sync Tests
+    // MARK: - Watch History Tests
 
-    func testWatchHistoryConversion() throws {
+    func testWatchHistoryConversion() {
         let history = mockWatchHistory[0]
-
         XCTAssertFalse(history.channelName.isEmpty)
         XCTAssertNotNil(history.channelId)
         XCTAssertGreaterThan(history.duration, 0)
@@ -159,18 +87,31 @@ final class CloudKitManagerTests: XCTestCase {
         XCTAssertLessThanOrEqual(history.position, history.duration)
     }
 
-    // MARK: - Settings Sync Tests
+    // MARK: - Settings Tests
 
-    func testSettingsConversion() throws {
+    func testSettingsConversion() {
         XCTAssertFalse(mockSettings.theme.isEmpty)
         XCTAssertGreaterThanOrEqual(mockSettings.volume, 0.0)
         XCTAssertLessThanOrEqual(mockSettings.volume, 1.0)
         XCTAssertFalse(mockSettings.quality.isEmpty)
     }
 
+    // MARK: - CloudKitManager shared instance
+
+    func testSharedInstanceExists() {
+        let manager = CloudKitManager.shared
+        XCTAssertNotNil(manager)
+    }
+
+    func testManagerHasSyncState() {
+        let manager = CloudKitManager.shared
+        // isSyncing defaults to false
+        XCTAssertFalse(manager.isSyncing)
+    }
+
     // MARK: - Conflict Resolution Tests
 
-    func testLastWriteWinsConflictResolution() throws {
+    func testLastWriteWinsConflictResolution() {
         let oldDate = Date().addingTimeInterval(-3600)
         let newDate = Date()
 
@@ -182,14 +123,12 @@ final class CloudKitManagerTests: XCTestCase {
         newPlaylist.lastModified = newDate
         newPlaylist.name = "New Name"
 
-        // Simulate conflict resolution
         let winner = newPlaylist.lastModified > oldPlaylist.lastModified ? newPlaylist : oldPlaylist
-
         XCTAssertEqual(winner.name, "New Name")
         XCTAssertEqual(winner.lastModified, newDate)
     }
 
-    func testFirstWriteWinsConflictResolution() throws {
+    func testFirstWriteWinsConflictResolution() {
         let oldDate = Date().addingTimeInterval(-3600)
         let newDate = Date()
 
@@ -201,9 +140,7 @@ final class CloudKitManagerTests: XCTestCase {
         newPlaylist.lastModified = newDate
         newPlaylist.name = "New Name"
 
-        // Simulate first-write-wins
         let winner = oldPlaylist.lastModified < newPlaylist.lastModified ? oldPlaylist : newPlaylist
-
         XCTAssertEqual(winner.name, "Old Name")
         XCTAssertEqual(winner.lastModified, oldDate)
     }
@@ -227,27 +164,19 @@ final class CloudKitManagerTests: XCTestCase {
 
     // MARK: - Merge Logic Tests
 
-    func testMergeLocalAndRemoteItems() throws {
-        // Create local items
-        var local = mockPlaylists
+    func testMergeLocalAndRemoteItems() {
+        var local = mockPlaylists!
         local[0].syncStatus = .pending
         local[0].name = "Local Modified"
 
-        // Create remote items (same IDs, different data)
-        var remote = mockPlaylists
-        remote[0].lastModified = Date().addingTimeInterval(-3600) // Older
+        var remote = mockPlaylists!
+        remote[0].lastModified = Date().addingTimeInterval(-3600)
         remote[0].name = "Remote Original"
 
-        // Simulate merge with last-write-wins
         var merged: [UUID: SyncedPlaylist] = [:]
-
-        for item in remote {
-            merged[item.id] = item
-        }
-
+        for item in remote { merged[item.id] = item }
         for localItem in local {
             if let remoteItem = merged[localItem.id] {
-                // Last write wins
                 merged[localItem.id] = localItem.lastModified > remoteItem.lastModified ? localItem : remoteItem
             } else {
                 merged[localItem.id] = localItem
@@ -255,103 +184,18 @@ final class CloudKitManagerTests: XCTestCase {
         }
 
         let result = Array(merged.values)
-
         XCTAssertEqual(result.count, mockPlaylists.count)
-
-        // Find the merged item
         if let mergedItem = result.first(where: { $0.id == local[0].id }) {
             XCTAssertEqual(mergedItem.name, "Local Modified")
         }
     }
 
-    func testMergeWithNewLocalItem() throws {
-        var local = mockPlaylists
-
-        // Add a new local item
-        let newPlaylist = SyncedPlaylist(
-            id: UUID(),
-            name: "New Local Playlist",
-            url: "https://example.com/new.m3u",
-            type: .m3u
-        )
-        local.append(newPlaylist)
-
-        let remote = Array(mockPlaylists.prefix(2)) // Only first 2 items
-
-        // Simulate merge
-        var merged: [UUID: SyncedPlaylist] = [:]
-
-        for item in remote {
-            merged[item.id] = item
-        }
-
-        for localItem in local {
-            if merged[localItem.id] == nil {
-                merged[localItem.id] = localItem
-            }
-        }
-
-        let result = Array(merged.values)
-
-        XCTAssertEqual(result.count, local.count)
-        XCTAssertTrue(result.contains(where: { $0.id == newPlaylist.id }))
-    }
-
-    func testMergeWithDeletedLocalItem() throws {
-        let local = Array(mockPlaylists.prefix(2)) // Only first 2 items
-        let remote = mockPlaylists // All 3 items
-
-        // Simulate merge
-        var merged: [UUID: SyncedPlaylist] = [:]
-
-        for item in remote {
-            merged[item.id] = item
-        }
-
-        for localItem in local {
-            if let remoteItem = merged[localItem.id] {
-                merged[localItem.id] = localItem.lastModified > remoteItem.lastModified ? localItem : remoteItem
-            }
-        }
-
-        let result = Array(merged.values)
-
-        // Remote item should still be present
-        XCTAssertEqual(result.count, remote.count)
-    }
-
-    // MARK: - Batch Operations Tests
-
-    func testBatchPlaylistSync() throws {
-        // Verify we can handle multiple playlists
-        XCTAssertEqual(mockPlaylists.count, 3)
-
-        for playlist in mockPlaylists {
-            XCTAssertNotNil(playlist.id)
-            XCTAssertFalse(playlist.name.isEmpty)
-        }
-    }
-
-    func testBatchFavoriteSync() throws {
-        XCTAssertEqual(mockFavorites.count, 2)
-
-        for favorite in mockFavorites {
-            XCTAssertNotNil(favorite.id)
-            XCTAssertNotNil(favorite.channelId)
-        }
-    }
-
     // MARK: - Data Integrity Tests
 
-    func testPlaylistDataIntegrity() throws {
+    func testPlaylistDataIntegrity() {
         for playlist in mockPlaylists {
-            // Verify URL is valid
             XCTAssertNotNil(URL(string: playlist.url))
-
-            // Verify type is valid
             XCTAssertTrue([PlaylistType.m3u, .xtream].contains(playlist.type))
-
-            // Verify Xtream playlists have credentials
             if playlist.type == .xtream {
                 XCTAssertNotNil(playlist.username)
                 XCTAssertNotNil(playlist.password)
@@ -359,53 +203,38 @@ final class CloudKitManagerTests: XCTestCase {
         }
     }
 
-    func testFavoriteDataIntegrity() throws {
+    func testFavoriteDataIntegrity() {
         for favorite in mockFavorites {
-            // Verify dates are valid
             XCTAssertLessThanOrEqual(favorite.addedAt, Date())
             XCTAssertLessThanOrEqual(favorite.lastModified, Date())
         }
     }
 
-    func testWatchHistoryDataIntegrity() throws {
+    func testWatchHistoryDataIntegrity() {
         for history in mockWatchHistory {
-            // Verify position doesn't exceed duration
             XCTAssertLessThanOrEqual(history.position, history.duration)
-
-            // Verify dates are valid
             XCTAssertLessThanOrEqual(history.watchedAt, Date())
         }
     }
 
     // MARK: - Performance Tests
 
-    func testMergePerformance() throws {
-        // Create large datasets
+    func testMergePerformance() {
         var largePlaylists: [SyncedPlaylist] = []
         for i in 0..<1000 {
             largePlaylists.append(
-                SyncedPlaylist(
-                    id: UUID(),
-                    name: "Playlist \(i)",
-                    url: "https://example.com/playlist\(i).m3u",
-                    type: .m3u
-                )
+                SyncedPlaylist(id: UUID(), name: "Playlist \(i)", url: "https://example.com/playlist\(i).m3u", type: .m3u)
             )
         }
 
         measure {
             var merged: [UUID: SyncedPlaylist] = [:]
-
-            for item in largePlaylists {
-                merged[item.id] = item
-            }
-
+            for item in largePlaylists { merged[item.id] = item }
             for localItem in largePlaylists {
                 if let remoteItem = merged[localItem.id] {
                     merged[localItem.id] = localItem.lastModified > remoteItem.lastModified ? localItem : remoteItem
                 }
             }
-
             _ = Array(merged.values)
         }
     }

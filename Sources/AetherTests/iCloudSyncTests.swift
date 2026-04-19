@@ -4,8 +4,9 @@ import XCTest
 final class iCloudSyncTests: XCTestCase {
     var syncService: iCloudSyncService!
 
-    override func setUp() async throws {
-        syncService = await iCloudSyncService()
+    override func setUp() {
+        super.setUp()
+        syncService = iCloudSyncService()
     }
 
     func testSyncablePlaylist() {
