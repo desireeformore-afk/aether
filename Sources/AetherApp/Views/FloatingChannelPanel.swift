@@ -139,11 +139,13 @@ struct FloatingChannelPanel: View {
                 searchActivationToken: searchActivationToken
             )
             .contentTransition(.opacity)
+            .animation(.easeInOut(duration: 0.2), value: activeTab)
 
         case .movies:
             if let creds = playlist.xstreamCredentials {
                 VODBrowserView(credentials: creds, player: player, isEmbedded: true)
                     .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.2), value: activeTab)
             } else {
                 unavailableView("Movies unavailable", systemImage: "film", description: "Movies require an Xtream Codes playlist.")
             }
@@ -152,6 +154,7 @@ struct FloatingChannelPanel: View {
             if let creds = playlist.xstreamCredentials {
                 SeriesBrowserView(credentials: creds, player: player, isEmbedded: true)
                     .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.2), value: activeTab)
             } else {
                 unavailableView("Series unavailable", systemImage: "tv.and.mediabox", description: "Series require an Xtream Codes playlist.")
             }
