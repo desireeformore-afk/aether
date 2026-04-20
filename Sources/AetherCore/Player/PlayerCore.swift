@@ -373,6 +373,8 @@ public final class PlayerCore {
         guard retrySourceItem !== item else { return }
         guard !isRetrying else { return }
         guard retryCount < maxRetries, let channel = currentChannel else {
+            isRetrying = false
+            retrySourceItem = nil
             state = .error("Stream unavailable after \(maxRetries) retries")
             return
         }
@@ -420,8 +422,11 @@ public final class PlayerCore {
                       let item,
                       item === self.player.currentItem else { return }
                 // -16845 = CoreMedia HTTP 458 (IPTV rate limit / server refusal) — not retryable
-                if nsErr?.code == -16845 || nsErr?.domain == "CoreMediaErrorDomain" {
-                    print("[PlayerCore] 🚫 CoreMedia error \(nsErr?.code ?? 0) — blocking retry")
+                // Also block for any underlying 4xx HTTP error exposed via NSError code
+                let httpCode = nsErr?.code ?? 0
+                if nsErr?.code == -16845 || nsErr?.domain == "CoreMediaErrorDomain"
+                    || (400...499).contains(httpCode) {
+                    print("[PlayerCore] 🚫 Error \(nsErr?.domain ?? "?") \(httpCode) — blocking retry")
                     self.shouldBlockRetry = true
                 }
                 self.scheduleRetry(for: item)
