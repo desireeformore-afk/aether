@@ -478,7 +478,7 @@ public final class PlayerCore {
                     if proxy.isRunning {
                         // Proxy alive — seek to current position to un-stall
                         let pos = self.player.currentTime()
-                        self.player.seek(to: pos)
+                        await self.player.seek(to: pos)
                         self.player.play()
                     } else {
                         // Proxy died — restart proxy and replace AVPlayerItem with new URL
