@@ -15,45 +15,52 @@ public struct PlayerControlsView: View {
     private var isPlaying: Bool { player.state == .playing }
 
     public var body: some View {
-        HStack(spacing: 20) {
-            Button { player.playPrevious() } label: {
-                Image(systemName: "backward.fill")
+        VStack(spacing: 0) {
+            if let channel = player.currentChannel, channel.contentType != .liveTV {
+                SeekBarView(player: player)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Previous channel")
+            HStack(spacing: 20) {
+                Button { player.playPrevious() } label: {
+                    Image(systemName: "backward.fill")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Previous channel")
 
-            Button { player.togglePlayPause() } label: {
-                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                    .font(.title2)
+                Button { player.togglePlayPause() } label: {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.title2)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isPlaying ? "Pause" : "Play")
+
+                Button { player.playNext() } label: {
+                    Image(systemName: "forward.fill")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Next channel")
+
+                Spacer()
+
+                Button { player.toggleMute() } label: {
+                    Image(systemName: player.isMuted ? "speaker.slash.fill" : "speaker.fill")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(player.isMuted ? "Unmute" : "Mute")
+
+                #if !os(tvOS)
+                Slider(value: Binding(
+                    get: { Double(player.volume) },
+                    set: { player.setVolume(Float($0)) }
+                ), in: 0...1)
+                .frame(width: 80)
+                .accessibilityLabel("Volume")
+                #endif
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isPlaying ? "Pause" : "Play")
-
-            Button { player.playNext() } label: {
-                Image(systemName: "forward.fill")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Next channel")
-
-            Spacer()
-
-            Button { player.toggleMute() } label: {
-                Image(systemName: player.isMuted ? "speaker.slash.fill" : "speaker.fill")
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(player.isMuted ? "Unmute" : "Mute")
-
-            #if !os(tvOS)
-            Slider(value: Binding(
-                get: { Double(player.volume) },
-                set: { player.setVolume(Float($0)) }
-            ), in: 0...1)
-            .frame(width: 80)
-            .accessibilityLabel("Volume")
-            #endif
+            .padding(.horizontal)
+            .padding(.vertical, 8)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
         .background(.ultraThinMaterial)
     }
 }
