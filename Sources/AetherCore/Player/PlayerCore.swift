@@ -91,6 +91,9 @@ public final class PlayerCore {
         player.currentTime().seconds
     }
 
+    /// Whether the current stream is live (true) or VOD with seekable duration (false).
+    public private(set) var isLiveStream: Bool = true
+
     /// Whether playback is currently active.
     public var isPlaying: Bool {
         state == .playing
@@ -214,6 +217,10 @@ public final class PlayerCore {
         print("[PlayerCore] Playing: \(channel.name)")
         print("[PlayerCore]   URL: \(url.absoluteString)")
         print("[PlayerCore]   Extension: \(ext)")
+
+        // VOD types: finite, seekable. Live: indefinite.
+        let vodExtensions: Set<String> = ["mkv", "mp4", "avi", "mov", "wmv"]
+        isLiveStream = !vodExtensions.contains(ext)
 
         // Containers that AVPlayer cannot play natively — always route through FFmpeg proxy.
         // mkv: -12847 "Cannot Open"; avi/wmv: no native support; ts/m2ts: -12939 byte-range error.
@@ -464,7 +471,22 @@ public final class PlayerCore {
                 guard let self,
                       let item,
                       item === self.player.currentItem else { return }
-                self.scheduleRetry(for: item)
+                // If we have an HLS proxy, check if it's still alive before retrying.
+                // A dead proxy means we must restart it and replace the AVPlayerItem —
+                // simply retrying the old URL (on the old port) will get Connection refused.
+                if let proxy = self.hlsProxy {
+                    if proxy.isRunning {
+                        // Proxy alive — seek to current position to un-stall
+                        let pos = self.player.currentTime()
+                        self.player.seek(to: pos)
+                        self.player.play()
+                    } else {
+                        // Proxy died — restart proxy and replace AVPlayerItem with new URL
+                        await self.restartProxyAndReplaceItem()
+                    }
+                } else {
+                    self.scheduleRetry(for: item)
+                }
             }
         }
     }
@@ -473,6 +495,53 @@ public final class PlayerCore {
         let center = NotificationCenter.default
         if let obs = stallObserver { center.removeObserver(obs); stallObserver = nil }
         if let obs = failedObserver { center.removeObserver(obs); failedObserver = nil }
+    }
+
+    /// Restarts the HLS proxy (which binds a new port) and replaces the AVPlayerItem
+    /// so AVPlayer uses the new URL. Prevents Connection refused on the old port.
+    private func restartProxyAndReplaceItem() async {
+        guard let channel = currentChannel,
+              let proxy = hlsProxy,
+              let sourceURL = channel.streamURL as URL? else { return }
+
+        guard retryCount < maxRetries else {
+            state = .error("Stream unavailable after \(maxRetries) retries")
+            return
+        }
+        retryCount += 1
+        state = .loading
+        print("[PlayerCore] Proxy died — restarting (attempt \(retryCount))")
+
+        // Wait 2s before restarting to let the OS release the port
+        try? await Task.sleep(for: .seconds(2))
+        guard currentChannel?.id == channel.id else { return }
+
+        removeRetryObservers()
+        statusObserver?.cancel()
+        statusObserver = nil
+
+        do {
+            try await proxy.start(from: sourceURL)
+            guard currentChannel?.id == channel.id else { return }
+
+            let proxyAssetOptions: [String: Any] = [
+                AVURLAssetAllowsCellularAccessKey: true,
+                AVURLAssetPreferPreciseDurationAndTimingKey: false,
+                "AVURLAssetHTTPHeaderFieldsKey": ["X-Playback-Session-Id": UUID().uuidString]
+            ]
+            let proxyAsset = AVURLAsset(url: proxy.playlistURL, options: proxyAssetOptions)
+            let newItem = AVPlayerItem(asset: proxyAsset)
+            newItem.preferredForwardBufferDuration = isLiveStream ? 4 : 10
+            player.replaceCurrentItem(with: newItem)
+            player.play()
+            observePlayerItem(newItem)
+            registerRetryObservers(for: newItem)
+            print("[PlayerCore] Proxy restarted, new URL: \(proxy.playlistURL)")
+        } catch {
+            guard currentChannel?.id == channel.id else { return }
+            print("[PlayerCore] Proxy restart failed: \(error.localizedDescription)")
+            state = .error(error.localizedDescription)
+        }
     }
 
     // MARK: - Private
@@ -502,6 +571,13 @@ public final class PlayerCore {
                     self.retryCount = 0
                     self.retrySourceItem = nil
                     self.state = .playing
+                    // Determine live vs VOD from actual item duration
+                    let dur = item.duration
+                    if dur.isIndefinite || dur == .zero {
+                        self.isLiveStream = true
+                    } else if dur.isNumeric && dur.seconds > 0 {
+                        self.isLiveStream = false
+                    }
                     // Reset buffer to normal after successful recovery
                     BufferingConfig.resetToNormal(for: item)
                 case .failed:
