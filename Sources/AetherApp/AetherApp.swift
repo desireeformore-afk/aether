@@ -138,10 +138,9 @@ extension AetherApp {
         try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
         let storeURL = appSupport.appendingPathComponent("aether.store")
 
-        // Purge stale persistent history so CoreData stops logging
-        // "Persistent History has to be truncated due to removed entities".
-        // This happens when entities were removed+re-added during development.
-        purgePersistentHistory(storeURL: storeURL)
+        // Delete the store if it was created with an incompatible schema (CoreData 134100).
+        // This happens when entities were added/removed during development.
+        resetStoreIfIncompatible(storeURL: storeURL)
 
         let config = ModelConfiguration(url: storeURL)
         do {
@@ -170,28 +169,43 @@ extension AetherApp {
         }
     }()
 
-    /// Truncates all persistent history transactions so stale entity-removal
-    /// warnings don't appear when SwiftData models are added/removed during dev.
-    private static func purgePersistentHistory(storeURL: URL) {
-        let mom = NSManagedObjectModel()
-        let psc = NSPersistentStoreCoordinator(managedObjectModel: mom)
-        let options: [String: Any] = [
-            NSPersistentHistoryTrackingKey: true as NSNumber,
-            NSPersistentStoreRemoteChangeNotificationPostOptionKey: false as NSNumber
-        ]
-        guard let store = try? psc.addPersistentStore(
-            ofType: NSSQLiteStoreType,
-            configurationName: nil,
-            at: storeURL,
-            options: options
-        ) else { return }
-        let ctx = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-        ctx.persistentStoreCoordinator = psc
-        ctx.performAndWait {
-            let truncate = NSPersistentHistoryChangeRequest.deleteHistory(before: Date())
-            _ = try? ctx.execute(truncate)
+    /// Removes the SQLite store if it contains entities that no longer exist in the current schema.
+    /// Prevents NSCocoaErrorDomain 134100 (incompatible model) on first launch after a schema change.
+    private static func resetStoreIfIncompatible(storeURL: URL) {
+        guard FileManager.default.fileExists(atPath: storeURL.path) else { return }
+
+        let metadata: [String: Any]
+        do {
+            metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(
+                ofType: NSSQLiteStoreType, at: storeURL, options: nil)
+        } catch {
+            // Unreadable store — remove it and let SwiftData recreate
+            removeStore(at: storeURL)
+            print("[AetherDB] Removed unreadable store, will recreate")
+            return
         }
-        try? psc.remove(store)
+
+        // Current schema only has PlaylistRecord, FavoriteRecord, WatchHistoryRecord.
+        // If the on-disk store has extra entities from an old schema, the hashes won't match.
+        let storeHashes = metadata["NSStoreModelVersionHashes"] as? [String: Any] ?? [:]
+        let knownEntities: Set<String> = ["PlaylistRecord", "FavoriteRecord", "WatchHistoryRecord",
+                                          "ChannelRecord", "MovieRecord", "SeriesRecord",
+                                          "WatchProgressRecord"]
+        let storeEntities = Set(storeHashes.keys)
+        let unknownEntities = storeEntities.subtracting(knownEntities)
+
+        if !unknownEntities.isEmpty {
+            removeStore(at: storeURL)
+            print("[AetherDB] Removed incompatible store (unknown entities: \(unknownEntities)), will recreate")
+        }
+    }
+
+    private static func removeStore(at storeURL: URL) {
+        let walURL = storeURL.appendingPathExtension("wal")
+        let shmURL = storeURL.appendingPathExtension("shm")
+        try? FileManager.default.removeItem(at: storeURL)
+        try? FileManager.default.removeItem(at: walURL)
+        try? FileManager.default.removeItem(at: shmURL)
     }
 }
 
