@@ -138,17 +138,6 @@ struct ContentView: View {
                 detailContent
             }
             .navigationSplitViewStyle(.balanced)
-            .toolbar {
-                ToolbarItem(placement: .navigation) {
-                    Button(action: {
-                        withAnimation {
-                            sidebarVisibility = sidebarVisibility == .all ? .detailOnly : .all
-                        }
-                    }) {
-                        Image(systemName: "sidebar.left")
-                    }
-                }
-            }
 
             // Network status banner
             VStack {

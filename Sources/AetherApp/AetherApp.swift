@@ -60,6 +60,13 @@ struct AetherApp: App {
         _analyticsService = State(wrappedValue: analytics)
         _statusBarController = State(wrappedValue: StatusBarController(player: player))
 
+        // Aggressive image caching — 100MB memory, 500MB disk
+        URLCache.shared = URLCache(
+            memoryCapacity: 100 * 1024 * 1024,
+            diskCapacity: 500 * 1024 * 1024,
+            diskPath: "aether_image_cache"
+        )
+
         // Wire analytics to player
         player.onWatchSessionEnd = { channel, startTime, duration in
             Task { @MainActor in
