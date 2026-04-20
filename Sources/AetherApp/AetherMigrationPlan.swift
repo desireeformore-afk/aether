@@ -1,4 +1,5 @@
 import SwiftData
+import AetherCore
 
 enum AetherMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
