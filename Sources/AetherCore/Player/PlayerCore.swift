@@ -215,14 +215,11 @@ public final class PlayerCore {
         print("[PlayerCore]   URL: \(url.absoluteString)")
         print("[PlayerCore]   Extension: \(ext)")
 
-        // Formats that need FFmpeg remux — decision based on contentType, not URL heuristics
-        let needsProxy: Bool
-        switch channel.contentType {
-        case .liveTV:
-            needsProxy = ext == "ts" || url.path.contains("/live/")
-        case .movie, .series:
-            needsProxy = ext == "mkv" || ext == "avi" || ext == "wmv"
-        }
+        // Containers that AVPlayer cannot play natively — always route through FFmpeg proxy.
+        // mkv: -12847 "Cannot Open"; avi/wmv: no native support; ts/m2ts: -12939 byte-range error.
+        let proxyExtensions: Set<String> = ["mkv", "avi", "wmv", "ts", "m2ts"]
+        let needsProxy: Bool = proxyExtensions.contains(ext)
+            || (channel.contentType == .liveTV && url.path.contains("/live/"))
 
         if needsProxy {
             guard LocalHLSProxy.isAvailable else {
@@ -259,8 +256,26 @@ public final class PlayerCore {
                     self.registerRetryObservers(for: item)
                 } catch {
                     guard let self, self.currentChannel?.id == channel.id else { return }
-                    print("[PlayerCore] HLS proxy error: \(error.localizedDescription)")
-                    self.state = .error(error.localizedDescription)
+                    let errMsg = error.localizedDescription
+                    print("[PlayerCore] HLS proxy error: \(errMsg)")
+
+                    // HTTP 458 = non-standard IPTV server rejection — FFmpeg can't handle it.
+                    // Fall back to direct AVPlayer; some servers accept it where FFmpeg is blocked.
+                    let is458 = errMsg.contains("458") || errMsg.contains("Server returned 4")
+                    if is458 {
+                        print("[PlayerCore] HTTP 458 detected — falling back to direct AVPlayer")
+                        let asset = AVURLAsset(url: url)
+                        let item = AVPlayerItem(asset: asset)
+                        item.preferredForwardBufferDuration = 4
+                        self.player.replaceCurrentItem(with: item)
+                        self.player.play()
+                        self.observePlayerItem(item)
+                        self.registerRetryObservers(for: item)
+                        // Mark 458 so that if AVPlayer also fails we don't retry
+                        self.shouldBlockRetry = true
+                    } else {
+                        self.state = .error(errMsg)
+                    }
                 }
             }
             return
@@ -428,6 +443,11 @@ public final class PlayerCore {
                     || (400...499).contains(httpCode) {
                     print("[PlayerCore] 🚫 Error \(nsErr?.domain ?? "?") \(httpCode) — blocking retry")
                     self.shouldBlockRetry = true
+                    // Provide a user-friendly message for 458 specifically
+                    if httpCode == 458 || nsErr?.code == -16845 {
+                        self.state = .error("Stream niedostępny (HTTP 458 — serwer odrzucił połączenie)")
+                        return
+                    }
                 }
                 self.scheduleRetry(for: item)
             }

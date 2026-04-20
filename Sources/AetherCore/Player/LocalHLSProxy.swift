@@ -235,9 +235,12 @@ public final class LocalHLSProxy: @unchecked Sendable {
             // TCP/HTTP connection options: 10s connect timeout, auto-reconnect on drop
             "-timeout", "10000000",
             "-reconnect", "1",
+            "-reconnect_at_eof", "1",
             "-reconnect_streamed", "1",
             "-reconnect_delay_max", "5",
             "-max_delay", "500000",
+            // Tolerate non-standard HTTP status codes (e.g. 458) and corrupt packets
+            "-ignore_invalid_packets", "1",
         ]
 
         if isVOD {
