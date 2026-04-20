@@ -47,6 +47,7 @@ struct ContentView: View {
     #endif
 
     @AppStorage("preferredColorScheme") private var preferredScheme: String = "auto"
+    @State private var showLanguagePicker = false
 
     private var resolvedColorScheme: ColorScheme? {
         switch preferredScheme {
@@ -189,6 +190,29 @@ struct ContentView: View {
             if playerCore.state == .playing, let channel = playerCore.currentChannel {
                 miniPlayerBar(channel: channel)
             }
+
+            // Gear button — language/country preferences
+            HStack {
+                Spacer()
+                Button {
+                    showLanguagePicker.toggle()
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showLanguagePicker, arrowEdge: .trailing) {
+                    LanguagePickerView()
+                        .background(Color(.sRGB, red: 0.1, green: 0.1, blue: 0.1))
+                        .onChange(of: homeViewModel.preferredCountry) { _, _ in
+                            homeViewModel.rebuildWithCurrentPreferences()
+                        }
+                }
+                .padding(.trailing, 12)
+            }
+            .padding(.vertical, 8)
+            .background(Color(.sRGB, red: 0.08, green: 0.08, blue: 0.08, opacity: 1))
         }
         .background(Color(.sRGB, red: 0.08, green: 0.08, blue: 0.08, opacity: 1))
     }

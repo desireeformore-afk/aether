@@ -10,6 +10,9 @@ struct VODBrowserView: View {
 
     @State private var selectedVOD: XstreamVOD?
     @State private var heroBannerItems: [HeroBannerItem] = []
+    @State private var selectedServiceTitle: String = ""
+    @State private var selectedServiceItems: [ShelfItem] = []
+    @State private var showServiceDetail = false
 
     var body: some View {
         ZStack {
@@ -31,7 +34,12 @@ struct VODBrowserView: View {
                             ForEach(Array(homeViewModel.streamingServiceShelves.enumerated()), id: \.offset) { _, shelf in
                                 CategoryShelf(
                                     title: shelf.title,
-                                    items: shelfItemsWithTap(shelf.items)
+                                    items: shelfItemsWithTap(shelf.items),
+                                    onMore: {
+                                        selectedServiceTitle = shelf.title
+                                        selectedServiceItems = shelfItemsWithTap(homeViewModel.allItemsForService(shelf.title))
+                                        showServiceDetail = true
+                                    }
                                 )
                             }
                         }
@@ -71,6 +79,14 @@ struct VODBrowserView: View {
         }
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
+        }
+        .sheet(isPresented: $showServiceDetail) {
+            StreamingServiceDetailView(
+                title: selectedServiceTitle,
+                items: selectedServiceItems,
+                player: player,
+                credentials: credentials
+            )
         }
     }
 

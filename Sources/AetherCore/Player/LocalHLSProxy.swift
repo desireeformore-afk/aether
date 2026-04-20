@@ -239,8 +239,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
             // Spoof User-Agent — IPTV servers often return 400 for ffmpeg's default UA
             "-user_agent", Self.userAgent,
             "-headers", "Accept: */*\r\nAccept-Language: en-US,en;q=0.9\r\n",
-            // TCP/HTTP connection options: 10s connect timeout, auto-reconnect on drop
-            "-timeout", "10000000",
+            // TCP/HTTP connection options: auto-reconnect on drop
             "-reconnect", "1",
             "-reconnect_at_eof", "1",
             "-reconnect_streamed", "1",
@@ -249,11 +248,16 @@ public final class LocalHLSProxy: @unchecked Sendable {
         ]
 
         if isVOD {
-            // VOD needs more probing time for MKV headers over HTTP
-            args += ["-probesize", "5000000", "-analyzeduration", "5000000"]
+            // VOD needs longer timeouts — IPTV servers often send MKV headers slowly
+            args += [
+                "-reconnect_on_http_error", "4xx,5xx",
+                "-timeout", "30000000",
+                "-rw_timeout", "30000000",
+                "-probesize", "5000000", "-analyzeduration", "5000000",
+            ]
         } else {
             // Live: minimize startup latency
-            args += ["-probesize", "1000000", "-analyzeduration", "1000000"]
+            args += ["-timeout", "10000000", "-probesize", "1000000", "-analyzeduration", "1000000"]
         }
 
         args += ["-i", sourceURL.absoluteString]
@@ -330,8 +334,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
         try process.run()
         self.ffmpegProcess = process
 
-        // 3. Wait for first segment (VOD needs more time to probe MKV headers over HTTP)
-        let maxWaitIterations = isVOD ? 200 : 67  // 30s for VOD (200*150ms), 10s for Live (67*150ms)
+        // 3. Wait for first segment — 30s for both VOD and Live (200*150ms)
+        let maxWaitIterations = 200
+        var stderrLines: [String] = []
         for i in 0..<maxWaitIterations {
             try await Task.sleep(nanoseconds: 150_000_000) // 150ms
 
@@ -340,15 +345,23 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 // For VOD, FFmpeg may finish quickly and exit 0 — that's OK if playlist is ready
                 let errData = errPipe.fileHandleForReading.availableData
                 let errStr = String(data: errData, encoding: .utf8) ?? ""
+                stderrLines = errStr.components(separatedBy: "\n").filter { !$0.isEmpty }
                 let trimmed = errStr.trimmingCharacters(in: .whitespacesAndNewlines)
                 if FileManager.default.fileExists(atPath: m3u8Path),
                    let content = try? String(contentsOf: URL(fileURLWithPath: m3u8Path), encoding: .utf8),
                    content.contains(".ts") {
-                    print("[HLSProxy] FFmpeg finished, playlist ready after \(Double(i + 1) * 0.2)s")
+                    print("[HLSProxy] FFmpeg finished, playlist ready after \(Double(i + 1) * 0.15)s")
                     return
                 }
+                print("[HLSProxy] FFmpeg stderr tail: \(stderrLines.suffix(5).joined(separator: " | "))")
                 print("[HLSProxy] FFmpeg exited early: \(trimmed.isEmpty ? "(no output)" : String(trimmed.prefix(500)))")
                 throw ProxyError.ffmpegFailed(trimmed.isEmpty ? "FFmpeg exited with no output" : trimmed)
+            }
+
+            // Collect available stderr lines for diagnostics
+            let available = errPipe.fileHandleForReading.availableData
+            if let chunk = String(data: available, encoding: .utf8), !chunk.isEmpty {
+                stderrLines.append(contentsOf: chunk.components(separatedBy: "\n").filter { !$0.isEmpty })
             }
 
             // Check if the first segment file exists and playlist references it
@@ -362,6 +375,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
             }
         }
 
+        print("[HLSProxy] FFmpeg stderr tail: \(stderrLines.suffix(5).joined(separator: " | "))")
         stop()
         throw ProxyError.timeout
     }
@@ -398,7 +412,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
             case .ffmpegFailed(let msg):
                 return "FFmpeg error: \(msg.prefix(200))"
             case .timeout:
-                return "Stream timed out — server did not send data within 20s. The stream may be offline or require a VPN."
+                return "Stream timed out — server did not send data within 45s. The stream may be offline or require a VPN."
             }
         }
     }
