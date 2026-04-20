@@ -152,6 +152,9 @@ public final class PlayerCore {
     /// Blocks retry when HTTP 400 error is detected.
     private var shouldBlockRetry: Bool = false
 
+    /// URLs that failed via FFmpeg proxy this session — skip automatic retry for these.
+    private var failedProxyURLs = Set<String>()
+
     /// FFmpeg HLS proxy — remuxes TS/MKV to local HLS segments for AVPlayer
     private var hlsProxy: LocalHLSProxy?
 
@@ -245,6 +248,14 @@ public final class PlayerCore {
                 return
             }
 
+            // Don't retry a URL that already failed via FFmpeg this session
+            let urlKey = url.absoluteString
+            if failedProxyURLs.contains(urlKey) {
+                print("[PlayerCore] Skipping known-failed proxy URL: \(url.lastPathComponent)")
+                showStreamErrorBanner("Nie można załadować strumienia")
+                return
+            }
+
             let proxy = LocalHLSProxy()
             self.hlsProxy = proxy
 
@@ -286,6 +297,8 @@ public final class PlayerCore {
                         print("[PlayerCore] HLS proxy timeout — falling back to direct AVPlayer")
                         await self.fallbackToDirectPlayer(url: url, channel: channel)
                     } else {
+                        // Mark URL as failed to prevent retry loops
+                        self.failedProxyURLs.insert(urlKey)
                         self.showStreamErrorBanner("Nie można załadować strumienia")
                     }
                 }
@@ -341,6 +354,7 @@ public final class PlayerCore {
         isRetrying = false
         retrySourceItem = nil
         shouldBlockRetry = false
+        failedProxyURLs.removeAll()
         state = .idle
     }
 

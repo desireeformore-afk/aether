@@ -208,9 +208,13 @@ public final class LocalHLSProxy: @unchecked Sendable {
             throw ProxyError.ffmpegNotFound
         }
 
-        // Create fresh output directory
+        // Create fresh output directory — must exist before FFmpeg starts writing segments
         try? FileManager.default.removeItem(at: outputDir)
         try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
+        guard FileManager.default.fileExists(atPath: outputDir.path) else {
+            throw ProxyError.ffmpegFailed("Failed to create temp directory: \(outputDir.path)")
+        }
+        print("[HLSProxy] Temp dir: \(outputDir.path)")
 
         // 1. Start local HTTP server
         let server = MiniHTTPServer(rootDir: outputDir)
@@ -315,13 +319,14 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 "-f", "hls",
                 "-hls_time", "4",
                 "-hls_list_size", "5",
-                "-hls_flags", "delete_segments",
+                "-hls_flags", "delete_segments+append_list",
             ]
             print("[HLSProxy] Mode: Live (TS)")
         }
 
         args += ["-hls_segment_filename", segPattern, m3u8Path]
         process.arguments = args
+        print("[HLSProxy] FFmpeg cmd: ffmpeg \(args.joined(separator: " "))")
         process.standardOutput = FileHandle.nullDevice
 
         // Capture stderr for diagnostics
