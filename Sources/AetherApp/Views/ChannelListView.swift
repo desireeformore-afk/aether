@@ -600,17 +600,24 @@ struct ChannelListView: View {
                 }
             }
         } label: {
-            HStack {
-                Image(systemName: collapsed ? "chevron.right" : "chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                Text(section.group)
-                    .font(.aetherCaption.bold())
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text("\(section.channels.count)")
-                    .font(.aetherCaption)
-                    .foregroundStyle(.tertiary)
+            VStack(spacing: 0) {
+                HStack(spacing: 6) {
+                    Image(systemName: collapsed ? "chevron.right" : "chevron.down")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.tertiary)
+                    Text(section.group.uppercased())
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .tracking(0.5)
+                    Spacer()
+                    Text("\(section.channels.count)")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+
+                Divider()
             }
             .contentShape(Rectangle())
         }
@@ -621,41 +628,19 @@ struct ChannelListView: View {
         let epgKey = ch.epgId ?? ch.name
         let isBlocked = parentalService.settings.isEnabled && !parentalService.isChannelAllowed(ch)
         let isFavorite = isFavoriteChannel(ch)
+        let isActive = player.currentChannel == ch
 
-        return HStack(spacing: 0) {
-            ChannelRowView(
-                channel: ch,
-                isSelected: player.currentChannel == ch,
-                epgTitle: nowPlaying[epgKey]?.title
-            )
-
-            if isBlocked {
-                Image(systemName: "lock.fill")
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .padding(.trailing, 6)
-            }
-
-            // Inline favorite toggle — one tap, no confirmation
-            Button {
-                toggleFavorite(channel: ch)
-            } label: {
-                Image(systemName: isFavorite ? "star.fill" : "star")
-                    .font(.system(size: 12))
-                    .foregroundStyle(isFavorite ? .yellow : Color.secondary.opacity(0.5))
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 8)
-            .contentShape(Rectangle())
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if isBlocked {
-                showPINLock = true
-            } else {
-                play(ch)
-            }
-        }
+        return ChannelRowContainer(
+            channel: ch,
+            isActive: isActive,
+            isBlocked: isBlocked,
+            isFavorite: isFavorite,
+            epgTitle: nowPlaying[epgKey]?.title,
+            onTap: {
+                if isBlocked { showPINLock = true } else { play(ch) }
+            },
+            onFavoriteTap: { toggleFavorite(channel: ch) }
+        )
         .sheet(isPresented: $showPINLock) {
             PINLockView(
                 reason: "This channel is restricted by parental controls",
@@ -737,4 +722,63 @@ private struct FilterChip: View {
     }
 }
 
+// MARK: - ChannelRowContainer (premium macOS channel row)
+
+private struct ChannelRowContainer: View {
+    let channel: Channel
+    let isActive: Bool
+    let isBlocked: Bool
+    let isFavorite: Bool
+    let epgTitle: String?
+    let onTap: () -> Void
+    let onFavoriteTap: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ChannelRowView(
+                channel: channel,
+                isSelected: isActive,
+                epgTitle: epgTitle
+            )
+
+            if isBlocked {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(isActive ? .white.opacity(0.8) : .red)
+                    .padding(.trailing, 6)
+            }
+
+            Button(action: onFavoriteTap) {
+                Image(systemName: isFavorite ? "star.fill" : "star")
+                    .font(.system(size: 12))
+                    .foregroundStyle(
+                        isFavorite
+                            ? .yellow
+                            : (isActive ? .white.opacity(0.5) : Color.secondary.opacity(0.35))
+                    )
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 10)
+            .contentShape(Rectangle())
+        }
+        .background(
+            Group {
+                if isActive {
+                    Color.accentColor
+                } else if isHovered {
+                    Color.white.opacity(0.08)
+                } else {
+                    Color.clear
+                }
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .animation(.easeInOut(duration: 0.12), value: isHovered)
+        .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
+        .onTapGesture { onTap() }
+    }
+}
 

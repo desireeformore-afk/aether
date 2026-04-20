@@ -16,34 +16,36 @@ public struct ChannelRowView: View {
 
     public var body: some View {
         HStack(spacing: 12) {
-            // Logo
+            // Logo — circular, 40x40
             AsyncImage(url: channel.logoURL) { image in
-                image.resizable().scaledToFit()
+                image.resizable().scaledToFill()
             } placeholder: {
                 Image(systemName: "tv")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
+                    .font(.system(size: 16))
             }
-            .frame(width: 36, height: 36)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .frame(width: 40, height: 40)
+            .clipShape(Circle())
             .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(channel.name)
-                    .font(.body)
-                    .fontWeight(isSelected ? .semibold : .regular)
+                    .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
 
                 if let title = epgTitle {
                     Text(title)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isSelected ? .white.opacity(0.75) : .secondary)
                         .lineLimit(1)
                 }
             }
 
             Spacer()
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 5)
+        .padding(.horizontal, 10)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityDescription)
