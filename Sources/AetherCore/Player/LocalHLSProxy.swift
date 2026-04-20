@@ -277,8 +277,8 @@ public final class LocalHLSProxy: @unchecked Sendable {
             }
             args += [
                 "-f", "hls",
-                "-hls_time", "4",
-                "-hls_list_size", "10",
+                "-hls_time", "6",
+                "-hls_list_size", "6",
                 "-hls_flags", "delete_segments+append_list",
             ]
             print("[HLSProxy] Mode: VOD (\(ext)), codec: \(videoCodec), bsf: \(bsfFilter.isEmpty ? "auto" : bsfFilter)")
@@ -331,7 +331,8 @@ public final class LocalHLSProxy: @unchecked Sendable {
             // Check if playlist has at least one segment reference
             if FileManager.default.fileExists(atPath: m3u8Path),
                let content = try? String(contentsOf: URL(fileURLWithPath: m3u8Path), encoding: .utf8),
-               content.contains(".ts") {
+               content.contains(".ts"),
+               (content.components(separatedBy: ".ts").count - 1) >= 2 {
                 print("[HLSProxy] Ready after \(Double(i + 1) * 0.2)s")
                 // Brief pause so AVPlayer doesn't race the muxer on the first segment
                 try await Task.sleep(nanoseconds: 200_000_000)

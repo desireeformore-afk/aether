@@ -242,7 +242,7 @@ public final class PlayerCore {
                     guard let self, self.currentChannel?.id == channel.id else { return }
 
                     let item = AVPlayerItem(url: proxy.playlistURL)
-                    item.preferredForwardBufferDuration = 4
+                    item.preferredForwardBufferDuration = channel.contentType == .liveTV ? 4 : 10
                     self.player.replaceCurrentItem(with: item)
                     self.player.play()
                     self.observePlayerItem(item)
