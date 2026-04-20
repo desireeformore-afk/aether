@@ -13,6 +13,8 @@ struct ContentView: View {
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var selectedChannel: Channel?
     @State private var showChannelPanel = false
+    @State private var showHome = false
+    @Query private var allPlaylists: [PlaylistRecord]
     #if os(macOS)
     @State private var showCommandPalette = false
     /// Search activation signal forwarded to ChannelListView inside the panel
@@ -47,6 +49,23 @@ struct ContentView: View {
             PlayerView(player: playerCore)
                 .ignoresSafeArea()
 
+            // Welcome screen when no playlists configured
+            if allPlaylists.isEmpty {
+                WelcomeView { playlist in
+                    selectedPlaylist = playlist
+                    playerCore.currentXstreamCredentials = playlist.xstreamCredentials
+                }
+                .transition(.opacity)
+                .zIndex(10)
+            }
+
+            // Home screen overlay: Netflix-style shelf, shown when idle + Xtream playlist active
+            if showHome, let creds = playerCore.currentXstreamCredentials, !allPlaylists.isEmpty {
+                HomeView(credentials: creds, player: playerCore)
+                    .transition(.opacity)
+                    .zIndex(5)
+            }
+
             // Network status banner
             VStack {
                 NetworkStatusBanner(networkMonitor: networkMonitor)
@@ -76,7 +95,7 @@ struct ContentView: View {
                 ))
             }
 
-            // Toggle button (top-left corner) - only show when panel is hidden
+            // Toggle buttons (top-left corner) - only show when panel is hidden
             if !showChannelPanel {
                 VStack {
                     HStack {
@@ -90,12 +109,25 @@ struct ContentView: View {
                         }
                         .buttonStyle(.plain)
                         .help("Toggle Channel List  ⌘L")
-                        .padding(16)
+
+                        if playerCore.currentXstreamCredentials != nil {
+                            Button(action: { showHome.toggle() }) {
+                                Image(systemName: showHome ? "house.fill" : "house")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(.white)
+                                    .padding(12)
+                                    .background(Color.black.opacity(0.5))
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .help("Toggle Home Screen")
+                        }
 
                         Spacer()
                     }
                     Spacer()
                 }
+                .padding(16)
                 .transition(.opacity)
             }
 
@@ -122,8 +154,13 @@ struct ContentView: View {
             #endif
         }
         .animation(.spring(duration: 0.3), value: showChannelPanel)
+        .animation(.easeInOut(duration: 0.25), value: showHome)
         .background(themeService.active.backgroundView())
         .preferredColorScheme(resolvedColorScheme)
+        .onChange(of: playerCore.state) { _, newState in
+            // Auto-dismiss home screen when playback starts
+            if case .playing = newState { showHome = false }
+        }
         .onChange(of: selectedPlaylist) { _, newPlaylist in
             guard let playlist = newPlaylist else {
                 playerCore.currentXstreamCredentials = nil

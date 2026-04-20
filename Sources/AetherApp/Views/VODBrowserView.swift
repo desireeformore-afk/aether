@@ -392,7 +392,7 @@ private struct ShimmerView: View {
 
 // MARK: - VODDetailSheet
 
-private struct VODDetailSheet: View {
+struct VODDetailSheet: View {
     let vod: XstreamVOD
     let credentials: XstreamCredentials
     @Bindable var player: PlayerCore
