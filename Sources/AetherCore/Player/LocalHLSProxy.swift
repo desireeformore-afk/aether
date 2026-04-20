@@ -232,6 +232,12 @@ public final class LocalHLSProxy: @unchecked Sendable {
             // Spoof User-Agent — IPTV servers often return 400 for ffmpeg's default UA
             "-user_agent", Self.userAgent,
             "-headers", "Accept: */*\r\nAccept-Language: en-US,en;q=0.9\r\n",
+            // TCP/HTTP connection options: 10s connect timeout, auto-reconnect on drop
+            "-timeout", "10000000",
+            "-reconnect", "1",
+            "-reconnect_streamed", "1",
+            "-reconnect_delay_max", "5",
+            "-max_delay", "500000",
         ]
 
         if isVOD {
@@ -242,15 +248,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
             args += ["-probesize", "1000000", "-analyzeduration", "1000000"]
         }
 
-        args += [
-            "-i", sourceURL.absoluteString,
-            "-map", "0:v:0",                       // First video stream ONLY
-            "-map", "0:a:0?",                       // First audio stream ONLY (optional — '?' = don't fail if no audio)
-            "-sn", "-dn",                           // No subs, no data (prevents dvb_teletext crash)
-            "-ignore_unknown",                      // Ignore unknown stream types entirely
-            "-c:v", "copy",                         // Video: always copy (no transcode)
-            "-max_muxing_queue_size", "4096",        // Prevent muxer queue overflow on complex streams
-        ]
+        args += ["-i", sourceURL.absoluteString]
 
         if isVOD {
             // VOD (MKV/MP4): pick correct bitstream filter based on detected codec
@@ -265,27 +263,39 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 bsfFilter = ""
             }
 
-            args += ["-c:a", "copy"]                // Audio: copy (MKV usually has AAC)
+            args += [
+                "-map", "0:v:0",
+                "-map", "0:a:0?",
+                "-sn", "-dn",
+                "-ignore_unknown",
+                "-c:v", "copy",
+                "-max_muxing_queue_size", "4096",
+                "-c:a", "copy",
+            ]
             if !bsfFilter.isEmpty {
-                args += ["-bsf:v", bsfFilter]        // Convert AVCC/HVCC→Annex B NALs for HLS/TS
+                args += ["-bsf:v", bsfFilter]
             }
             args += [
                 "-f", "hls",
-                "-hls_time", "4",                   // Longer segments for VOD
-                "-hls_list_size", "10",              // Keep recent segments (saves disk)
+                "-hls_time", "4",
+                "-hls_list_size", "10",
                 "-hls_flags", "delete_segments+append_list",
             ]
             print("[HLSProxy] Mode: VOD (\(ext)), codec: \(videoCodec), bsf: \(bsfFilter.isEmpty ? "auto" : bsfFilter)")
         } else {
-            // Live (TS): audio is often EAC3/AC3, needs transcode to AAC
+            // Live TS: let FFmpeg pick streams automatically — explicit mapping fails
+            // when the stream hasn't fully buffered headers at probe time.
             args += [
+                "-sn", "-dn",
+                "-c:v", "copy",
+                "-max_muxing_queue_size", "4096",
                 "-c:a", "aac",
                 "-b:a", "192k",
-                "-ac", "2",                         // Stereo
+                "-ac", "2",
                 "-f", "hls",
-                "-hls_time", "4",                   // 4s segments (2s was too short, caused stalls)
-                "-hls_list_size", "5",              // Rolling window
-                "-hls_flags", "delete_segments",    // Auto-cleanup
+                "-hls_time", "4",
+                "-hls_list_size", "5",
+                "-hls_flags", "delete_segments",
             ]
             print("[HLSProxy] Mode: Live (TS)")
         }
@@ -305,7 +315,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
         self.ffmpegProcess = process
 
         // 3. Wait for first segment (VOD needs more time to probe MKV headers over HTTP)
-        let maxWaitIterations = isVOD ? 75 : 50  // 15s for VOD, 10s for Live
+        let maxWaitIterations = isVOD ? 75 : 100  // 15s for VOD, 20s for Live
         for i in 0..<maxWaitIterations {
             try await Task.sleep(nanoseconds: 200_000_000) // 200ms
 
@@ -313,8 +323,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
             if !process.isRunning {
                 let errData = errPipe.fileHandleForReading.availableData
                 let errStr = String(data: errData, encoding: .utf8) ?? "unknown error"
-                print("[HLSProxy] FFmpeg exited early: \(errStr.prefix(500))")
-                throw ProxyError.ffmpegFailed(errStr)
+                let trimmed = errStr.trimmingCharacters(in: .whitespacesAndNewlines)
+                print("[HLSProxy] FFmpeg exited early: \(trimmed.isEmpty ? "(no output)" : String(trimmed.prefix(500)))")
+                throw ProxyError.ffmpegFailed(trimmed.isEmpty ? "FFmpeg exited with no output" : trimmed)
             }
 
             // Check if playlist has at least one segment reference
@@ -322,6 +333,8 @@ public final class LocalHLSProxy: @unchecked Sendable {
                let content = try? String(contentsOf: URL(fileURLWithPath: m3u8Path), encoding: .utf8),
                content.contains(".ts") {
                 print("[HLSProxy] Ready after \(Double(i + 1) * 0.2)s")
+                // Brief pause so AVPlayer doesn't race the muxer on the first segment
+                try await Task.sleep(nanoseconds: 200_000_000)
                 return
             }
         }
@@ -362,7 +375,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
             case .ffmpegFailed(let msg):
                 return "FFmpeg error: \(msg.prefix(200))"
             case .timeout:
-                return "Timeout waiting for stream (no HLS segments created)"
+                return "Stream timed out — server did not send data within 20s. The stream may be offline or require a VPN."
             }
         }
     }
