@@ -10,21 +10,6 @@ struct SeriesBrowserView: View {
 
     @State private var heroBannerItems: [HeroBannerItem] = []
 
-    /// Convenience init for embedded usage (FloatingChannelPanel) without shared HomeViewModel.
-    init(credentials: XstreamCredentials, player: PlayerCore, isEmbedded: Bool = false) {
-        self.credentials = credentials
-        self.player = player
-        let vm = HomeViewModel()
-        self._homeViewModel = ObservedObject(wrappedValue: vm)
-    }
-
-    /// Primary init — shared HomeViewModel (ContentView main layout).
-    init(homeViewModel: HomeViewModel, player: PlayerCore, credentials: XstreamCredentials) {
-        self._homeViewModel = ObservedObject(wrappedValue: homeViewModel)
-        self.player = player
-        self.credentials = credentials
-    }
-
     var body: some View {
         ZStack {
             Color(.sRGB, red: 0.05, green: 0.05, blue: 0.05, opacity: 1).ignoresSafeArea()
@@ -36,6 +21,7 @@ struct SeriesBrowserView: View {
                     VStack(spacing: 0) {
                         if !heroBannerItems.isEmpty {
                             HeroBanner(items: heroBannerItems)
+                                .padding(.bottom, -20)
                         }
 
                         ForEach(Array(homeViewModel.seriesShelves.enumerated()), id: \.offset) { _, shelf in
@@ -68,7 +54,7 @@ struct SeriesBrowserView: View {
             RoundedRectangle(cornerRadius: 0)
                 .fill(Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1))
                 .frame(maxWidth: .infinity)
-                .frame(height: 380)
+                .frame(height: 420)
                 .shimmer()
 
             VStack(alignment: .leading, spacing: 32) {

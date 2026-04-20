@@ -21,15 +21,22 @@ struct HomeView: View {
                     VStack(spacing: 0) {
                         if !viewModel.heroBannerItems.isEmpty {
                             HeroBanner(items: viewModel.heroBannerItems)
+                                .padding(.bottom, -20)
                         }
 
                         ForEach(Array(viewModel.shelves.enumerated()), id: \.offset) { _, shelf in
-                            CategoryShelf(title: shelf.title, items: shelf.items)
+                            CategoryShelf(
+                                title: shelf.title,
+                                items: shelfItemsWithTap(shelf.items, credentials: credentials)
+                            )
                         }
 
                         if !viewModel.seriesShelves.isEmpty {
                             ForEach(Array(viewModel.seriesShelves.enumerated()), id: \.offset) { _, shelf in
-                                CategoryShelf(title: shelf.title, items: shelf.items)
+                                CategoryShelf(
+                                    title: shelf.title,
+                                    items: shelfItemsWithTap(shelf.items, credentials: credentials)
+                                )
                             }
                         }
 
@@ -43,6 +50,26 @@ struct HomeView: View {
             }
         }
         .onAppear { viewModel.load(credentials: credentials) }
+        .sheet(item: $selectedVOD) { vod in
+            VODDetailSheet(vod: vod, credentials: credentials, player: player)
+        }
+    }
+
+    private func shelfItemsWithTap(_ items: [ShelfItem], credentials: XstreamCredentials) -> [ShelfItem] {
+        items.map { item in
+            var copy = item
+            if let vod = item.vod {
+                copy = ShelfItem(
+                    id: item.id,
+                    title: item.title,
+                    imageURL: item.imageURL,
+                    vod: vod,
+                    series: nil,
+                    onTap: { player.play(vod.toChannel(credentials: credentials)) }
+                )
+            }
+            return copy
+        }
     }
 
     // MARK: - Loading skeleton
@@ -52,7 +79,7 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: 0)
                 .fill(Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1))
                 .frame(maxWidth: .infinity)
-                .frame(height: 380)
+                .frame(height: 420)
                 .shimmer()
 
             VStack(alignment: .leading, spacing: 32) {
@@ -64,7 +91,7 @@ struct HomeView: View {
                             .shimmer()
 
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
+                            HStack(spacing: 14) {
                                 ForEach(0..<8, id: \.self) { _ in
                                     RoundedRectangle(cornerRadius: 12)
                                         .fill(Color(.sRGB, red: 0.18, green: 0.18, blue: 0.18, opacity: 1))
@@ -72,7 +99,7 @@ struct HomeView: View {
                                         .shimmer()
                                 }
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 24)
                         }
                     }
                 }

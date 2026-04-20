@@ -9,6 +9,7 @@ struct FloatingChannelPanel: View {
     @Binding var selectedPlaylist: PlaylistRecord?
     @Binding var selectedChannel: Channel?
     @Bindable var player: PlayerCore
+    @ObservedObject var homeViewModel: HomeViewModel
     /// Incremented by ContentView keyboard handler to activate search in the channel list.
     var searchActivationToken: Int = 0
 
@@ -116,7 +117,8 @@ struct FloatingChannelPanel: View {
                     GlobalContentSearchView(
                         service: XstreamService(credentials: creds),
                         credentials: creds,
-                        player: player
+                        player: player,
+                        homeViewModel: homeViewModel
                     )
                 }
             }
@@ -143,7 +145,7 @@ struct FloatingChannelPanel: View {
 
         case .movies:
             if let creds = playlist.xstreamCredentials {
-                VODBrowserView(credentials: creds, player: player, isEmbedded: true)
+                VODBrowserView(homeViewModel: homeViewModel, player: player, credentials: creds)
                     .contentTransition(.opacity)
                     .animation(.easeInOut(duration: 0.2), value: activeTab)
             } else {
@@ -152,7 +154,7 @@ struct FloatingChannelPanel: View {
 
         case .series:
             if let creds = playlist.xstreamCredentials {
-                SeriesBrowserView(credentials: creds, player: player, isEmbedded: true)
+                SeriesBrowserView(homeViewModel: homeViewModel, player: player, credentials: creds)
                     .contentTransition(.opacity)
                     .animation(.easeInOut(duration: 0.2), value: activeTab)
             } else {

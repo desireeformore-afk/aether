@@ -261,7 +261,8 @@ struct ContentView: View {
                     GlobalContentSearchView(
                         service: homeViewModel.sharedService,
                         credentials: creds,
-                        player: playerCore
+                        player: playerCore,
+                        homeViewModel: homeViewModel
                     )
                 } else {
                     noPlaylistPrompt

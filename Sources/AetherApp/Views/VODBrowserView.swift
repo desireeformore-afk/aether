@@ -11,21 +11,6 @@ struct VODBrowserView: View {
     @State private var selectedVOD: XstreamVOD?
     @State private var heroBannerItems: [HeroBannerItem] = []
 
-    /// Convenience init for embedded usage (FloatingChannelPanel) without shared HomeViewModel.
-    init(credentials: XstreamCredentials, player: PlayerCore, isEmbedded: Bool = false) {
-        self.credentials = credentials
-        self.player = player
-        let vm = HomeViewModel()
-        self._homeViewModel = ObservedObject(wrappedValue: vm)
-    }
-
-    /// Primary init — shared HomeViewModel (ContentView main layout).
-    init(homeViewModel: HomeViewModel, player: PlayerCore, credentials: XstreamCredentials) {
-        self._homeViewModel = ObservedObject(wrappedValue: homeViewModel)
-        self.player = player
-        self.credentials = credentials
-    }
-
     var body: some View {
         ZStack {
             Color(.sRGB, red: 0.05, green: 0.05, blue: 0.05, opacity: 1).ignoresSafeArea()
@@ -37,10 +22,14 @@ struct VODBrowserView: View {
                     VStack(spacing: 0) {
                         if !heroBannerItems.isEmpty {
                             HeroBanner(items: heroBannerItems)
+                                .padding(.bottom, -20)
                         }
 
                         ForEach(Array(homeViewModel.shelves.enumerated()), id: \.offset) { _, shelf in
-                            CategoryShelf(title: shelf.title, items: shelf.items)
+                            CategoryShelf(
+                                title: shelf.title,
+                                items: shelfItemsWithTap(shelf.items)
+                            )
                         }
 
                         Spacer(minLength: 40)
@@ -52,6 +41,23 @@ struct VODBrowserView: View {
         .onAppear {
             homeViewModel.load(credentials: credentials)
             updateHeroBanner()
+        }
+        .sheet(item: $selectedVOD) { vod in
+            VODDetailSheet(vod: vod, credentials: credentials, player: player)
+        }
+    }
+
+    private func shelfItemsWithTap(_ items: [ShelfItem]) -> [ShelfItem] {
+        items.map { item in
+            guard let vod = item.vod else { return item }
+            return ShelfItem(
+                id: item.id,
+                title: item.title,
+                imageURL: item.imageURL,
+                vod: vod,
+                series: nil,
+                onTap: { selectedVOD = vod }
+            )
         }
     }
 
@@ -69,7 +75,7 @@ struct VODBrowserView: View {
             RoundedRectangle(cornerRadius: 0)
                 .fill(Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1))
                 .frame(maxWidth: .infinity)
-                .frame(height: 380)
+                .frame(height: 420)
                 .shimmer()
 
             VStack(alignment: .leading, spacing: 32) {

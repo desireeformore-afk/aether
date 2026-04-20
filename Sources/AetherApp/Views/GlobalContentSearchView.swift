@@ -5,12 +5,17 @@ struct GlobalContentSearchView: View {
     let service: XstreamService?
     let credentials: XstreamCredentials
     @Bindable var player: PlayerCore
+    @ObservedObject var homeViewModel: HomeViewModel
 
     @State private var query = ""
     @State private var vodResults: [XstreamVOD] = []
     @State private var seriesResults: [XstreamSeries] = []
     @State private var debounceTask: Task<Void, Never>?
     @State private var selectedVOD: XstreamVOD?
+
+    private var isLocalSearchAvailable: Bool {
+        !homeViewModel.allVODs.isEmpty || !homeViewModel.allSeries.isEmpty
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,17 +39,17 @@ struct GlobalContentSearchView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding()
 
-            if service == nil {
-                ContentUnavailableView(
-                    "Brak danych",
-                    systemImage: "arrow.circlepath",
-                    description: Text("Wróć na stronę główną, żeby załadować bibliotekę")
-                )
-            } else if query.isEmpty {
+            if query.isEmpty {
                 ContentUnavailableView(
                     "Szukaj",
                     systemImage: "magnifyingglass",
                     description: Text("Wpisz tytuł filmu lub serialu")
+                )
+            } else if !homeViewModel.isPhase1Loaded && service == nil {
+                ContentUnavailableView(
+                    "Ładowanie...",
+                    systemImage: "arrow.circlepath",
+                    description: Text("Wróć na stronę główną, żeby załadować bibliotekę")
                 )
             } else if vodResults.isEmpty && seriesResults.isEmpty {
                 ContentUnavailableView(
@@ -90,15 +95,36 @@ struct GlobalContentSearchView: View {
         .onChange(of: query) { _, newVal in
             debounceTask?.cancel()
             debounceTask = Task {
-                try? await Task.sleep(for: .milliseconds(300))
-                guard !Task.isCancelled, let svc = service else { return }
-                vodResults = await svc.searchVODs(query: newVal)
-                seriesResults = await svc.searchSeries(query: newVal)
+                try? await Task.sleep(for: .milliseconds(200))
+                guard !Task.isCancelled else { return }
+                await runSearch(query: newVal)
             }
         }
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
         }
+    }
+
+    private func runSearch(query: String) async {
+        guard !query.isEmpty else {
+            vodResults = []
+            seriesResults = []
+            return
+        }
+
+        let lower = query.lowercased()
+
+        // Fast local search if cached data is available
+        if isLocalSearchAvailable {
+            vodResults = homeViewModel.allVODs.filter { $0.name.lowercased().contains(lower) }
+            seriesResults = homeViewModel.allSeries.filter { $0.name.lowercased().contains(lower) }
+            return
+        }
+
+        // Fallback: network search via service
+        guard let svc = service else { return }
+        vodResults = await svc.searchVODs(query: query)
+        seriesResults = await svc.searchSeries(query: query)
     }
 
     private func cleanCategoryName(_ name: String?) -> String? {

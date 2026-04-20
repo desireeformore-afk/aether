@@ -9,12 +9,16 @@ final class HomeViewModel: ObservableObject {
     @Published var shelves: [(title: String, items: [ShelfItem])] = []
     @Published var seriesShelves: [(title: String, items: [ShelfItem])] = []
     @Published var liveItems: [ShelfItem] = []
+    @Published var allVODs: [XstreamVOD] = []
+    @Published var allSeries: [XstreamSeries] = []
     @Published var errorMessage: String? = nil
 
     // Static cache — shared across views, survives navigation
     static var cachedVODShelves: [(title: String, items: [ShelfItem])]? = nil
     static var cachedSeriesShelves: [(title: String, items: [ShelfItem])]? = nil
     static var cachedLive: [ShelfItem]? = nil
+    static var cachedAllVODs: [XstreamVOD]? = nil
+    static var cachedAllSeries: [XstreamSeries]? = nil
 
     private var service: XstreamService?
     private var hasLoaded = false
@@ -42,6 +46,8 @@ final class HomeViewModel: ObservableObject {
             }
             if let cached = Self.cachedSeriesShelves { seriesShelves = cached }
             if let cached = Self.cachedLive { liveItems = cached }
+            if let cached = Self.cachedAllVODs { allVODs = cached }
+            if let cached = Self.cachedAllSeries { allSeries = cached }
             isFullyLoaded = true
             return
         }
@@ -57,24 +63,28 @@ final class HomeViewModel: ObservableObject {
         Self.cachedVODShelves = nil
         Self.cachedSeriesShelves = nil
         Self.cachedLive = nil
+        Self.cachedAllVODs = nil
+        Self.cachedAllSeries = nil
         heroBannerItems = []
         shelves = []
         seriesShelves = []
         liveItems = []
+        allVODs = []
+        allSeries = []
         isPhase1Loaded = false
         isFullyLoaded = false
         load(credentials: credentials)
     }
 
     private func performLoad(_ svc: XstreamService) async {
-        // Phase 1: Load VOD categories only (~38KB), pick best 8, signal UI immediately
+        // Phase 1: Load VOD categories, pick top 8, signal UI immediately
         let allCats = (try? await svc.vodCategories()) ?? []
         let filtered = allCats
             .filter { !isGarbageCategory($0.name) }
             .sorted { $0.name < $1.name }
         let top8 = Array(filtered.prefix(8))
 
-        // Load first 3 categories concurrently for the hero banner + initial shelves
+        // Load first 3 categories for the hero banner + initial shelves
         if !top8.isEmpty {
             let cats3 = Array(top8.prefix(3))
             let r0 = await loadVODShelf(svc: svc, cat: cats3[0])
@@ -86,37 +96,46 @@ final class HomeViewModel: ObservableObject {
             if let r = r2 { initialShelves.append(r) }
             shelves = initialShelves
             heroBannerItems = Self.buildHeroBanner(from: initialShelves)
+            allVODs = initialShelves.flatMap { $0.items.compactMap { $0.vod } }
         }
         isPhase1Loaded = true
 
-        // Phase 2: Load remaining categories sequentially (avoids actor isolation issues)
+        // Phase 2: Load remaining 5 categories sequentially, progressive rendering
         var allShelves = shelves
+        var collectedVODs: [XstreamVOD] = allVODs
         for cat in top8.dropFirst(3) {
             if let shelf = await loadVODShelf(svc: svc, cat: cat) {
                 allShelves.append(shelf)
                 shelves = allShelves
+                collectedVODs.append(contentsOf: shelf.items.compactMap { $0.vod })
+                allVODs = collectedVODs
             }
         }
         Self.cachedVODShelves = allShelves
+        Self.cachedAllVODs = collectedVODs
         heroBannerItems = Self.buildHeroBanner(from: allShelves)
 
-        // Load series categories
+        // Load series categories (top 4), progressive rendering
         let allSeriesCats = (try? await svc.seriesCategories()) ?? []
         let cleanSeriesCats = allSeriesCats
             .filter { !isGarbageCategory($0.name) }
             .sorted { $0.name < $1.name }
         var seriesResults: [(title: String, items: [ShelfItem])] = []
+        var collectedSeries: [XstreamSeries] = []
         for cat in cleanSeriesCats.prefix(4) {
             if let shelf = await loadSeriesShelf(svc: svc, cat: cat) {
                 seriesResults.append(shelf)
                 seriesShelves = seriesResults
+                collectedSeries.append(contentsOf: shelf.items.compactMap { $0.series })
+                allSeries = collectedSeries
             }
         }
         Self.cachedSeriesShelves = seriesResults
+        Self.cachedAllSeries = collectedSeries
 
-        // Load live channels
+        // Load live channels (first 20)
         let liveStreams = (try? await svc.liveStreams()) ?? []
-        let liveShelfItems = liveStreams.prefix(30).map { stream in
+        let liveShelfItems = liveStreams.prefix(20).map { stream in
             ShelfItem(id: "\(stream.id)", title: stream.name, imageURL: stream.streamIcon, onTap: {})
         }
         liveItems = Array(liveShelfItems)
@@ -129,7 +148,7 @@ final class HomeViewModel: ObservableObject {
         guard let streams = try? await svc.vodStreams(categoryID: cat.id), !streams.isEmpty else { return nil }
         let cleanName = cleanCategoryName(cat.name)
         let items = streams.prefix(20).map { vod in
-            ShelfItem(id: "\(vod.id)", title: vod.name, imageURL: vod.streamIcon, onTap: {})
+            ShelfItem(id: "\(vod.id)", title: vod.name, imageURL: vod.streamIcon, vod: vod, onTap: {})
         }
         return (cleanName, Array(items))
     }
@@ -138,7 +157,7 @@ final class HomeViewModel: ObservableObject {
         guard let series = try? await svc.seriesList(categoryID: cat.id), !series.isEmpty else { return nil }
         let cleanName = cleanCategoryName(cat.name)
         let items = series.prefix(20).map { s in
-            ShelfItem(id: "\(s.id)", title: s.name, imageURL: s.cover, onTap: {})
+            ShelfItem(id: "\(s.id)", title: s.name, imageURL: s.cover, series: s, onTap: {})
         }
         return (cleanName, Array(items))
     }
@@ -152,10 +171,34 @@ final class HomeViewModel: ObservableObject {
 
     func cleanCategoryName(_ name: String) -> String {
         var clean = name
-        if let range = clean.range(of: " - ") {
-            clean = String(clean[range.upperBound...])
+
+        // Strip leading prefix patterns: "PL - ", "TR - ", "AR-TR-D - ", "NF - ", "4K-TOP - " etc.
+        let prefixPatterns = ["AR-TR-D - ", "4K-TOP - ", "NF - "]
+        for prefix in prefixPatterns {
+            if clean.hasPrefix(prefix) {
+                clean = String(clean.dropFirst(prefix.count))
+                break
+            }
         }
-        return clean.trimmingCharacters(in: .whitespaces)
+        // Generic "XX - " pattern (short prefixes up to 6 chars)
+        if let range = clean.range(of: " - ") {
+            let prefix = String(clean[..<range.lowerBound])
+            if prefix.count <= 6 {
+                clean = String(clean[range.upperBound...])
+            }
+        }
+
+        clean = clean.trimmingCharacters(in: .whitespaces)
+
+        // Add flag emoji based on origin detected in the raw name
+        let upper = name.uppercased()
+        if upper.hasPrefix("TR") || upper.contains("TUR") {
+            clean = "🇹🇷 \(clean)"
+        } else if upper.hasPrefix("PL") || upper.contains(" PL ") {
+            clean = "🇵🇱 \(clean)"
+        }
+
+        return clean
     }
 
     func isGarbageCategory(_ name: String) -> Bool {
