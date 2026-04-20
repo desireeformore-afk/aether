@@ -51,11 +51,8 @@ private struct SidebarRowView: View {
                 ZStack {
                     Image(systemName: item.icon)
                         .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(
-                            isSelected
-                                ? Color.white.shadow(.drop(color: accentColor.opacity(0.8), radius: 4))
-                                : Color.white.opacity(0.45)
-                        )
+                        .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.45))
+                        .shadow(color: isSelected ? accentColor.opacity(0.8) : .clear, radius: 4)
                         .animation(.easeInOut(duration: 0.15), value: isSelected)
                 }
                 .frame(width: 28, height: 28)
