@@ -241,7 +241,17 @@ public final class PlayerCore {
                     try await proxy.start(from: url)
                     guard let self, self.currentChannel?.id == channel.id else { return }
 
-                    let item = AVPlayerItem(url: proxy.playlistURL)
+                    // Use AVURLAsset with explicit options for local proxy streams.
+                    // AVURLAssetPreferPreciseDurationAndTimingKey: false avoids the DRM
+                    // key-system probe (FDCP_Limited -12540) that fires on HLS without
+                    // a proper EXT-X-STREAM-INF when AVPlayer guesses FairPlay is needed.
+                    let proxyAssetOptions: [String: Any] = [
+                        AVURLAssetAllowsCellularAccessKey: true,
+                        AVURLAssetPreferPreciseDurationAndTimingKey: false,
+                        "AVURLAssetHTTPHeaderFieldsKey": ["X-Playback-Session-Id": UUID().uuidString]
+                    ]
+                    let proxyAsset = AVURLAsset(url: proxy.playlistURL, options: proxyAssetOptions)
+                    let item = AVPlayerItem(asset: proxyAsset)
                     item.preferredForwardBufferDuration = channel.contentType == .liveTV ? 4 : 10
                     self.player.replaceCurrentItem(with: item)
                     self.player.play()
