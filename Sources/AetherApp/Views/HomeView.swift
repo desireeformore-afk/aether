@@ -9,6 +9,7 @@ struct HomeView: View {
     let credentials: XstreamCredentials
 
     @State private var selectedVOD: XstreamVOD?
+    @State private var selectedSeries: XstreamSeries?
 
     var body: some View {
         ZStack {
@@ -55,13 +56,15 @@ struct HomeView: View {
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
         }
+        .sheet(item: $selectedSeries) { series in
+            SeriesDetailView(series: series, credentials: credentials, player: player)
+        }
     }
 
     private func shelfItemsWithTap(_ items: [ShelfItem], credentials: XstreamCredentials) -> [ShelfItem] {
         items.map { item in
-            var copy = item
             if let vod = item.vod {
-                copy = ShelfItem(
+                return ShelfItem(
                     id: item.id,
                     title: item.title,
                     imageURL: item.imageURL,
@@ -69,8 +72,17 @@ struct HomeView: View {
                     series: nil,
                     onTap: { player.play(vod.toChannel(credentials: credentials)) }
                 )
+            } else if let series = item.series {
+                return ShelfItem(
+                    id: item.id,
+                    title: item.title,
+                    imageURL: item.imageURL,
+                    vod: nil,
+                    series: series,
+                    onTap: { selectedSeries = series }
+                )
             }
-            return copy
+            return item
         }
     }
 

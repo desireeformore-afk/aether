@@ -188,9 +188,11 @@ struct ContentView: View {
 
             // Mini player bar at bottom of sidebar
             if playerCore.state == .playing, let channel = playerCore.currentChannel {
+                Divider().background(Color.white.opacity(0.1))
                 miniPlayerBar(channel: channel)
             }
 
+            Divider().background(Color.white.opacity(0.1))
             // Gear button — language/country preferences
             HStack {
                 Spacer()

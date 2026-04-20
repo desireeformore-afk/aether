@@ -86,6 +86,9 @@ public final class PlayerCore {
     /// Whether Picture-in-Picture is active.
     public private(set) var isPiPActive: Bool = false
 
+    /// Transient banner message shown after all retries exhausted (auto-dismisses after 5s).
+    public private(set) var streamErrorBanner: String? = nil
+
     /// Current playback time in seconds.
     public var currentTime: TimeInterval {
         player.currentTime().seconds
@@ -273,15 +276,17 @@ public final class PlayerCore {
                     let errMsg = error.localizedDescription
                     print("[PlayerCore] HLS proxy error: \(errMsg)")
 
-                    // HTTP 458 = non-standard IPTV server rejection — FFmpeg can't handle it.
-                    // Retry with .ts extension (IPTV often serves .mkv URLs that 458,
-                    // but the same stream_id is available as .ts). Then try .mp4, then
-                    // fall back to direct AVPlayer for m3u8/mp4 AVPlayer can play natively.
+                    // HTTP 458 = non-standard IPTV server rejection — retry with alternate extension
                     let is458 = errMsg.contains("458") || errMsg.contains("Server returned 4")
+                    let isTimeout = errMsg.contains("timed out") || errMsg.contains("timeout")
                     if is458 {
                         await self.retry458WithAlternateExtension(originalURL: url, channel: channel)
+                    } else if isTimeout {
+                        // Proxy timeout → fall back to direct AVPlayer silently
+                        print("[PlayerCore] HLS proxy timeout — falling back to direct AVPlayer")
+                        await self.fallbackToDirectPlayer(url: url, channel: channel)
                     } else {
-                        self.state = .error(errMsg)
+                        self.showStreamErrorBanner("Nie można załadować strumienia")
                     }
                 }
             }
@@ -389,7 +394,7 @@ public final class PlayerCore {
     /// `item` identifies the failing item — duplicate calls for the same item are ignored.
     private func scheduleRetry(for item: AVPlayerItem) {
         guard !shouldBlockRetry else {
-            state = .error("Stream rejected by server (client error — not retrying)")
+            showStreamErrorBanner("Nie można załadować strumienia")
             return
         }
         // De-duplicate: if we're already retrying because of this exact item, skip.
@@ -398,7 +403,7 @@ public final class PlayerCore {
         guard retryCount < maxRetries, let channel = currentChannel else {
             isRetrying = false
             retrySourceItem = nil
-            state = .error("Stream unavailable after \(maxRetries) retries")
+            showStreamErrorBanner("Nie można załadować strumienia")
             return
         }
         isRetrying = true
@@ -444,16 +449,21 @@ public final class PlayerCore {
                 guard let self,
                       let item,
                       item === self.player.currentItem else { return }
-                // -16845 = CoreMedia HTTP 458 (IPTV rate limit / server refusal) — not retryable
-                // Also block for any underlying 4xx HTTP error exposed via NSError code
+                // -16845 = CoreMedia MKV "Cannot Open" — try .ts extension before giving up
                 let httpCode = nsErr?.code ?? 0
-                if nsErr?.code == -16845 || nsErr?.domain == "CoreMediaErrorDomain"
-                    || (400...499).contains(httpCode) {
+                if nsErr?.code == -16845 {
+                    print("[PlayerCore] 🔄 Error -16845 (Cannot Open) — retrying with .ts extension")
+                    if let ch = self.currentChannel {
+                        let tsURL = ch.streamURL.deletingPathExtension().appendingPathExtension("ts")
+                        await self.fallbackToDirectPlayer(url: tsURL, channel: ch)
+                    }
+                    return
+                }
+                if nsErr?.domain == "CoreMediaErrorDomain" || (400...499).contains(httpCode) {
                     print("[PlayerCore] 🚫 Error \(nsErr?.domain ?? "?") \(httpCode) — blocking retry")
                     self.shouldBlockRetry = true
-                    // Provide a user-friendly message for 458 specifically
-                    if httpCode == 458 || nsErr?.code == -16845 {
-                        self.state = .error("Stream niedostępny (HTTP 458 — serwer odrzucił połączenie)")
+                    if httpCode == 458 {
+                        self.showStreamErrorBanner("Nie można załadować strumienia")
                         return
                     }
                 }
@@ -506,7 +516,7 @@ public final class PlayerCore {
               let sourceURL = channel.streamURL as URL? else { return }
 
         guard retryCount < maxRetries else {
-            state = .error("Stream unavailable after \(maxRetries) retries")
+            showStreamErrorBanner("Nie można załadować strumienia")
             return
         }
         retryCount += 1
@@ -541,7 +551,7 @@ public final class PlayerCore {
         } catch {
             guard currentChannel?.id == channel.id else { return }
             print("[PlayerCore] Proxy restart failed: \(error.localizedDescription)")
-            state = .error(error.localizedDescription)
+            showStreamErrorBanner("Nie można załadować strumienia")
         }
     }
 
@@ -611,6 +621,39 @@ public final class PlayerCore {
         player.play()
         observePlayerItem(item)
         shouldBlockRetry = true
+        registerRetryObservers(for: item)
+    }
+
+    // MARK: - Banner helper
+
+    /// Shows a transient error banner and returns player to idle after 5s.
+    private func showStreamErrorBanner(_ message: String) {
+        print("[PlayerCore] 🔔 Banner: \(message)")
+        streamErrorBanner = message
+        state = .idle
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            if self.streamErrorBanner == message {
+                self.streamErrorBanner = nil
+            }
+        }
+    }
+
+    /// Falls back to direct AVPlayer playback (no FFmpeg proxy) for the given URL.
+    private func fallbackToDirectPlayer(url: URL, channel: Channel) async {
+        guard currentChannel?.id == channel.id else { return }
+        print("[PlayerCore] Direct AVPlayer fallback: \(url.lastPathComponent)")
+        removeRetryObservers()
+        statusObserver?.cancel()
+        statusObserver = nil
+        hlsProxy?.stop()
+        hlsProxy = nil
+        let asset = AVURLAsset(url: url)
+        let item = AVPlayerItem(asset: asset)
+        item.preferredForwardBufferDuration = 4
+        player.replaceCurrentItem(with: item)
+        player.play()
+        observePlayerItem(item)
         registerRetryObservers(for: item)
     }
 
@@ -687,8 +730,8 @@ public final class PlayerCore {
                             self.shouldBlockRetry = true
                         }
                     }
-                    self.state = .error(err)
-                    // Don't auto-retry — show error to user for debugging
+                    // Schedule retry — scheduleRetry will show banner after maxRetries
+                    self.scheduleRetry(for: item)
                 case .unknown:
                     print("[PlayerCore] ⏳ status unknown (waiting...)")
                 @unknown default:

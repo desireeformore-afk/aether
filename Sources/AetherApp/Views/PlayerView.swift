@@ -101,6 +101,22 @@ struct PlayerView: View {
                     .padding(.bottom)
             }
 
+            // Stream error banner — auto-dismissing, appears at top of player
+            if let banner = player.streamErrorBanner {
+                VStack {
+                    Text(banner)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 8))
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    Spacer()
+                }
+                .padding(.top, 16)
+                .animation(.easeInOut(duration: 0.3), value: player.streamErrorBanner)
+            }
+
             // PIN Lock Overlay
             if showPINLock, blockedChannel != nil, let reason = blockReason {
                 PINLockView(
@@ -184,15 +200,15 @@ struct PlayerView: View {
             .padding(16)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
         case .error(let msg):
-            VStack(spacing: 12) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.red)
+            VStack(spacing: 8) {
+                Image(systemName: "exclamationmark.circle")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.white.opacity(0.7))
                 Text(msg)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
-                Button("Retry") {
+                Button("Ponów") {
                     if let channel = player.currentChannel {
                         Task { @MainActor in
                             player.play(channel)
@@ -200,9 +216,10 @@ struct PlayerView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                .controlSize(.small)
             }
-            .padding(24)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .padding(20)
+            .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 12))
         default:
             EmptyView()
         }

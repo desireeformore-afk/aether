@@ -69,7 +69,7 @@ final class HomeViewModel: ObservableObject {
 
         // Restore from in-memory cache if already loaded
         if hasLoaded {
-            if let cached = Self.cachedVODShelves, !shelves.isEmpty { return }
+            if !shelves.isEmpty { return }
             if let cached = Self.cachedVODShelves {
                 shelves = cached
                 heroBannerItems = Self.buildHeroBanner(from: cached)
@@ -114,6 +114,10 @@ final class HomeViewModel: ObservableObject {
 
     private func performLoad(_ svc: XstreamService) async {
         // TIER 0: disk cache already shown by load() — skip if already populated
+        defer {
+            // If the task was cancelled before completion, allow load() to retry
+            if Task.isCancelled { hasLoaded = false }
+        }
 
         // Fetch all categories
         let allCats = (try? await svc.vodCategories()) ?? []
@@ -387,9 +391,15 @@ final class HomeViewModel: ObservableObject {
 
         // Add flag emoji based on origin detected in the raw name
         let upper = name.uppercased()
-        if upper.hasPrefix("TR") || upper.contains("TUR") {
+        // Turkish: only if name starts with "TR - " or "TR-" or contains Turkish keywords
+        let isTurkish = upper.hasPrefix("TR - ") || upper.hasPrefix("TR-")
+            || upper.contains("TURK") || upper.contains("TÜRK") || upper.contains("TURKISH")
+        // Polish: only if name starts with "PL - " or "PL-" or contains " PL " (with spaces) or Polish keywords
+        let isPolish = upper.hasPrefix("PL - ") || upper.hasPrefix("PL-")
+            || upper.contains(" PL ") || upper.contains("POLISH") || upper.contains("POLSKI")
+        if isTurkish {
             clean = "🇹🇷 \(clean)"
-        } else if upper.hasPrefix("PL") || upper.contains(" PL ") {
+        } else if isPolish {
             clean = "🇵🇱 \(clean)"
         }
 
