@@ -25,11 +25,38 @@ struct VODBrowserView: View {
                                 .padding(.bottom, -20)
                         }
 
+                        // Streaming services section
+                        if !homeViewModel.streamingServiceShelves.isEmpty {
+                            sectionHeader("Serwisy streamingowe")
+                            ForEach(Array(homeViewModel.streamingServiceShelves.enumerated()), id: \.offset) { _, shelf in
+                                CategoryShelf(
+                                    title: shelf.title,
+                                    items: shelfItemsWithTap(shelf.items)
+                                )
+                            }
+                        }
+
+                        // Genre section divider
+                        if !homeViewModel.genreShelves.isEmpty {
+                            sectionHeader("Gatunki")
+                            ForEach(Array(homeViewModel.genreShelves.enumerated()), id: \.offset) { _, shelf in
+                                CategoryShelf(
+                                    title: shelf.title,
+                                    items: shelfItemsWithTap(shelf.items)
+                                )
+                            }
+                        }
+
+                        // Remaining shelves (not matched to streaming/genre)
+                        let usedTitles = Set(homeViewModel.streamingServiceShelves.map(\.title) +
+                                            homeViewModel.genreShelves.map(\.title))
                         ForEach(Array(homeViewModel.shelves.enumerated()), id: \.offset) { _, shelf in
-                            CategoryShelf(
-                                title: shelf.title,
-                                items: shelfItemsWithTap(shelf.items)
-                            )
+                            if !usedTitles.contains(shelf.title) {
+                                CategoryShelf(
+                                    title: shelf.title,
+                                    items: shelfItemsWithTap(shelf.items)
+                                )
+                            }
                         }
 
                         Spacer(minLength: 40)
@@ -45,6 +72,23 @@ struct VODBrowserView: View {
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
         }
+    }
+
+    @ViewBuilder
+    private func sectionHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .kerning(0.8)
+            Rectangle()
+                .fill(Color.white.opacity(0.12))
+                .frame(height: 1)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 32)
+        .padding(.bottom, 4)
     }
 
     private func shelfItemsWithTap(_ items: [ShelfItem]) -> [ShelfItem] {
@@ -218,68 +262,115 @@ struct VODDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        HStack(alignment: .top, spacing: 20) {
-            AsyncImage(url: vod.streamIcon.flatMap(URL.init(string:))) { phase in
-                switch phase {
-                case .success(let img):
-                    img.resizable().scaledToFill()
-                default:
-                    ZStack {
-                        Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
-                        Image(systemName: "film")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.secondary)
+        ZStack(alignment: .topLeading) {
+            Color(.sRGB, red: 0.06, green: 0.06, blue: 0.08, opacity: 1).ignoresSafeArea()
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+
+                    // Backdrop image with gradient overlay
+                    ZStack(alignment: .bottomLeading) {
+                        AsyncImage(url: vod.streamIcon.flatMap(URL.init(string:))) { phase in
+                            switch phase {
+                            case .success(let img):
+                                img.resizable().aspectRatio(contentMode: .fill)
+                            default:
+                                ZStack {
+                                    Color(.sRGB, red: 0.12, green: 0.12, blue: 0.14, opacity: 1)
+                                    Image(systemName: "film")
+                                        .font(.system(size: 64))
+                                        .foregroundStyle(.white.opacity(0.15))
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 280)
+                        .clipped()
+
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0),
+                                .init(color: Color(.sRGB, red: 0.06, green: 0.06, blue: 0.08, opacity: 0.6), location: 0.5),
+                                .init(color: Color(.sRGB, red: 0.06, green: 0.06, blue: 0.08, opacity: 1), location: 1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 280)
                     }
+
+                    // Content below backdrop
+                    VStack(alignment: .leading, spacing: 16) {
+
+                        // Title
+                        Text(vod.name)
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(3)
+
+                        // Metadata row: category + rating stars
+                        HStack(spacing: 12) {
+                            if let cat = vod.categoryName, !cat.isEmpty {
+                                Text(cat)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            if let rating = vod.rating, !rating.isEmpty,
+                               let ratingValue = Double(rating), ratingValue > 0 {
+                                HStack(spacing: 3) {
+                                    ForEach(0..<5) { i in
+                                        Image(systemName: Double(i) < ratingValue / 2 ? "star.fill" : "star")
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(.yellow)
+                                    }
+                                    Text(String(format: "%.1f", ratingValue))
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(.yellow)
+                                }
+                            }
+                        }
+
+                        // Play button — large, blue, full width
+                        Button {
+                            playVOD()
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 16, weight: .bold))
+                                Text("Odtwórz")
+                                    .font(.system(size: 17, weight: .bold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .foregroundStyle(.white)
+                            .background(Color.blue)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+
+                        // Description placeholder (Xtream VOD list API doesn't include plot)
+                        // Cast + genre info not available in list endpoint
+                    }
+                    .padding(.horizontal, 28)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
                 }
             }
-            .frame(width: 140, height: 210)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text(vod.name)
-                    .font(.system(.title2, design: .default, weight: .bold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(3)
-
-                if let rating = vod.rating, !rating.isEmpty, let ratingValue = Double(rating), ratingValue > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "star.fill")
-                            .foregroundStyle(.yellow)
-                            .font(.system(size: 14))
-                        Text(String(format: "%.1f", ratingValue))
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.primary)
-                    }
-                }
-
-                Spacer()
-
-                Button {
-                    playVOD()
-                    dismiss()
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "play.fill")
-                        Text("Play Now")
-                            .fontWeight(.semibold)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                .controlSize(.large)
-
-                Button("Cancel", role: .cancel) { dismiss() }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .keyboardShortcut(.cancelAction)
+            // Dismiss button
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .shadow(color: .black.opacity(0.5), radius: 4)
+                    .padding(16)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
         }
-        .padding(24)
-        .frame(width: 420, height: 270)
+        .frame(width: 520, height: 620)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private func playVOD() {

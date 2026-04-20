@@ -267,19 +267,12 @@ public final class PlayerCore {
                     print("[PlayerCore] HLS proxy error: \(errMsg)")
 
                     // HTTP 458 = non-standard IPTV server rejection — FFmpeg can't handle it.
-                    // Fall back to direct AVPlayer; some servers accept it where FFmpeg is blocked.
+                    // Retry with .ts extension (IPTV often serves .mkv URLs that 458,
+                    // but the same stream_id is available as .ts). Then try .mp4, then
+                    // fall back to direct AVPlayer for m3u8/mp4 AVPlayer can play natively.
                     let is458 = errMsg.contains("458") || errMsg.contains("Server returned 4")
                     if is458 {
-                        print("[PlayerCore] HTTP 458 detected — falling back to direct AVPlayer")
-                        let asset = AVURLAsset(url: url)
-                        let item = AVPlayerItem(asset: asset)
-                        item.preferredForwardBufferDuration = 4
-                        self.player.replaceCurrentItem(with: item)
-                        self.player.play()
-                        self.observePlayerItem(item)
-                        self.registerRetryObservers(for: item)
-                        // Mark 458 so that if AVPlayer also fails we don't retry
-                        self.shouldBlockRetry = true
+                        await self.retry458WithAlternateExtension(originalURL: url, channel: channel)
                     } else {
                         self.state = .error(errMsg)
                     }
@@ -542,6 +535,75 @@ public final class PlayerCore {
             print("[PlayerCore] Proxy restart failed: \(error.localizedDescription)")
             state = .error(error.localizedDescription)
         }
+    }
+
+    // MARK: - 458 retry helpers
+
+    /// When a proxied stream returns HTTP 458 for (e.g.) a .mkv URL, try the same stream ID
+    /// with .ts extension via FFmpeg proxy, then .mp4, then fall back to direct AVPlayer.
+    private func retry458WithAlternateExtension(originalURL: URL, channel: Channel) async {
+        let extensions458: [String] = ["ts", "mp4"]
+        for ext in extensions458 {
+            guard currentChannel?.id == channel.id else { return }
+            let altURL = originalURL.deletingPathExtension().appendingPathExtension(ext)
+            print("[PlayerCore] 458 retry with .\(ext) extension: \(altURL.absoluteString)")
+
+            // Proxy-eligible extensions
+            let proxyExts: Set<String> = ["ts", "mkv", "avi", "wmv", "m2ts"]
+            if proxyExts.contains(ext) {
+                let proxy = LocalHLSProxy()
+                self.hlsProxy = proxy
+                do {
+                    try await proxy.start(from: altURL)
+                    guard currentChannel?.id == channel.id else { return }
+                    let opts: [String: Any] = [
+                        AVURLAssetAllowsCellularAccessKey: true,
+                        AVURLAssetPreferPreciseDurationAndTimingKey: false,
+                        "AVURLAssetHTTPHeaderFieldsKey": ["X-Playback-Session-Id": UUID().uuidString]
+                    ]
+                    let asset = AVURLAsset(url: proxy.playlistURL, options: opts)
+                    let item = AVPlayerItem(asset: asset)
+                    item.preferredForwardBufferDuration = 10
+                    player.replaceCurrentItem(with: item)
+                    player.play()
+                    observePlayerItem(item)
+                    registerRetryObservers(for: item)
+                    return // success
+                } catch {
+                    let msg = error.localizedDescription
+                    let again458 = msg.contains("458") || msg.contains("Server returned 4")
+                    if !again458 {
+                        self.state = .error(msg)
+                        return
+                    }
+                    // another 458 — continue to next extension
+                    print("[PlayerCore] 458 again for .\(ext), trying next")
+                }
+            } else {
+                // mp4 — try direct AVPlayer (AVPlayer supports mp4)
+                let asset = AVURLAsset(url: altURL)
+                let item = AVPlayerItem(asset: asset)
+                item.preferredForwardBufferDuration = 10
+                player.replaceCurrentItem(with: item)
+                player.play()
+                observePlayerItem(item)
+                shouldBlockRetry = true // 4xx chain — don't auto-retry
+                registerRetryObservers(for: item)
+                return
+            }
+        }
+
+        // All extension retries exhausted — try direct AVPlayer with original URL as last resort
+        guard currentChannel?.id == channel.id else { return }
+        print("[PlayerCore] 458 all retries failed — falling back to direct AVPlayer")
+        let asset = AVURLAsset(url: originalURL)
+        let item = AVPlayerItem(asset: asset)
+        item.preferredForwardBufferDuration = 4
+        player.replaceCurrentItem(with: item)
+        player.play()
+        observePlayerItem(item)
+        shouldBlockRetry = true
+        registerRetryObservers(for: item)
     }
 
     // MARK: - Private

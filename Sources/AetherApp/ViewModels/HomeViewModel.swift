@@ -13,6 +13,10 @@ final class HomeViewModel: ObservableObject {
     @Published var allSeries: [XstreamSeries] = []
     @Published var errorMessage: String? = nil
 
+    // Priority-sorted VOD shelves exposed to VODBrowserView
+    @Published var streamingServiceShelves: [(title: String, icon: String, items: [ShelfItem])] = []
+    @Published var genreShelves: [(title: String, items: [ShelfItem])] = []
+
     // Static cache — shared across views, survives navigation
     static var cachedVODShelves: [(title: String, items: [ShelfItem])]? = nil
     static var cachedSeriesShelves: [(title: String, items: [ShelfItem])]? = nil
@@ -42,6 +46,7 @@ final class HomeViewModel: ObservableObject {
             if let cached = Self.cachedVODShelves {
                 shelves = cached
                 heroBannerItems = Self.buildHeroBanner(from: cached)
+                rebuildPriorityShelves(from: cached)
                 isPhase1Loaded = true
             }
             if let cached = Self.cachedSeriesShelves { seriesShelves = cached }
@@ -68,6 +73,8 @@ final class HomeViewModel: ObservableObject {
         heroBannerItems = []
         shelves = []
         seriesShelves = []
+        streamingServiceShelves = []
+        genreShelves = []
         liveItems = []
         allVODs = []
         allSeries = []
@@ -77,16 +84,17 @@ final class HomeViewModel: ObservableObject {
     }
 
     private func performLoad(_ svc: XstreamService) async {
-        // Phase 1: Load VOD categories, pick top 8, signal UI immediately
         let allCats = (try? await svc.vodCategories()) ?? []
         let filtered = allCats
             .filter { !isGarbageCategory($0.name) }
             .sorted { $0.name < $1.name }
-        let top8 = Array(filtered.prefix(8))
 
-        // Load first 3 categories for the hero banner + initial shelves
-        if !top8.isEmpty {
-            let cats3 = Array(top8.prefix(3))
+        // Load up to 16 VOD shelves total
+        let top16 = Array(filtered.prefix(16))
+
+        // Phase 1: first 3 shelves for hero banner + initial display
+        if !top16.isEmpty {
+            let cats3 = Array(top16.prefix(3))
             let r0 = await loadVODShelf(svc: svc, cat: cats3[0])
             let r1 = cats3.count > 1 ? await loadVODShelf(svc: svc, cat: cats3[1]) : nil
             let r2 = cats3.count > 2 ? await loadVODShelf(svc: svc, cat: cats3[2]) : nil
@@ -96,17 +104,19 @@ final class HomeViewModel: ObservableObject {
             if let r = r2 { initialShelves.append(r) }
             shelves = initialShelves
             heroBannerItems = Self.buildHeroBanner(from: initialShelves)
+            rebuildPriorityShelves(from: initialShelves)
             allVODs = initialShelves.flatMap { $0.items.compactMap { $0.vod } }
         }
         isPhase1Loaded = true
 
-        // Phase 2: Load remaining 5 categories sequentially, progressive rendering
+        // Phase 2: remaining shelves, progressive rendering
         var allShelves = shelves
         var collectedVODs: [XstreamVOD] = allVODs
-        for cat in top8.dropFirst(3) {
+        for cat in top16.dropFirst(3) {
             if let shelf = await loadVODShelf(svc: svc, cat: cat) {
                 allShelves.append(shelf)
                 shelves = allShelves
+                rebuildPriorityShelves(from: allShelves)
                 collectedVODs.append(contentsOf: shelf.items.compactMap { $0.vod })
                 allVODs = collectedVODs
             }
@@ -115,14 +125,14 @@ final class HomeViewModel: ObservableObject {
         Self.cachedAllVODs = collectedVODs
         heroBannerItems = Self.buildHeroBanner(from: allShelves)
 
-        // Load series categories (top 4), progressive rendering
+        // Load series categories (top 8)
         let allSeriesCats = (try? await svc.seriesCategories()) ?? []
         let cleanSeriesCats = allSeriesCats
             .filter { !isGarbageCategory($0.name) }
             .sorted { $0.name < $1.name }
         var seriesResults: [(title: String, items: [ShelfItem])] = []
         var collectedSeries: [XstreamSeries] = []
-        for cat in cleanSeriesCats.prefix(4) {
+        for cat in cleanSeriesCats.prefix(8) {
             if let shelf = await loadSeriesShelf(svc: svc, cat: cat) {
                 seriesResults.append(shelf)
                 seriesShelves = seriesResults
@@ -142,6 +152,60 @@ final class HomeViewModel: ObservableObject {
         Self.cachedLive = Array(liveShelfItems)
 
         isFullyLoaded = true
+    }
+
+    // MARK: - Priority shelf buckets
+
+    /// Streaming service keyword map: (keywords, display label, SF Symbol icon)
+    private static let streamingServices: [(keywords: [String], label: String, icon: String)] = [
+        (["netflix", " nf ", "nf-", "-nf "], "Netflix", "n.circle.fill"),
+        (["prime", "amazon"], "Prime Video", "p.circle.fill"),
+        (["apple tv", "appletv", "apple+"], "Apple TV+", "apple.logo"),
+        (["hbo"], "HBO Max", "h.circle.fill"),
+        (["disney"], "Disney+", "d.circle.fill"),
+        (["hulu"], "Hulu", "h.square.fill"),
+        (["paramount"], "Paramount+", "p.square.fill"),
+    ]
+
+    /// Genre keyword map: (keywords, display label)
+    private static let genreKeywords: [(keywords: [String], label: String)] = [
+        (["action", "akcja", "thriller"], "Akcja & Thriller"),
+        (["comedy", "komedia"], "Komedia"),
+        (["horror"], "Horror"),
+        (["sci-fi", " sf ", "science fiction"], "Sci-Fi"),
+        (["drama", "dramat"], "Dramat"),
+        (["animation", "animacja", "animated"], "Animacja"),
+        (["documentary", "dokument"], "Dokumentalne"),
+        (["kids", "family", "dla dzieci", "children"], "Dla dzieci"),
+        (["romance", "romans"], "Romans"),
+        (["4k"], "4K Filmy"),
+        (["polish", "polski", " pl "], "🇵🇱 Polskie"),
+        (["turkish", "turecki", " tr "], "🇹🇷 Tureckie"),
+    ]
+
+    /// Rebuilds `streamingServiceShelves` and `genreShelves` from the flat shelves list.
+    private func rebuildPriorityShelves(from shelves: [(title: String, items: [ShelfItem])]) {
+        var streaming: [(title: String, icon: String, items: [ShelfItem])] = []
+        var genre: [(title: String, items: [ShelfItem])] = []
+        var used = Set<String>()
+
+        for shelf in shelves {
+            let lower = shelf.title.lowercased()
+            if let svc = Self.streamingServices.first(where: { $0.keywords.contains(where: { lower.contains($0) }) }) {
+                if !used.contains(svc.label) {
+                    streaming.append((title: svc.label, icon: svc.icon, items: shelf.items))
+                    used.insert(svc.label)
+                }
+            } else if let g = Self.genreKeywords.first(where: { $0.keywords.contains(where: { lower.contains($0) }) }) {
+                if !used.contains(g.label) {
+                    genre.append((title: g.label, items: shelf.items))
+                    used.insert(g.label)
+                }
+            }
+        }
+
+        streamingServiceShelves = streaming
+        genreShelves = genre
     }
 
     private func loadVODShelf(svc: XstreamService, cat: XstreamCategory) async -> (title: String, items: [ShelfItem])? {
@@ -203,9 +267,12 @@ final class HomeViewModel: ObservableObject {
 
     func isGarbageCategory(_ name: String) -> Bool {
         if name.isEmpty { return true }
+        // Filter Arabic/RTL script categories
         if name.unicodeScalars.contains(where: { $0.value > 0x0600 && $0.value < 0x06FF }) { return true }
-        let garbage = ["netflix", "amazon", "apple tv", "disney", "hbo", "premium", "adult", "xxx", "18+"]
+        // Only truly garbage categories — streaming services are KEPT and prioritized
+        let garbage = ["adult", "xxx", "18+"]
         let lower = name.lowercased()
         return garbage.contains(where: { lower.contains($0) })
     }
 }
+

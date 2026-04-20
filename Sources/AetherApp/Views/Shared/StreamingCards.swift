@@ -154,7 +154,7 @@ struct HeroBanner: View {
                     .animation(.easeInOut(duration: 0.4), value: currentIndex)
 
                 Button(action: item.onTap) {
-                    Label("▶ Odtwórz", systemImage: "")
+                    Label("▶ Odtwórz", systemImage: "play.fill")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 26)

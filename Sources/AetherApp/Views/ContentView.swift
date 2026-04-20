@@ -36,6 +36,7 @@ struct ContentView: View {
     @State private var selectedSection: AppSection = .home
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var isFullscreenPlayer = false
+    @State private var sidebarVisibility: NavigationSplitViewVisibility = .all
     @StateObject private var homeViewModel = HomeViewModel()
     @Query private var allPlaylists: [PlaylistRecord]
 
@@ -130,13 +131,24 @@ struct ContentView: View {
     @ViewBuilder
     private var mainLayout: some View {
         ZStack {
-            NavigationSplitView(columnVisibility: .constant(.all)) {
+            NavigationSplitView(columnVisibility: $sidebarVisibility) {
                 sidebarContent
                     .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
             } detail: {
                 detailContent
             }
             .navigationSplitViewStyle(.balanced)
+            .toolbar {
+                ToolbarItem(placement: .navigation) {
+                    Button(action: {
+                        withAnimation {
+                            sidebarVisibility = sidebarVisibility == .all ? .detailOnly : .all
+                        }
+                    }) {
+                        Image(systemName: "sidebar.left")
+                    }
+                }
+            }
 
             // Network status banner
             VStack {

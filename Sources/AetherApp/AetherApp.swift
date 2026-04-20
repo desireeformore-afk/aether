@@ -172,21 +172,28 @@ extension AetherApp {
     /// Removes the SQLite store if it contains entities that no longer exist in the current schema.
     /// Prevents NSCocoaErrorDomain 134100 (incompatible model) on first launch after a schema change.
     private static func resetStoreIfIncompatible(storeURL: URL) {
-        // Nuclear reset (v4): wipe all store files once after schema overhaul
-        let resetKey = "store_reset_v4"
+        // Nuclear reset (v5): wipe all store files once after schema overhaul
+        let resetKey = "store_reset_v5"
         if !UserDefaults.standard.bool(forKey: resetKey) {
             let appSupport = storeURL.deletingLastPathComponent()
             let fm = FileManager.default
             if let items = try? fm.contentsOfDirectory(at: appSupport, includingPropertiesForKeys: nil) {
                 for item in items {
                     let ext = item.pathExtension.lowercased()
-                    if ["sqlite", "store", "wal", "shm"].contains(ext) {
+                    let base = item.deletingPathExtension().lastPathComponent.lowercased()
+                    if [\"sqlite\", \"store\", \"wal\", \"shm\"].contains(ext)
+                        || base.hasSuffix(\"-wal\") || base.hasSuffix(\"-shm\") {
                         try? fm.removeItem(at: item)
                     }
                 }
             }
+            // Also delete WAL/SHM suffixed variants (aether.store-wal, aether.store-shm)
+            let storeWAL = storeURL.appendingPathExtension(\"-wal\")
+            let storeSHM = storeURL.appendingPathExtension(\"-shm\")
+            try? fm.removeItem(at: storeWAL)
+            try? fm.removeItem(at: storeSHM)
             UserDefaults.standard.set(true, forKey: resetKey)
-            print("[AetherDB] Nuclear store reset (v4) complete")
+            print(\"[AetherDB] Nuclear store reset (v5) complete\")
             return
         }
 
