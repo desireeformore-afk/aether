@@ -27,7 +27,7 @@ public struct XstreamCredentials: Sendable {
     /// Builds a stream URL without percent-encoding credentials.
     /// `appendingPathComponent` encodes special chars (e.g. `@` → `%40`),
     /// which breaks servers that expect raw credentials in the path.
-    func streamURL(type: String, id: Int, ext: String) -> URL {
+    public func streamURL(type: String, id: Int, ext: String) -> URL {
         let base = baseURL.absoluteString.hasSuffix("/")
             ? String(baseURL.absoluteString.dropLast())
             : baseURL.absoluteString
