@@ -11,7 +11,6 @@ struct GlobalContentSearchView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var filterType: ContentType? = nil
-    @State private var searchTask: Task<Void, Never>?
     @State private var selectedSeries: XstreamSeries?
 
     private let xstreamService: XstreamService
@@ -87,13 +86,6 @@ struct GlobalContentSearchView: View {
                 TextField("Szukaj filmów i seriali...", text: $searchText)
                     .textFieldStyle(.plain)
                     .foregroundStyle(Color.aetherText)
-                    .onChange(of: searchText) { _, _ in
-                        searchTask?.cancel()
-                        searchTask = Task {
-                            try? await Task.sleep(for: .milliseconds(300))
-                            guard !Task.isCancelled else { return }
-                        }
-                    }
                 
                 if !searchText.isEmpty {
                     Button {
@@ -217,21 +209,7 @@ struct GlobalContentSearchView: View {
     }
 
     private func playVOD(_ vod: XstreamVOD) {
-        let ext = vod.containerExtension ?? "mp4"
-        let streamURL = credentials.baseURL
-            .appendingPathComponent("movie")
-            .appendingPathComponent(credentials.username)
-            .appendingPathComponent(credentials.password)
-            .appendingPathComponent("\(vod.id).\(ext)")
-
-        let channel = Channel(
-            id: UUID(),
-            name: vod.name,
-            streamURL: streamURL,
-            logoURL: vod.streamIcon.flatMap(URL.init(string:)),
-            groupTitle: "VOD",
-            epgId: nil
-        )
+        let channel = vod.toChannel(credentials: credentials)
         player.play(channel)
     }
 }
