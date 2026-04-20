@@ -258,7 +258,7 @@ struct SeriesBrowserView: View {
 
 // MARK: - SeriesCard
 
-private struct SeriesCard: View {
+struct SeriesCard: View {
     let series: XstreamSeries
     @State private var isHovered = false
 

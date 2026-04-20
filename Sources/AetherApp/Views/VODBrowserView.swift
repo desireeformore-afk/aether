@@ -277,7 +277,7 @@ struct VODBrowserView: View {
 
 // MARK: - VODCard
 
-private struct VODCard: View {
+struct VODCard: View {
     let vod: XstreamVOD
     @State private var isHovered = false
 

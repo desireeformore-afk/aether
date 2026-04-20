@@ -114,7 +114,7 @@ struct FloatingChannelPanel: View {
                 .help("Search All Content  ⌘F")
                 .sheet(isPresented: $showGlobalSearch) {
                     GlobalContentSearchView(
-                        xstreamService: XstreamService(credentials: creds),
+                        service: XstreamService(credentials: creds),
                         credentials: creds,
                         player: player
                     )
