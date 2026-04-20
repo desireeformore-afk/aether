@@ -356,7 +356,7 @@ public final class PlayerCore {
     /// `item` identifies the failing item — duplicate calls for the same item are ignored.
     private func scheduleRetry(for item: AVPlayerItem) {
         guard !shouldBlockRetry else {
-            state = .error("HTTP 400 - invalid request")
+            state = .error("Stream rejected by server (client error — not retrying)")
             return
         }
         // De-duplicate: if we're already retrying because of this exact item, skip.
@@ -402,10 +402,18 @@ public final class PlayerCore {
             queue: .main
         ) { [weak self] notification in
             let item = notification.object as? AVPlayerItem
+            let err = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
+            let nsErr = err as NSError?
+            print("[PlayerCore] ⚠️ Failed to play to end: \(err?.localizedDescription ?? "unknown")")
             Task { @MainActor [weak self] in
                 guard let self,
                       let item,
                       item === self.player.currentItem else { return }
+                // -16845 = CoreMedia HTTP 458 (IPTV rate limit / server refusal) — not retryable
+                if nsErr?.code == -16845 || nsErr?.domain == "CoreMediaErrorDomain" {
+                    print("[PlayerCore] 🚫 CoreMedia error \(nsErr?.code ?? 0) — blocking retry")
+                    self.shouldBlockRetry = true
+                }
                 self.scheduleRetry(for: item)
             }
         }
@@ -466,8 +474,11 @@ public final class PlayerCore {
                     print("[PlayerCore] ❌ FAILED: \(err)")
                     if let underlying = (item.error as NSError?)?.userInfo[NSUnderlyingErrorKey] as? NSError {
                         print("[PlayerCore]   Underlying: \(underlying.domain) \(underlying.code) \(underlying.localizedDescription)")
-                        if underlying.code == 400 {
-                            print("[PlayerCore] 🚫 HTTP 400 detected — blocking retry")
+                        // Block retry for any 4xx HTTP error (client errors — won't fix with retry)
+                        // Common: 400 Bad Request, 403 Forbidden, 404 Not Found, 458 (IPTV rate limit)
+                        let httpCode = underlying.code
+                        if (400...499).contains(httpCode) || underlying.domain == "CoreMediaErrorDomain" {
+                            print("[PlayerCore] 🚫 HTTP \(httpCode) (\(underlying.domain)) — blocking retry, not recoverable")
                             self.shouldBlockRetry = true
                         }
                     }
