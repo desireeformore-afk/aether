@@ -215,9 +215,14 @@ public final class PlayerCore {
         print("[PlayerCore]   URL: \(url.absoluteString)")
         print("[PlayerCore]   Extension: \(ext)")
 
-        // Formats that need FFmpeg remux: TS (live), MKV, AVI
-        let needsProxy = ext == "ts" || ext == "mkv" || ext == "avi" || ext == "wmv"
-            || url.path.contains("/live/")
+        // Formats that need FFmpeg remux — decision based on contentType, not URL heuristics
+        let needsProxy: Bool
+        switch channel.contentType {
+        case .liveTV:
+            needsProxy = ext == "ts" || url.path.contains("/live/")
+        case .movie, .series:
+            needsProxy = ext == "mkv" || ext == "avi" || ext == "wmv"
+        }
 
         if needsProxy {
             guard LocalHLSProxy.isAvailable else {
@@ -390,10 +395,10 @@ public final class PlayerCore {
     private func registerRetryObservers(for item: AVPlayerItem) {
         let center = NotificationCenter.default
 
-        // Failed to play to end
+        // Failed to play to end — bind to the specific item to avoid cross-item noise
         failedObserver = center.addObserver(
             forName: .AVPlayerItemFailedToPlayToEndTime,
-            object: nil,
+            object: item,
             queue: .main
         ) { [weak self] notification in
             let item = notification.object as? AVPlayerItem
@@ -405,10 +410,10 @@ public final class PlayerCore {
             }
         }
 
-        // Playback stalled
+        // Playback stalled — bind to the specific item to avoid cross-item noise
         stallObserver = center.addObserver(
             forName: .AVPlayerItemPlaybackStalled,
-            object: nil,
+            object: item,
             queue: .main
         ) { [weak self] notification in
             let item = notification.object as? AVPlayerItem
