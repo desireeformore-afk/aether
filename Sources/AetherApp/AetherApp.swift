@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import CoreData
 import AetherCore
 import AetherUI
 
@@ -139,10 +140,16 @@ extension AetherApp {
         let storeURL = appSupport.appendingPathComponent("aether.store")
         let config = ModelConfiguration(url: storeURL)
         do {
-            return try ModelContainer(
+            let container = try ModelContainer(
                 for: PlaylistRecord.self, FavoriteRecord.self, WatchHistoryRecord.self,
                 configurations: config
             )
+            // Purge stale persistent history from previously removed entities
+            // (e.g. PlaylistRecord/WatchHistoryRecord schema changes) to suppress
+            // CoreData truncation warnings. Uses a lightweight NSPersistentContainer
+            // pointed at the same store file.
+            purgePersistentHistory(at: storeURL)
+            return container
         } catch {
             print("[Aether] SwiftData store failed: \(error) — using in-memory fallback")
             let fallback = ModelConfiguration(isStoredInMemoryOnly: true)
@@ -152,6 +159,28 @@ extension AetherApp {
             )
         }
     }()
+
+    /// Deletes all persistent history on the SwiftData store to suppress truncation warnings
+    /// caused by entity schema changes (e.g. removed PlaylistRecord / WatchHistoryRecord).
+    private static func purgePersistentHistory(at storeURL: URL) {
+        DispatchQueue.global(qos: .utility).async {
+            let mom = NSManagedObjectModel()
+            let psc = NSPersistentStoreCoordinator(managedObjectModel: mom)
+            let storeDescription = NSPersistentStoreDescription(url: storeURL)
+            storeDescription.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
+            var added = false
+            psc.addPersistentStore(with: storeDescription) { _, error in
+                added = error == nil
+            }
+            guard added else { return }
+            let ctx = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+            ctx.persistentStoreCoordinator = psc
+            ctx.perform {
+                let req = NSPersistentHistoryChangeRequest.deleteHistory(before: Date())
+                _ = try? ctx.execute(req)
+            }
+        }
+    }
 }
 
 // MARK: - HistoryCoordinator
