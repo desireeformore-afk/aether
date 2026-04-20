@@ -2,28 +2,6 @@ import SwiftUI
 import SwiftData
 import AetherCore
 
-// MARK: - App Section
-
-enum AppSection: String, CaseIterable, Identifiable {
-    case home = "Home"
-    case live = "Na żywo"
-    case movies = "Filmy"
-    case series = "Seriale"
-    case search = "Szukaj"
-
-    var id: String { rawValue }
-
-    var icon: String {
-        switch self {
-        case .home:   return "house.fill"
-        case .live:   return "tv.fill"
-        case .movies: return "film.fill"
-        case .series: return "play.square.stack.fill"
-        case .search: return "magnifyingglass"
-        }
-    }
-}
-
 // MARK: - ContentView
 
 struct ContentView: View {
@@ -33,7 +11,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var playerCore: PlayerCore
 
-    @State private var selectedSection: AppSection = .home
+    @State private var sidebarSelection: SidebarItem = .home
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var isFullscreenPlayer = false
     @State private var sidebarVisibility: NavigationSplitViewVisibility = .all
@@ -59,6 +37,10 @@ struct ContentView: View {
 
     private var activeCredentials: XstreamCredentials? {
         (selectedPlaylist ?? allPlaylists.first)?.xstreamCredentials
+    }
+
+    private var activePlaylistName: String? {
+        (selectedPlaylist ?? allPlaylists.first)?.name
     }
 
     init(playerCore: PlayerCore) {
@@ -133,8 +115,9 @@ struct ContentView: View {
     private var mainLayout: some View {
         ZStack {
             NavigationSplitView(columnVisibility: $sidebarVisibility) {
-                sidebarContent
-                    .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
+                SidebarView(selection: $sidebarSelection, playlistName: activePlaylistName)
+                    .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 240)
+                    .toolbar(removing: .sidebarToggle)
             } detail: {
                 detailContent
             }
@@ -169,91 +152,12 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Sidebar
-
-    @ViewBuilder
-    private var sidebarContent: some View {
-        VStack(spacing: 0) {
-            List(AppSection.allCases, selection: $selectedSection) { section in
-                Label(section.rawValue, systemImage: section.icon)
-                    .tag(section)
-                    .foregroundStyle(.white)
-                    .font(.system(size: 14, weight: .medium))
-                    .padding(.vertical, 2)
-            }
-            .listStyle(.sidebar)
-            .scrollContentBackground(.hidden)
-            .background(Color(.sRGB, red: 0.08, green: 0.08, blue: 0.08, opacity: 1))
-            .accentColor(.blue)
-
-            // Mini player bar at bottom of sidebar
-            if playerCore.state == .playing, let channel = playerCore.currentChannel {
-                Divider().background(Color.white.opacity(0.1))
-                miniPlayerBar(channel: channel)
-            }
-
-            Divider().background(Color.white.opacity(0.1))
-            // Gear button — language/country preferences
-            HStack {
-                Spacer()
-                Button {
-                    showLanguagePicker.toggle()
-                } label: {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.5))
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showLanguagePicker, arrowEdge: .trailing) {
-                    LanguagePickerView()
-                        .background(Color(.sRGB, red: 0.1, green: 0.1, blue: 0.1))
-                        .onChange(of: homeViewModel.preferredCountry) { _, _ in
-                            homeViewModel.rebuildWithCurrentPreferences()
-                        }
-                }
-                .padding(.trailing, 12)
-            }
-            .padding(.vertical, 8)
-            .background(Color(.sRGB, red: 0.08, green: 0.08, blue: 0.08, opacity: 1))
-        }
-        .background(Color(.sRGB, red: 0.08, green: 0.08, blue: 0.08, opacity: 1))
-    }
-
-    private func miniPlayerBar(channel: Channel) -> some View {
-        HStack(spacing: 10) {
-            AsyncImage(url: channel.logoURL) { phase in
-                switch phase {
-                case .success(let img): img.resizable().aspectRatio(contentMode: .fill)
-                default: Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1)
-                }
-            }
-            .frame(width: 36, height: 36)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
-
-            Text(channel.name)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Button(action: { playerCore.togglePlayPause() }) {
-                Image(systemName: playerCore.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.white)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(10)
-        .background(Color(.sRGB, red: 0.12, green: 0.12, blue: 0.12, opacity: 1))
-        .onTapGesture { isFullscreenPlayer = true }
-    }
-
     // MARK: - Detail
 
     @ViewBuilder
     private var detailContent: some View {
         Group {
-            switch selectedSection {
+            switch sidebarSelection {
             case .home:
                 if let creds = activeCredentials {
                     HomeView(viewModel: homeViewModel, player: playerCore, credentials: creds)
@@ -271,7 +175,7 @@ struct ContentView: View {
                 } else {
                     noPlaylistPrompt
                 }
-            case .movies:
+            case .vod:
                 if let creds = activeCredentials {
                     VODBrowserView(homeViewModel: homeViewModel, player: playerCore, credentials: creds)
                 } else {
@@ -294,6 +198,28 @@ struct ContentView: View {
                 } else {
                     noPlaylistPrompt
                 }
+            case .history:
+                WatchHistoryView()
+            case .settings:
+                SettingsView()
+                    .overlay(alignment: .topTrailing) {
+                        Button {
+                            showLanguagePicker.toggle()
+                        } label: {
+                            Image(systemName: "globe")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .padding(12)
+                        }
+                        .buttonStyle(.plain)
+                        .popover(isPresented: $showLanguagePicker, arrowEdge: .leading) {
+                            LanguagePickerView()
+                                .background(Color(red: 0.1, green: 0.1, blue: 0.1))
+                                .onChange(of: homeViewModel.preferredCountry) { _, _ in
+                                    homeViewModel.rebuildWithCurrentPreferences()
+                                }
+                        }
+                    }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -314,7 +240,7 @@ struct ContentView: View {
     private func setupKeyboardHandlerCallbacks() {
         keyboardHandler.onClosePanel = {}
         keyboardHandler.onActivateSearch = {
-            selectedSection = .search
+            sidebarSelection = .search
             searchActivationToken += 1
         }
         keyboardHandler.onToggleFavorite = {
