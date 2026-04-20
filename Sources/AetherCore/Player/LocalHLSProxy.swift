@@ -187,6 +187,13 @@ public final class LocalHLSProxy: @unchecked Sendable {
     /// HTTP URL of the HLS playlist (set after `start()` completes).
     public private(set) var playlistURL: URL = URL(string: "about:blank")!
 
+    /// The current base URL of the local HTTP server (host+port), or nil if not running.
+    /// Use this to build segment URLs after a proxy restart.
+    public var currentStreamURL: URL? {
+        guard let server = httpServer, server.port > 0 else { return nil }
+        return URL(string: "http://127.0.0.1:\(server.port)/stream.m3u8")
+    }
+
     /// Whether FFmpeg is currently running.
     public var isRunning: Bool {
         ffmpegProcess?.isRunning == true
@@ -279,8 +286,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
             args += [
                 "-f", "hls",
                 "-hls_time", "6",
-                "-hls_list_size", "6",
-                "-hls_flags", "delete_segments+append_list",
+                "-hls_list_size", "0",
+                "-hls_playlist_type", "vod",
+                "-hls_flags", "independent_segments",
             ]
             print("[HLSProxy] Mode: VOD (\(ext)), codec: \(videoCodec), bsf: \(bsfFilter.isEmpty ? "auto" : bsfFilter)")
         } else {
@@ -316,20 +324,27 @@ public final class LocalHLSProxy: @unchecked Sendable {
         self.ffmpegProcess = process
 
         // 3. Wait for first segment (VOD needs more time to probe MKV headers over HTTP)
-        let maxWaitIterations = isVOD ? 75 : 100  // 15s for VOD, 20s for Live
+        let maxWaitIterations = isVOD ? 150 : 100  // 30s for VOD (large files), 20s for Live
         for i in 0..<maxWaitIterations {
             try await Task.sleep(nanoseconds: 200_000_000) // 200ms
 
-            // Check if process died
+            // Check if process died unexpectedly (still running is normal for VOD during mux)
             if !process.isRunning {
+                // For VOD, FFmpeg may finish quickly and exit 0 — that's OK if playlist is ready
                 let errData = errPipe.fileHandleForReading.availableData
-                let errStr = String(data: errData, encoding: .utf8) ?? "unknown error"
+                let errStr = String(data: errData, encoding: .utf8) ?? ""
                 let trimmed = errStr.trimmingCharacters(in: .whitespacesAndNewlines)
+                if FileManager.default.fileExists(atPath: m3u8Path),
+                   let content = try? String(contentsOf: URL(fileURLWithPath: m3u8Path), encoding: .utf8),
+                   content.contains(".ts") {
+                    print("[HLSProxy] FFmpeg finished, playlist ready after \(Double(i + 1) * 0.2)s")
+                    return
+                }
                 print("[HLSProxy] FFmpeg exited early: \(trimmed.isEmpty ? "(no output)" : String(trimmed.prefix(500)))")
                 throw ProxyError.ffmpegFailed(trimmed.isEmpty ? "FFmpeg exited with no output" : trimmed)
             }
 
-            // Check if playlist has at least one segment reference
+            // Check if playlist has at least 2 segment references before handing off
             if FileManager.default.fileExists(atPath: m3u8Path),
                let content = try? String(contentsOf: URL(fileURLWithPath: m3u8Path), encoding: .utf8),
                content.contains(".ts"),
