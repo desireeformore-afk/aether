@@ -261,14 +261,18 @@ public final class LocalHLSProxy: @unchecked Sendable {
         if isVOD {
             // VOD (MKV/MP4): pick correct bitstream filter based on detected codec
             let bsfFilter: String
+            let isHEVC: Bool
             switch videoCodec {
             case "hevc", "h265":
                 bsfFilter = "hevc_mp4toannexb"
+                isHEVC = true
             case "h264", "avc":
                 bsfFilter = "h264_mp4toannexb"
+                isHEVC = false
             default:
                 // For unknown codecs, try without BSF (FFmpeg may auto-detect)
                 bsfFilter = ""
+                isHEVC = false
             }
 
             args += [
@@ -280,6 +284,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 "-max_muxing_queue_size", "4096",
                 "-c:a", "copy",
             ]
+            if isHEVC {
+                args += ["-tag:v", "hvc1"]
+            }
             if !bsfFilter.isEmpty {
                 args += ["-bsf:v", bsfFilter]
             }

@@ -2,7 +2,30 @@ import SwiftUI
 import SwiftData
 import AetherCore
 
-/// Root view: Fullscreen player with floating channel panel overlay.
+// MARK: - App Section
+
+enum AppSection: String, CaseIterable, Identifiable {
+    case home = "Home"
+    case live = "Na żywo"
+    case movies = "Filmy"
+    case series = "Seriale"
+    case search = "Szukaj"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .home:   return "house.fill"
+        case .live:   return "tv.fill"
+        case .movies: return "film.fill"
+        case .series: return "play.square.stack.fill"
+        case .search: return "magnifyingglass"
+        }
+    }
+}
+
+// MARK: - ContentView
+
 struct ContentView: View {
     @Environment(EPGStore.self) private var epgStore
     @Environment(NetworkMonitorService.self) private var networkMonitor
@@ -10,15 +33,16 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var playerCore: PlayerCore
 
+    @State private var selectedSection: AppSection = .home
     @State private var selectedPlaylist: PlaylistRecord?
-    @State private var selectedChannel: Channel?
-    @State private var showChannelPanel = false
-    @State private var showHome = false
+    @State private var isFullscreenPlayer = false
+    @StateObject private var homeViewModel = HomeViewModel()
     @Query private var allPlaylists: [PlaylistRecord]
+
     #if os(macOS)
     @State private var showCommandPalette = false
-    /// Search activation signal forwarded to ChannelListView inside the panel
     @State private var searchActivationToken: Int = 0
+    private let keyboardHandler: KeyboardShortcutHandler
     #endif
 
     @AppStorage("preferredColorScheme") private var preferredScheme: String = "auto"
@@ -26,15 +50,14 @@ struct ContentView: View {
     private var resolvedColorScheme: ColorScheme? {
         switch preferredScheme {
         case "light": return .light
-        case "dark": return .dark
-        default: return nil
+        case "dark":  return .dark
+        default:      return nil
         }
     }
 
-    // Keyboard handler — retained for the lifetime of this view (macOS only)
-    #if os(macOS)
-    private let keyboardHandler: KeyboardShortcutHandler
-    #endif
+    private var activeCredentials: XstreamCredentials? {
+        (selectedPlaylist ?? allPlaylists.first)?.xstreamCredentials
+    }
 
     init(playerCore: PlayerCore) {
         self.playerCore = playerCore
@@ -44,122 +67,31 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack {
-            // Base layer: Fullscreen player
-            PlayerView(player: playerCore)
-                .ignoresSafeArea()
-
-            // Welcome screen when no playlists configured
+        Group {
             if allPlaylists.isEmpty {
                 WelcomeView { playlist in
                     selectedPlaylist = playlist
                     playerCore.currentXstreamCredentials = playlist.xstreamCredentials
                 }
-                .transition(.opacity)
-                .zIndex(10)
-            }
-
-            // Home screen overlay: Netflix-style shelf, shown when idle + Xtream playlist active
-            if showHome, let creds = playerCore.currentXstreamCredentials, !allPlaylists.isEmpty {
-                HomeView(credentials: creds, player: playerCore)
-                    .transition(.opacity)
-                    .zIndex(5)
-            }
-
-            // Network status banner
-            VStack {
-                NetworkStatusBanner(networkMonitor: networkMonitor)
-                Spacer()
-            }
-            .ignoresSafeArea()
-
-            // Floating channel panel overlay
-            if showChannelPanel {
-                ZStack {
-                    // Dismissal backdrop
-                    Color.black.opacity(0.3)
-                        .ignoresSafeArea()
-                        .onTapGesture { showChannelPanel = false }
-
-                    FloatingChannelPanel(
-                        isVisible: $showChannelPanel,
-                        selectedPlaylist: $selectedPlaylist,
-                        selectedChannel: $selectedChannel,
-                        player: playerCore,
-                        searchActivationToken: searchActivationToken
-                    )
-                }
-                .transition(.asymmetric(
-                    insertion: .move(edge: .leading).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
-            }
-
-            // Toggle buttons (top-left corner) - only show when panel is hidden
-            if !showChannelPanel {
-                VStack {
-                    HStack {
-                        Button(action: { showChannelPanel.toggle() }) {
-                            Image(systemName: "sidebar.left")
-                                .font(.system(size: 20))
-                                .foregroundStyle(.white)
-                                .padding(12)
-                                .background(Color.black.opacity(0.5))
-                                .clipShape(Circle())
+            } else if isFullscreenPlayer {
+                PlayerView(player: playerCore)
+                    .ignoresSafeArea()
+                    .overlay(alignment: .topLeading) {
+                        Button(action: { isFullscreenPlayer = false }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 28))
+                                .foregroundStyle(.white.opacity(0.8))
+                                .padding(20)
                         }
                         .buttonStyle(.plain)
-                        .help("Toggle Channel List  ⌘L")
-
-                        if playerCore.currentXstreamCredentials != nil {
-                            Button(action: { showHome.toggle() }) {
-                                Image(systemName: showHome ? "house.fill" : "house")
-                                    .font(.system(size: 20))
-                                    .foregroundStyle(.white)
-                                    .padding(12)
-                                    .background(Color.black.opacity(0.5))
-                                    .clipShape(Circle())
-                            }
-                            .buttonStyle(.plain)
-                            .help("Toggle Home Screen")
-                        }
-
-                        Spacer()
                     }
-                    Spacer()
-                }
-                .padding(16)
-                .transition(.opacity)
+            } else {
+                mainLayout
             }
-
-            // Command Palette overlay
-            #if os(macOS)
-            if showCommandPalette {
-                ZStack {
-                    // Dismissal backdrop
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .ignoresSafeArea()
-                        .onTapGesture { showCommandPalette = false }
-
-                    CommandPaletteView(
-                        isPresented: $showCommandPalette,
-                        player: playerCore,
-                        channels: playerCore.channelList
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .padding(.top, 60)
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
-            }
-            #endif
         }
-        .animation(.spring(duration: 0.3), value: showChannelPanel)
-        .animation(.easeInOut(duration: 0.25), value: showHome)
-        .background(themeService.active.backgroundView())
         .preferredColorScheme(resolvedColorScheme)
         .onChange(of: playerCore.state) { _, newState in
-            // Auto-dismiss home screen when playback starts
-            if case .playing = newState { showHome = false }
+            if case .playing = newState { isFullscreenPlayer = true }
         }
         .onChange(of: selectedPlaylist) { _, newPlaylist in
             guard let playlist = newPlaylist else {
@@ -174,7 +106,6 @@ struct ContentView: View {
             setupKeyboardHandlerCallbacks()
             keyboardHandler.startMonitoring()
             #endif
-            // Auto-restore last channel on launch
             if let channel = playerCore.restoreLastChannel() {
                 playerCore.play(channel)
             }
@@ -191,23 +122,171 @@ struct ContentView: View {
             showCommandPalette.toggle()
             return .handled
         }
-        .onKeyPress(.init("l"), phases: .down) { event in
-            guard event.modifiers.contains(.command) else { return .ignored }
-            withAnimation(.spring(duration: 0.3)) { showChannelPanel.toggle() }
-            return .handled
-        }
         #endif
     }
 
+    // MARK: - Main NavigationSplitView layout
+
+    @ViewBuilder
+    private var mainLayout: some View {
+        ZStack {
+            NavigationSplitView(columnVisibility: .constant(.all)) {
+                sidebarContent
+                    .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
+            } detail: {
+                detailContent
+            }
+            .navigationSplitViewStyle(.balanced)
+
+            // Network status banner
+            VStack {
+                NetworkStatusBanner(networkMonitor: networkMonitor)
+                Spacer()
+            }
+            .ignoresSafeArea()
+
+            // Command palette overlay
+            #if os(macOS)
+            if showCommandPalette {
+                ZStack {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .ignoresSafeArea()
+                        .onTapGesture { showCommandPalette = false }
+                    CommandPaletteView(
+                        isPresented: $showCommandPalette,
+                        player: playerCore,
+                        channels: playerCore.channelList
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.top, 60)
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+            }
+            #endif
+        }
+    }
+
+    // MARK: - Sidebar
+
+    @ViewBuilder
+    private var sidebarContent: some View {
+        VStack(spacing: 0) {
+            List(AppSection.allCases, selection: $selectedSection) { section in
+                Label(section.rawValue, systemImage: section.icon)
+                    .tag(section)
+                    .foregroundStyle(.white)
+                    .font(.system(size: 14, weight: .medium))
+                    .padding(.vertical, 2)
+            }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .background(Color(.sRGB, red: 0.08, green: 0.08, blue: 0.08, opacity: 1))
+            .accentColor(.blue)
+
+            // Mini player bar at bottom of sidebar
+            if playerCore.state == .playing, let channel = playerCore.currentChannel {
+                miniPlayerBar(channel: channel)
+            }
+        }
+        .background(Color(.sRGB, red: 0.08, green: 0.08, blue: 0.08, opacity: 1))
+    }
+
+    private func miniPlayerBar(channel: Channel) -> some View {
+        HStack(spacing: 10) {
+            AsyncImage(url: channel.logoURL) { phase in
+                switch phase {
+                case .success(let img): img.resizable().aspectRatio(contentMode: .fill)
+                default: Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1)
+                }
+            }
+            .frame(width: 36, height: 36)
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+
+            Text(channel.name)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(action: { playerCore.togglePlayPause() }) {
+                Image(systemName: playerCore.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(10)
+        .background(Color(.sRGB, red: 0.12, green: 0.12, blue: 0.12, opacity: 1))
+        .onTapGesture { isFullscreenPlayer = true }
+    }
+
+    // MARK: - Detail
+
+    @ViewBuilder
+    private var detailContent: some View {
+        Group {
+            switch selectedSection {
+            case .home:
+                if let creds = activeCredentials {
+                    HomeView(viewModel: homeViewModel, player: playerCore, credentials: creds)
+                        .onAppear { homeViewModel.load(credentials: creds) }
+                } else {
+                    noPlaylistPrompt
+                }
+            case .live:
+                if let playlist = selectedPlaylist ?? allPlaylists.first {
+                    ChannelListView(
+                        playlist: playlist,
+                        selectedChannel: .constant(nil),
+                        player: playerCore
+                    )
+                } else {
+                    noPlaylistPrompt
+                }
+            case .movies:
+                if let creds = activeCredentials {
+                    VODBrowserView(credentials: creds, player: playerCore)
+                } else {
+                    noPlaylistPrompt
+                }
+            case .series:
+                if let creds = activeCredentials {
+                    SeriesBrowserView(credentials: creds, player: playerCore)
+                } else {
+                    noPlaylistPrompt
+                }
+            case .search:
+                if let creds = activeCredentials {
+                    GlobalContentSearchView(
+                        service: homeViewModel.sharedService,
+                        credentials: creds,
+                        player: playerCore
+                    )
+                } else {
+                    noPlaylistPrompt
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black)
+    }
+
+    private var noPlaylistPrompt: some View {
+        ContentUnavailableView(
+            "Brak playlisty",
+            systemImage: "tv.slash",
+            description: Text("Dodaj playlistę w ustawieniach")
+        )
+    }
+
+    // MARK: - Keyboard handler (macOS)
+
     #if os(macOS)
     private func setupKeyboardHandlerCallbacks() {
-        keyboardHandler.onClosePanel = {
-            withAnimation(.spring(duration: 0.3)) { showChannelPanel = false }
-        }
+        keyboardHandler.onClosePanel = {}
         keyboardHandler.onActivateSearch = {
-            if !showChannelPanel {
-                withAnimation(.spring(duration: 0.3)) { showChannelPanel = true }
-            }
+            selectedSection = .search
             searchActivationToken += 1
         }
         keyboardHandler.onToggleFavorite = {

@@ -1,49 +1,69 @@
 import SwiftUI
-import SwiftData
 import AetherCore
 
 // MARK: - HomeView
 
-/// Netflix/Apple TV–style home screen shown when a playlist is active.
-/// Shows a rotating hero banner + horizontal shelves of VOD, series, and live TV.
 struct HomeView: View {
-    let credentials: XstreamCredentials
+    @ObservedObject var viewModel: HomeViewModel
     @Bindable var player: PlayerCore
+    let credentials: XstreamCredentials
 
-    @State private var heroBannerVODs: [XstreamVOD] = []
-    @State private var popularVODs: [XstreamVOD] = []
-    @State private var recentVODs: [XstreamVOD] = []
-    @State private var series: [XstreamSeries] = []
-    @State private var heroBannerIndex: Int = 0
-    @State private var heroRotationTask: Task<Void, Never>?
-    @State private var isLoading = true
+    @State private var heroBannerIndex = 0
     @State private var selectedVOD: XstreamVOD?
 
-    private let service: XstreamService
-
-    init(credentials: XstreamCredentials, player: PlayerCore) {
-        self.credentials = credentials
-        self.player = player
-        self.service = XstreamService(credentials: credentials)
-    }
+    private let timer = Timer.publish(every: 6, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 0) {
-                if isLoading {
-                    loadingPlaceholder
-                } else {
-                    if !heroBannerVODs.isEmpty {
-                        heroBanner
+        ZStack(alignment: .topLeading) {
+            Color.black.ignoresSafeArea()
+
+            if viewModel.isLoading && viewModel.heroBannerVODs.isEmpty {
+                loadingSkeleton
+            } else {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if !viewModel.heroBannerVODs.isEmpty {
+                            heroBanner
+                        }
+                        VStack(alignment: .leading, spacing: 32) {
+                            if !viewModel.popularVODs.isEmpty {
+                                ShelfRow(
+                                    title: "Popularne teraz",
+                                    items: viewModel.popularVODs,
+                                    player: player,
+                                    credentials: credentials
+                                )
+                            }
+                            if !viewModel.topSeries.isEmpty {
+                                SeriesShelfRow(
+                                    title: "Seriale",
+                                    items: viewModel.topSeries,
+                                    player: player,
+                                    credentials: credentials
+                                )
+                            }
+                            if !viewModel.recentVODs.isEmpty {
+                                ShelfRow(
+                                    title: "Ostatnio dodane",
+                                    items: viewModel.recentVODs,
+                                    player: player,
+                                    credentials: credentials
+                                )
+                            }
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.top, 32)
+                        .padding(.bottom, 40)
                     }
-                    shelves
-                        .padding(.top, 24)
                 }
             }
         }
-        .background(Color(red: 0.102, green: 0.102, blue: 0.102).ignoresSafeArea())
-        .task { await loadContent() }
-        .onDisappear { heroRotationTask?.cancel() }
+        .onReceive(timer) { _ in
+            guard !viewModel.heroBannerVODs.isEmpty else { return }
+            withAnimation(.easeInOut(duration: 0.8)) {
+                heroBannerIndex = (heroBannerIndex + 1) % viewModel.heroBannerVODs.count
+            }
+        }
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
         }
@@ -52,189 +72,166 @@ struct HomeView: View {
     // MARK: - Hero Banner
 
     private var heroBanner: some View {
-        let vod = heroBannerVODs[heroBannerIndex]
+        let vod = viewModel.heroBannerVODs[min(heroBannerIndex, viewModel.heroBannerVODs.count - 1)]
         return ZStack(alignment: .bottomLeading) {
-            // Poster background
-            AsyncImage(url: vod.streamIcon.flatMap(URL.init(string:))) { phase in
+            AsyncImage(url: vod.streamIcon.flatMap(URL.init)) { phase in
                 switch phase {
-                case .success(let image):
-                    image.resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .blur(radius: 2)
+                case .success(let img):
+                    img.resizable().aspectRatio(contentMode: .fill)
                 default:
-                    Color(red: 0.165, green: 0.165, blue: 0.165)
+                    Color(.sRGB, red: 0.12, green: 0.12, blue: 0.12, opacity: 1)
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 320)
+            .frame(height: 420)
             .clipped()
 
-            // Gradient overlay
             LinearGradient(
-                colors: [.clear, Color(red: 0.102, green: 0.102, blue: 0.102).opacity(0.7), Color(red: 0.102, green: 0.102, blue: 0.102)],
-                startPoint: .top,
-                endPoint: .bottom
+                colors: [.clear, Color.black.opacity(0.5), Color.black],
+                startPoint: .top, endPoint: .bottom
             )
-            .frame(height: 320)
+            .frame(height: 420)
 
-            // Content
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text(vod.name)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.system(size: 42, weight: .bold))
                     .foregroundStyle(.white)
+                    .shadow(radius: 4)
                     .lineLimit(2)
 
+                if let rating = vod.rating, !rating.isEmpty, rating != "0" {
+                    Label(rating, systemImage: "star.fill")
+                        .foregroundStyle(.yellow)
+                        .font(.system(size: 14, weight: .medium))
+                }
+
                 HStack(spacing: 12) {
-                    Button {
-                        let channel = vod.toChannel(credentials: credentials)
-                        player.play(channel)
-                    } label: {
+                    Button(action: { player.play(vod.toChannel(credentials: credentials)) }) {
                         Label("Odtwórz", systemImage: "play.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.accentColor)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.white)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                     .buttonStyle(.plain)
 
-                    Button {
-                        selectedVOD = vod
-                    } label: {
+                    Button(action: { selectedVOD = vod }) {
                         Label("Info", systemImage: "info.circle")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
                             .background(Color.white.opacity(0.2))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                     .buttonStyle(.plain)
                 }
 
-                // Page indicator
-                if heroBannerVODs.count > 1 {
-                    HStack(spacing: 6) {
-                        ForEach(heroBannerVODs.indices, id: \.self) { i in
-                            Circle()
-                                .fill(i == heroBannerIndex ? Color.white : Color.white.opacity(0.35))
-                                .frame(width: i == heroBannerIndex ? 8 : 6,
-                                       height: i == heroBannerIndex ? 8 : 6)
-                                .animation(.easeInOut(duration: 0.25), value: heroBannerIndex)
+                HStack(spacing: 6) {
+                    ForEach(0..<viewModel.heroBannerVODs.count, id: \.self) { i in
+                        Circle()
+                            .fill(i == heroBannerIndex ? Color.white : Color.white.opacity(0.4))
+                            .frame(
+                                width: i == heroBannerIndex ? 10 : 6,
+                                height: i == heroBannerIndex ? 10 : 6
+                            )
+                            .animation(.spring(duration: 0.3), value: heroBannerIndex)
+                    }
+                }
+            }
+            .padding(.horizontal, 40)
+            .padding(.bottom, 36)
+        }
+        .animation(.easeInOut(duration: 0.6), value: heroBannerIndex)
+    }
+
+    // MARK: - Loading skeleton
+
+    private var loadingSkeleton: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            RoundedRectangle(cornerRadius: 0)
+                .fill(Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1))
+                .frame(maxWidth: .infinity)
+                .frame(height: 420)
+                .shimmer()
+
+            VStack(alignment: .leading, spacing: 32) {
+                ForEach(0..<3, id: \.self) { _ in
+                    VStack(alignment: .leading, spacing: 12) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1))
+                            .frame(width: 200, height: 22)
+                            .shimmer()
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(0..<8, id: \.self) { _ in
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color(.sRGB, red: 0.18, green: 0.18, blue: 0.18, opacity: 1))
+                                        .frame(width: 130, height: 195)
+                                        .shimmer()
+                                }
+                            }
                         }
                     }
                 }
             }
-            .padding(.horizontal, 28)
-            .padding(.bottom, 24)
+            .padding(.horizontal, 24)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 320)
-        .clipped()
     }
+}
 
-    // MARK: - Shelves
+// MARK: - ShelfRow (VOD)
 
-    private var shelves: some View {
-        VStack(alignment: .leading, spacing: 28) {
-            if !popularVODs.isEmpty {
-                shelf(title: "🔥 Popularne", items: popularVODs)
-            }
-            if !recentVODs.isEmpty {
-                shelf(title: "🎬 Ostatnio dodane", items: recentVODs)
-            }
-            if !series.isEmpty {
-                seriesShelf
-            }
-        }
-        .padding(.bottom, 32)
-    }
+struct ShelfRow: View {
+    let title: String
+    let items: [XstreamVOD]
+    @Bindable var player: PlayerCore
+    let credentials: XstreamCredentials
 
-    private func shelf(title: String, items: [XstreamVOD]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+    @State private var selectedVOD: XstreamVOD?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.title2.bold())
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(.white)
-                .padding(.horizontal, 20)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                LazyHStack(spacing: 12) {
                     ForEach(items) { vod in
-                        VODCard(vod: vod, credentials: credentials, player: player)
+                        VODCard(vod: vod)
                             .onTapGesture { selectedVOD = vod }
                     }
                 }
-                .padding(.horizontal, 20)
             }
         }
+        .sheet(item: $selectedVOD) { vod in
+            VODDetailSheet(vod: vod, credentials: credentials, player: player)
+        }
     }
+}
 
-    private var seriesShelf: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("📺 Seriale")
-                .font(.title2.bold())
+// MARK: - SeriesShelfRow
+
+struct SeriesShelfRow: View {
+    let title: String
+    let items: [XstreamSeries]
+    @Bindable var player: PlayerCore
+    let credentials: XstreamCredentials
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(.white)
-                .padding(.horizontal, 20)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(series) { item in
-                        SeriesCard(series: item)
-                    }
-                }
-                .padding(.horizontal, 20)
-            }
-        }
-    }
-
-    private var loadingPlaceholder: some View {
-        VStack {
-            ProgressView()
-                .scaleEffect(1.4)
-                .tint(.white)
-            Text("Ładowanie…")
-                .foregroundStyle(.secondary)
-                .padding(.top, 12)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .frame(height: 400)
-    }
-
-    // MARK: - Data loading
-
-    private func loadContent() async {
-        isLoading = true
-        async let vodStreams = (try? service.vodStreams()) ?? []
-        async let seriesList = (try? service.seriesList()) ?? []
-
-        let (allVODs, allSeries) = await (vodStreams, seriesList)
-
-        // Sort by rating for "Popular" shelf
-        let sorted = allVODs.sorted {
-            (Double($0.rating ?? "") ?? 0) > (Double($1.rating ?? "") ?? 0)
-        }
-
-        heroBannerVODs = Array(sorted.prefix(3))
-        popularVODs = Array(sorted.prefix(15))
-        // "Recently added" — last 15 items in fetch order (server usually returns newest last)
-        recentVODs = Array(allVODs.suffix(15).reversed())
-        series = Array(allSeries.prefix(10))
-        isLoading = false
-
-        startHeroRotation()
-    }
-
-    private func startHeroRotation() {
-        guard heroBannerVODs.count > 1 else { return }
-        heroRotationTask?.cancel()
-        heroRotationTask = Task {
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(5))
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    withAnimation(.easeInOut(duration: 0.5)) {
-                        heroBannerIndex = (heroBannerIndex + 1) % heroBannerVODs.count
+                LazyHStack(spacing: 12) {
+                    ForEach(items) { series in
+                        SeriesCard(series: series)
                     }
                 }
             }
@@ -244,126 +241,134 @@ struct HomeView: View {
 
 // MARK: - VODCard
 
-private struct VODCard: View {
+struct VODCard: View {
     let vod: XstreamVOD
-    let credentials: XstreamCredentials
-    @Bindable var player: PlayerCore
-    @State private var isHovering = false
+    @State private var isHovered = false
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            AsyncImage(url: vod.streamIcon.flatMap(URL.init(string:))) { phase in
+        ZStack(alignment: .bottom) {
+            AsyncImage(url: vod.streamIcon.flatMap(URL.init)) { phase in
                 switch phase {
-                case .success(let image):
-                    image.resizable().aspectRatio(contentMode: .fill)
-                default:
-                    Color(red: 0.165, green: 0.165, blue: 0.165)
-                        .overlay(
-                            Image(systemName: "film")
-                                .font(.system(size: 28))
-                                .foregroundStyle(.white.opacity(0.3))
-                        )
+                case .success(let img):
+                    img.resizable().aspectRatio(contentMode: .fill)
+                case .failure:
+                    placeholderCard
+                case .empty:
+                    Color(.sRGB, red: 0.18, green: 0.18, blue: 0.18, opacity: 1)
+                @unknown default:
+                    Color(.sRGB, red: 0.18, green: 0.18, blue: 0.18, opacity: 1)
                 }
             }
-            .frame(width: 160, height: 240)
-            .clipped()
+            .frame(width: 130, height: 195)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            if isHovering {
+            if isHovered {
                 LinearGradient(
                     colors: [.clear, .black.opacity(0.85)],
-                    startPoint: .center,
-                    endPoint: .bottom
+                    startPoint: .center, endPoint: .bottom
                 )
+                .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 4) {
-                    if let rating = vod.rating, !rating.isEmpty, Double(rating) != nil {
-                        HStack(spacing: 2) {
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 9))
-                                .foregroundStyle(.yellow)
-                            Text(rating)
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(.white)
-                        }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Color.black.opacity(0.6))
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
-                    }
+                    Spacer()
                     Text(vod.name)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.white)
                         .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.white)
                 }
-                .padding(8)
-                .transition(.opacity)
+                .padding(10)
+                .frame(width: 130, height: 195, alignment: .bottomLeading)
             }
         }
-        .frame(width: 160, height: 240)
+        .frame(width: 130, height: 195)
+        .scaleEffect(isHovered ? 1.05 : 1.0)
+        .shadow(color: .black.opacity(isHovered ? 0.5 : 0.2), radius: isHovered ? 12 : 4)
+        .animation(.spring(duration: 0.2), value: isHovered)
+        .onHover { isHovered = $0 }
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .scaleEffect(isHovering ? 1.04 : 1.0)
-        .shadow(color: .black.opacity(isHovering ? 0.5 : 0.2), radius: isHovering ? 12 : 4)
-        .animation(.easeInOut(duration: 0.18), value: isHovering)
-        .onHover { isHovering = $0 }
+    }
+
+    private var placeholderCard: some View {
+        ZStack {
+            Color(.sRGB, red: 0.18, green: 0.18, blue: 0.18, opacity: 1)
+            VStack(spacing: 8) {
+                Image(systemName: "film")
+                    .font(.system(size: 32))
+                    .foregroundStyle(.white.opacity(0.3))
+                Text(vod.name)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .lineLimit(3)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(8)
+        }
     }
 }
 
 // MARK: - SeriesCard
 
-private struct SeriesCard: View {
+struct SeriesCard: View {
     let series: XstreamSeries
-    @State private var isHovering = false
+    @State private var isHovered = false
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            AsyncImage(url: series.cover.flatMap(URL.init(string:))) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().aspectRatio(contentMode: .fill)
-                default:
-                    Color(red: 0.165, green: 0.165, blue: 0.165)
-                        .overlay(
-                            Image(systemName: "tv")
-                                .font(.system(size: 28))
-                                .foregroundStyle(.white.opacity(0.3))
-                        )
-                }
-            }
-            .frame(width: 160, height: 240)
-            .clipped()
-
-            if isHovering {
-                LinearGradient(
-                    colors: [.clear, .black.opacity(0.85)],
-                    startPoint: .center,
-                    endPoint: .bottom
-                )
-
-                Text(series.name)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-                    .padding(8)
-                    .transition(.opacity)
+        AsyncImage(url: series.cover.flatMap(URL.init)) { phase in
+            switch phase {
+            case .success(let img):
+                img.resizable().aspectRatio(contentMode: .fill)
+            default:
+                Color(.sRGB, red: 0.18, green: 0.18, blue: 0.18, opacity: 1)
             }
         }
-        .frame(width: 160, height: 240)
+        .frame(width: 130, height: 195)
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .scaleEffect(isHovering ? 1.04 : 1.0)
-        .shadow(color: .black.opacity(isHovering ? 0.5 : 0.2), radius: isHovering ? 12 : 4)
-        .animation(.easeInOut(duration: 0.18), value: isHovering)
-        .onHover { isHovering = $0 }
+        .scaleEffect(isHovered ? 1.05 : 1.0)
+        .shadow(color: .black.opacity(isHovered ? 0.5 : 0.2), radius: isHovered ? 12 : 4)
+        .animation(.spring(duration: 0.2), value: isHovered)
+        .onHover { isHovered = $0 }
+    }
+}
+
+// MARK: - Shimmer modifier
+
+extension View {
+    func shimmer() -> some View {
+        self.modifier(ShimmerModifier())
+    }
+}
+
+struct ShimmerModifier: ViewModifier {
+    @State private var phase: CGFloat = -1
+
+    func body(content: Content) -> some View {
+        content.overlay(
+            GeometryReader { _ in
+                LinearGradient(
+                    colors: [.clear, .white.opacity(0.12), .clear],
+                    startPoint: .init(x: phase, y: 0),
+                    endPoint: .init(x: phase + 0.5, y: 0)
+                )
+            }
+        )
+        .onAppear {
+            withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
+                phase = 1.5
+            }
+        }
     }
 }
 
 // MARK: - WelcomeView
 
-/// Shown instead of HomeView when no playlist has been added yet.
 struct WelcomeView: View {
     @State private var showAddPlaylist = false
     @State private var gradientOffset: CGFloat = 0
     @Environment(\.modelContext) private var modelContext
-    @State private var addedPlaylist: PlaylistRecord?
 
     var onPlaylistAdded: (PlaylistRecord) -> Void
 
@@ -419,7 +424,7 @@ struct WelcomeView: View {
             .padding(40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.051, green: 0.051, blue: 0.051))
+        .background(Color(.sRGB, red: 0.051, green: 0.051, blue: 0.051, opacity: 1))
         .sheet(isPresented: $showAddPlaylist) {
             AddPlaylistSheet { playlist in
                 onPlaylistAdded(playlist)
@@ -451,5 +456,3 @@ struct WelcomeView: View {
         gradientOffset = 1
     }
 }
-
-

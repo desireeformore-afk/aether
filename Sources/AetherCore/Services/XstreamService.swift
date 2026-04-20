@@ -289,6 +289,45 @@ public actor XstreamService {
         return result
     }
 
+    /// Loads VODs from the first few clean categories — fast home screen preview.
+    /// Much faster than loading all streams; fetches only ~1–2 MB vs 60 MB.
+    public func vodStreamsFast() async throws -> [XstreamVOD] {
+        let cats = try await vodCategories()
+        let cleanCats = cats.filter { cat in
+            let n = cat.name.lowercased()
+            return !n.contains("netflix") && !n.contains("apple") &&
+                   !n.contains("amazon") && !n.contains("disney") &&
+                   !n.contains("hbo") && !n.contains("premium") &&
+                   !cat.name.isEmpty &&
+                   cat.name.unicodeScalars.allSatisfy({ $0.value < 0x0600 })
+        }
+        let topCats = Array(cleanCats.prefix(3))
+        guard !topCats.isEmpty else {
+            if let first = cats.first {
+                return (try? await vodStreams(categoryID: first.id)) ?? []
+            }
+            return []
+        }
+        async let r0 = (try? vodStreams(categoryID: topCats[0].id)) ?? []
+        async let r1 = topCats.count > 1 ? ((try? vodStreams(categoryID: topCats[1].id)) ?? []) : []
+        async let r2 = topCats.count > 2 ? ((try? vodStreams(categoryID: topCats[2].id)) ?? []) : []
+        return await r0 + r1 + r2
+    }
+
+    /// Searches cached VODs by title (case-insensitive). Returns all if query is empty.
+    public func searchVODs(query: String) -> [XstreamVOD] {
+        let q = query.lowercased().trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return cachedVods }
+        return cachedVods.filter { $0.name.lowercased().contains(q) }
+    }
+
+    /// Searches cached series by title (case-insensitive). Returns all if query is empty.
+    public func searchSeries(query: String) -> [XstreamSeries] {
+        let q = query.lowercased().trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return cachedSeries }
+        return cachedSeries.filter { $0.name.lowercased().contains(q) }
+    }
+
     // MARK: - Series
 
     /// Fetches all series categories.
