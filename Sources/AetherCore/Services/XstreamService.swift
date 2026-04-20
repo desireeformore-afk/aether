@@ -106,6 +106,7 @@ public struct XstreamVOD: Decodable, Sendable, Identifiable {
     public let name: String
     public let streamIcon: String?
     public let categoryID: String?
+    public let categoryName: String?
     public let containerExtension: String?
     public let rating: String?
 
@@ -114,6 +115,7 @@ public struct XstreamVOD: Decodable, Sendable, Identifiable {
         case name
         case streamIcon = "stream_icon"
         case categoryID = "category_id"
+        case categoryName = "category_name"
         case containerExtension = "container_extension"
         case rating
     }
@@ -162,12 +164,14 @@ public struct XstreamSeries: Decodable, Sendable, Identifiable, Hashable {
     public let releaseDate: String?
     public let rating: String?
     public let categoryID: String?
+    public let categoryName: String?
 
     enum CodingKeys: String, CodingKey {
         case id = "series_id"
         case name, cover, plot, cast, director, genre, rating
         case releaseDate = "releaseDate"
         case categoryID = "category_id"
+        case categoryName = "category_name"
     }
 }
 
