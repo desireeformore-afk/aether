@@ -41,7 +41,7 @@ struct HomeView: View {
                 }
             }
         }
-        .background(Color(hex: "#1A1A1A").ignoresSafeArea())
+        .background(Color(red: 0.102, green: 0.102, blue: 0.102).ignoresSafeArea())
         .task { await loadContent() }
         .onDisappear { heroRotationTask?.cancel() }
         .sheet(item: $selectedVOD) { vod in
@@ -62,7 +62,7 @@ struct HomeView: View {
                         .aspectRatio(contentMode: .fill)
                         .blur(radius: 2)
                 default:
-                    Color(hex: "#2A2A2A")
+                    Color(red: 0.165, green: 0.165, blue: 0.165)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -71,7 +71,7 @@ struct HomeView: View {
 
             // Gradient overlay
             LinearGradient(
-                colors: [.clear, Color(hex: "#1A1A1A").opacity(0.7), Color(hex: "#1A1A1A")],
+                colors: [.clear, Color(red: 0.102, green: 0.102, blue: 0.102).opacity(0.7), Color(red: 0.102, green: 0.102, blue: 0.102)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -257,7 +257,7 @@ private struct VODCard: View {
                 case .success(let image):
                     image.resizable().aspectRatio(contentMode: .fill)
                 default:
-                    Color(hex: "#2A2A2A")
+                    Color(red: 0.165, green: 0.165, blue: 0.165)
                         .overlay(
                             Image(systemName: "film")
                                 .font(.system(size: 28))
@@ -321,7 +321,7 @@ private struct SeriesCard: View {
                 case .success(let image):
                     image.resizable().aspectRatio(contentMode: .fill)
                 default:
-                    Color(hex: "#2A2A2A")
+                    Color(red: 0.165, green: 0.165, blue: 0.165)
                         .overlay(
                             Image(systemName: "tv")
                                 .font(.system(size: 28))
@@ -419,7 +419,7 @@ struct WelcomeView: View {
             .padding(40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "#0D0D0D"))
+        .background(Color(red: 0.051, green: 0.051, blue: 0.051))
         .sheet(isPresented: $showAddPlaylist) {
             AddPlaylistSheet { playlist in
                 onPlaylistAdded(playlist)
