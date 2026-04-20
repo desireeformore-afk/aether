@@ -116,11 +116,7 @@ struct SeriesDetailView: View {
 
     private func playEpisode(_ ep: XstreamEpisode) {
         let ext = ep.containerExtension ?? "mp4"
-        let url = credentials.baseURL
-            .appendingPathComponent("series")
-            .appendingPathComponent(credentials.username)
-            .appendingPathComponent(credentials.password)
-            .appendingPathComponent("\(ep.id).\(ext)")
+        let url = credentials.streamURL(type: "series", id: ep.id, ext: ext)
 
         let channel = Channel(
             id: UUID(),
@@ -128,7 +124,8 @@ struct SeriesDetailView: View {
             streamURL: url,
             logoURL: series.cover.flatMap(URL.init(string:)),
             groupTitle: "Series",
-            epgId: nil
+            epgId: nil,
+            contentType: .series
         )
         Task { @MainActor in
             player.play(channel)

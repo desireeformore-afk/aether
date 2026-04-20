@@ -23,6 +23,17 @@ public struct XstreamCredentials: Sendable {
                 URLQueryItem(name: "password", value: password)
             ])
     }
+
+    /// Builds a stream URL without percent-encoding credentials.
+    /// `appendingPathComponent` encodes special chars (e.g. `@` → `%40`),
+    /// which breaks servers that expect raw credentials in the path.
+    func streamURL(type: String, id: Int, ext: String) -> URL {
+        let base = baseURL.absoluteString.hasSuffix("/")
+            ? String(baseURL.absoluteString.dropLast())
+            : baseURL.absoluteString
+        let raw = "\(base)/\(type)/\(username)/\(password)/\(id).\(ext)"
+        return URL(string: raw) ?? baseURL
+    }
 }
 
 /// Account info returned by `/player_api.php` (login response).
@@ -73,11 +84,7 @@ public struct XstreamStream: Decodable, Sendable, Identifiable {
     /// Converts to a `Channel` given the credentials (to build the stream URL).
     public func toChannel(credentials: XstreamCredentials) -> Channel {
         let ext = containerExtension ?? "ts"
-        let streamURL = credentials.baseURL
-            .appendingPathComponent("live")
-            .appendingPathComponent(credentials.username)
-            .appendingPathComponent(credentials.password)
-            .appendingPathComponent("\(id).\(ext)")
+        let streamURL = credentials.streamURL(type: "live", id: id, ext: ext)
 
         // Deterministic UUID from streamID so Favorites/navigation survive re-fetch.
         let deterministicID = UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", id))") ?? UUID()
@@ -114,11 +121,7 @@ public struct XstreamVOD: Decodable, Sendable, Identifiable {
     /// Converts to a `Channel` (VOD playback URL).
     public func toChannel(credentials: XstreamCredentials) -> Channel {
         let ext = containerExtension ?? "mp4"
-        let streamURL = credentials.baseURL
-            .appendingPathComponent("movie")
-            .appendingPathComponent(credentials.username)
-            .appendingPathComponent(credentials.password)
-            .appendingPathComponent("\(id).\(ext)")
+        let streamURL = credentials.streamURL(type: "movie", id: id, ext: ext)
 
         // Deterministic UUID from stream_id (VOD namespace offset: 0x800000000000).
         let vodID = id + 0x800000000000
@@ -130,7 +133,8 @@ public struct XstreamVOD: Decodable, Sendable, Identifiable {
             streamURL: streamURL,
             logoURL: streamIcon.flatMap(URL.init(string:)),
             groupTitle: categoryID ?? "",
-            epgId: nil
+            epgId: nil,
+            contentType: .movie
         )
     }
 }
@@ -238,7 +242,7 @@ public actor XstreamService {
 
     /// Fetches all live stream categories.
     public func liveCategories() async throws -> [XstreamCategory] {
-        try await get(queryItems: [
+        try await getArray(queryItems: [
             URLQueryItem(name: "action", value: "get_live_categories")
         ])
     }
@@ -249,7 +253,7 @@ public actor XstreamService {
         if let cid = categoryID {
             items.append(URLQueryItem(name: "category_id", value: cid))
         }
-        return try await get(queryItems: items)
+        return try await getArray(queryItems: items)
     }
 
     /// Returns all live streams as `[Channel]`.
@@ -262,7 +266,7 @@ public actor XstreamService {
 
     /// Fetches all VOD categories.
     public func vodCategories() async throws -> [XstreamCategory] {
-        try await get(queryItems: [
+        try await getArray(queryItems: [
             URLQueryItem(name: "action", value: "get_vod_categories")
         ])
     }
@@ -273,14 +277,14 @@ public actor XstreamService {
         if let cid = categoryID {
             items.append(URLQueryItem(name: "category_id", value: cid))
         }
-        return try await get(queryItems: items)
+        return try await getArray(queryItems: items)
     }
 
     // MARK: - Series
 
     /// Fetches all series categories.
     public func seriesCategories() async throws -> [XstreamSeriesCategory] {
-        try await get(queryItems: [
+        try await getArray(queryItems: [
             URLQueryItem(name: "action", value: "get_series_categories")
         ])
     }
@@ -291,7 +295,7 @@ public actor XstreamService {
         if let cid = categoryID {
             items.append(URLQueryItem(name: "category_id", value: cid))
         }
-        return try await get(queryItems: items)
+        return try await getArray(queryItems: items)
     }
 
     /// Fetches full info + episode list for a series.
@@ -330,6 +334,40 @@ public actor XstreamService {
     // MARK: - Private
 
     private func get<T: Decodable>(queryItems: [URLQueryItem]) async throws -> T {
+        let data = try await fetch(queryItems: queryItems)
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            let preview = String(data: data.prefix(200), encoding: .utf8) ?? "<binary>"
+            print("[XstreamService] Decode error for \(T.self): \(error)")
+            print("[XstreamService] Raw response: \(preview)")
+            throw XstreamError.decodingError(error)
+        }
+    }
+
+    /// Variant for list endpoints: returns [] when the server responds with
+    /// `false` or `null` instead of a JSON array (common on panels with no
+    /// VOD/Series content enabled).
+    private func getArray<T: Decodable>(queryItems: [URLQueryItem]) async throws -> [T] {
+        let data = try await fetch(queryItems: queryItems)
+        // Xtream panels return the boolean `false` or `null` when the list is
+        // empty — neither is decodable as [T], so treat them as empty arrays.
+        if let firstByte = data.first,
+           firstByte == UInt8(ascii: "f") || firstByte == UInt8(ascii: "n") {
+            print("[XstreamService] API returned non-array (false/null) — treating as empty list")
+            return []
+        }
+        do {
+            return try JSONDecoder().decode([T].self, from: data)
+        } catch {
+            let preview = String(data: data.prefix(200), encoding: .utf8) ?? "<binary>"
+            print("[XstreamService] Decode error for [\(T.self)]: \(error)")
+            print("[XstreamService] Raw response: \(preview)")
+            throw XstreamError.decodingError(error)
+        }
+    }
+
+    private func fetch(queryItems: [URLQueryItem]) async throws -> Data {
         var components = URLComponents(url: credentials.apiBase, resolvingAgainstBaseURL: false)!
         var existing = components.queryItems ?? []
         existing.append(contentsOf: queryItems)
@@ -346,12 +384,7 @@ public actor XstreamService {
                 (response as? HTTPURLResponse)?.statusCode ?? -1
             )
         }
-
-        do {
-            return try JSONDecoder().decode(T.self, from: data)
-        } catch {
-            throw XstreamError.decodingError(error)
-        }
+        return data
     }
 }
 
