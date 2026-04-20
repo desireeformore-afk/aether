@@ -181,19 +181,19 @@ extension AetherApp {
                 for item in items {
                     let ext = item.pathExtension.lowercased()
                     let base = item.deletingPathExtension().lastPathComponent.lowercased()
-                    if [\"sqlite\", \"store\", \"wal\", \"shm\"].contains(ext)
-                        || base.hasSuffix(\"-wal\") || base.hasSuffix(\"-shm\") {
+                    if ["sqlite", "store", "wal", "shm"].contains(ext)
+                        || base.hasSuffix("-wal") || base.hasSuffix("-shm") {
                         try? fm.removeItem(at: item)
                     }
                 }
             }
             // Also delete WAL/SHM suffixed variants (aether.store-wal, aether.store-shm)
-            let storeWAL = storeURL.appendingPathExtension(\"-wal\")
-            let storeSHM = storeURL.appendingPathExtension(\"-shm\")
+            let storeWAL = storeURL.appendingPathExtension("-wal")
+            let storeSHM = storeURL.appendingPathExtension("-shm")
             try? fm.removeItem(at: storeWAL)
             try? fm.removeItem(at: storeSHM)
             UserDefaults.standard.set(true, forKey: resetKey)
-            print(\"[AetherDB] Nuclear store reset (v5) complete\")
+            print("[AetherDB] Nuclear store reset (v5) complete")
             return
         }
 
