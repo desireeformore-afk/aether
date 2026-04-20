@@ -9,6 +9,7 @@ struct GlobalContentSearchView: View {
     @State private var vodStreams: [XstreamVOD] = []
     @State private var series: [XstreamSeries] = []
     @State private var isLoading = false
+    @State private var isLoaded = false
     @State private var errorMessage: String?
     @State private var filterType: ContentType? = nil
     @State private var selectedSeries: XstreamSeries?
@@ -28,6 +29,17 @@ struct GlobalContentSearchView: View {
     }
 
     private func loadContent() async {
+        // Use cached data if already loaded
+        let cachedV = await xstreamService.cachedVods
+        let cachedS = await xstreamService.cachedSeries
+        if !cachedV.isEmpty || !cachedS.isEmpty {
+            vodStreams = cachedV
+            series = cachedS
+            isLoaded = true
+            return
+        }
+        guard !isLoaded else { return }
+
         isLoading = true
         errorMessage = nil
 
@@ -38,6 +50,7 @@ struct GlobalContentSearchView: View {
             let (vod, seriesData) = try await (vodTask, seriesTask)
             vodStreams = vod
             series = seriesData
+            isLoaded = true
         } catch {
             errorMessage = "Failed to load content: \(error.localizedDescription)"
         }

@@ -239,8 +239,6 @@ public final class LocalHLSProxy: @unchecked Sendable {
             "-reconnect_streamed", "1",
             "-reconnect_delay_max", "5",
             "-max_delay", "500000",
-            // Tolerate non-standard HTTP status codes (e.g. 458) and corrupt packets
-            "-ignore_invalid_packets", "1",
         ]
 
         if isVOD {

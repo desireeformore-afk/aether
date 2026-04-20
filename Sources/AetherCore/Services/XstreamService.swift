@@ -221,6 +221,9 @@ public actor XstreamService {
     private let credentials: XstreamCredentials
     private let session: URLSession
 
+    public var cachedVods: [XstreamVOD] = []
+    public var cachedSeries: [XstreamSeries] = []
+
     public init(credentials: XstreamCredentials, session: URLSession = .shared) {
         self.credentials = credentials
         self.session = session
@@ -277,7 +280,9 @@ public actor XstreamService {
         if let cid = categoryID {
             items.append(URLQueryItem(name: "category_id", value: cid))
         }
-        return try await getArray(queryItems: items)
+        let result: [XstreamVOD] = try await getArray(queryItems: items)
+        if categoryID == nil { cachedVods = result }
+        return result
     }
 
     // MARK: - Series
@@ -295,7 +300,9 @@ public actor XstreamService {
         if let cid = categoryID {
             items.append(URLQueryItem(name: "category_id", value: cid))
         }
-        return try await getArray(queryItems: items)
+        let result: [XstreamSeries] = try await getArray(queryItems: items)
+        if categoryID == nil { cachedSeries = result }
+        return result
     }
 
     /// Fetches full info + episode list for a series.

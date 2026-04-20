@@ -137,6 +137,12 @@ extension AetherApp {
         ).first!.appendingPathComponent("Aether")
         try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
         let storeURL = appSupport.appendingPathComponent("aether.store")
+
+        // Purge stale persistent history so CoreData stops logging
+        // "Persistent History has to be truncated due to removed entities".
+        // This happens when entities were removed+re-added during development.
+        purgePersistentHistory(storeURL: storeURL)
+
         let config = ModelConfiguration(url: storeURL)
         do {
             let container = try ModelContainer(
@@ -163,6 +169,30 @@ extension AetherApp {
             }
         }
     }()
+
+    /// Truncates all persistent history transactions so stale entity-removal
+    /// warnings don't appear when SwiftData models are added/removed during dev.
+    private static func purgePersistentHistory(storeURL: URL) {
+        let mom = NSManagedObjectModel()
+        let psc = NSPersistentStoreCoordinator(managedObjectModel: mom)
+        let options: [String: Any] = [
+            NSPersistentHistoryTrackingKey: true as NSNumber,
+            NSPersistentStoreRemoteChangeNotificationPostOptionKey: false as NSNumber
+        ]
+        guard let store = try? psc.addPersistentStore(
+            ofType: NSSQLiteStoreType,
+            configurationName: nil,
+            at: storeURL,
+            options: options
+        ) else { return }
+        let ctx = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
+        ctx.persistentStoreCoordinator = psc
+        ctx.performAndWait {
+            let truncate = NSPersistentHistoryChangeRequest.deleteHistory(before: Date())
+            _ = try? ctx.execute(truncate)
+        }
+        try? psc.remove(store)
+    }
 }
 
 // MARK: - HistoryCoordinator
