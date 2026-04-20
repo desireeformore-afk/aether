@@ -179,8 +179,8 @@ extension AetherApp {
     /// Removes the SQLite store if it contains entities that no longer exist in the current schema.
     /// Prevents NSCocoaErrorDomain 134100 (incompatible model) on first launch after a schema change.
     private static func resetStoreIfIncompatible(storeURL: URL) {
-        // Nuclear reset (v5): wipe all store files once after schema overhaul
-        let resetKey = "store_reset_v5"
+        // Nuclear reset (v6): wipe all store files once after schema overhaul
+        let resetKey = "store_reset_v6"
         if !UserDefaults.standard.bool(forKey: resetKey) {
             let appSupport = storeURL.deletingLastPathComponent()
             let fm = FileManager.default
@@ -222,7 +222,7 @@ extension AetherApp {
         let storeHashes = metadata["NSStoreModelVersionHashes"] as? [String: Any] ?? [:]
         let knownEntities: Set<String> = ["PlaylistRecord", "FavoriteRecord", "WatchHistoryRecord",
                                           "ChannelRecord", "MovieRecord", "SeriesRecord",
-                                          "WatchProgressRecord"]
+                                          "WatchProgressRecord", "WatchHistoryRecord"]
         let storeEntities = Set(storeHashes.keys)
         let unknownEntities = storeEntities.subtracting(knownEntities)
 
@@ -272,6 +272,18 @@ final class HistoryCoordinator {
             )
             ctx.insert(record)
             Self.trimHistory(context: ctx)
+        }
+
+        playerCore.onProgressUpdate = { [weak self] channelID, watched, total in
+            guard let ctx = self?.modelContext else { return }
+            let descriptor = FetchDescriptor<WatchHistoryRecord>(
+                sortBy: [SortDescriptor(\.watchedAt, order: .reverse)]
+            )
+            guard let records = try? ctx.fetch(descriptor),
+                  let record = records.first(where: { $0.channelID == channelID }) else { return }
+            record.watchedSecondsDouble = watched
+            record.totalDurationSeconds = total
+            try? ctx.save()
         }
     }
 

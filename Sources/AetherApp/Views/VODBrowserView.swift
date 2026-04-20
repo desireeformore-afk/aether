@@ -23,6 +23,8 @@ struct VODBrowserView: View {
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
+                        WatchHistoryShelf(player: player)
+
                         if !heroBannerItems.isEmpty {
                             HeroBanner(items: heroBannerItems)
                                 .padding(.bottom, -20)

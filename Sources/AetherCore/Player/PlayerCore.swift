@@ -123,11 +123,15 @@ public final class PlayerCore {
     /// Used to show Series and VOD browser buttons.
     public var currentXstreamCredentials: XstreamCredentials?
 
-    // MARK: - Watch history callback
+    // MARK: - Watch history callbacks
 
     /// Called when a watch session ends (channel switched or stopped).
     /// Parameters: (channel, startDate, durationSeconds)
     public var onWatchSessionEnd: ((Channel, Date, Int) -> Void)?
+
+    /// Called every 15 seconds during playback to update watch progress.
+    /// Parameters: (channelID, watchedSeconds, durationSeconds)
+    public var onProgressUpdate: ((UUID, Double, Double) -> Void)?
 
     // MARK: - Internal
 
@@ -150,6 +154,8 @@ public final class PlayerCore {
 
     /// Tracks when the current channel started playing.
     private var watchStartTime: Date?
+
+    private var progressTimer: Timer?
 
     public init() {
         // Register HTTP bypass protocol to allow arbitrary HTTP streams (bypasses ATS)
@@ -196,6 +202,7 @@ public final class PlayerCore {
         // Persist before switching
         lastChannelStore.save(channel)
         // End previous watch session before switching
+        stopProgressTracking()
         endWatchSession()
 
         // Clean up previous player item and observers
@@ -317,6 +324,7 @@ public final class PlayerCore {
 
     /// Stops playback and clears the current channel.
     public func stop() {
+        stopProgressTracking()
         endWatchSession()
         removeRetryObservers()
         statusObserver?.cancel()
@@ -608,6 +616,26 @@ public final class PlayerCore {
 
     // MARK: - Private
 
+    private func startProgressTracking(channel: Channel) {
+        progressTimer?.invalidate()
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            let current = self.player.currentTime().seconds
+            let rawDuration = self.player.currentItem?.duration.seconds ?? 0
+            let duration = rawDuration.isNaN || rawDuration.isInfinite ? 0 : rawDuration
+            if current > 0 {
+                Task { @MainActor in
+                    self.onProgressUpdate?(channel.id, current, duration)
+                }
+            }
+        }
+    }
+
+    private func stopProgressTracking() {
+        progressTimer?.invalidate()
+        progressTimer = nil
+    }
+
     /// Ends the current watch session and fires the callback.
     private func endWatchSession() {
         guard let channel = currentChannel, let start = watchStartTime else { return }
@@ -642,6 +670,10 @@ public final class PlayerCore {
                     }
                     // Reset buffer to normal after successful recovery
                     BufferingConfig.resetToNormal(for: item)
+                    // Start progress tracking for Continue Watching
+                    if let ch = self.currentChannel {
+                        self.startProgressTracking(channel: ch)
+                    }
                 case .failed:
                     let err = item.error?.localizedDescription ?? "unknown"
                     print("[PlayerCore] ❌ FAILED: \(err)")

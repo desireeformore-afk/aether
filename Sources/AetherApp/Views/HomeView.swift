@@ -19,6 +19,8 @@ struct HomeView: View {
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
+                        WatchHistoryShelf(player: player)
+
                         if !viewModel.heroBannerItems.isEmpty {
                             HeroBanner(items: viewModel.heroBannerItems)
                                 .padding(.bottom, -20)
