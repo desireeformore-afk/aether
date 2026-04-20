@@ -49,7 +49,7 @@ struct GlobalContentSearchView: View {
             } else if vodResults.isEmpty && seriesResults.isEmpty {
                 ContentUnavailableView(
                     "Brak wyników",
-                    systemImage: "film.slash",
+                    systemImage: "rectangle.slash",
                     description: Text("Nie znaleziono '\(query)'")
                 )
             } else {

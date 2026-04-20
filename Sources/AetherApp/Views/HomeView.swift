@@ -8,143 +8,41 @@ struct HomeView: View {
     @Bindable var player: PlayerCore
     let credentials: XstreamCredentials
 
-    @State private var heroBannerIndex = 0
     @State private var selectedVOD: XstreamVOD?
 
-    private let timer = Timer.publish(every: 6, on: .main, in: .common).autoconnect()
-
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            Color.black.ignoresSafeArea()
+        ZStack {
+            Color(.sRGB, red: 0.05, green: 0.05, blue: 0.05, opacity: 1).ignoresSafeArea()
 
-            if viewModel.isLoading && viewModel.heroBannerVODs.isEmpty {
+            if !viewModel.isPhase1Loaded {
                 loadingSkeleton
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        if !viewModel.heroBannerVODs.isEmpty {
-                            heroBanner
+                    VStack(spacing: 0) {
+                        if !viewModel.heroBannerItems.isEmpty {
+                            HeroBanner(items: viewModel.heroBannerItems)
                         }
-                        VStack(alignment: .leading, spacing: 32) {
-                            if !viewModel.popularVODs.isEmpty {
-                                ShelfRow(
-                                    title: "Popularne teraz",
-                                    items: viewModel.popularVODs,
-                                    player: player,
-                                    credentials: credentials
-                                )
-                            }
-                            if !viewModel.topSeries.isEmpty {
-                                SeriesShelfRow(
-                                    title: "Seriale",
-                                    items: viewModel.topSeries,
-                                    player: player,
-                                    credentials: credentials
-                                )
-                            }
-                            if !viewModel.recentVODs.isEmpty {
-                                ShelfRow(
-                                    title: "Ostatnio dodane",
-                                    items: viewModel.recentVODs,
-                                    player: player,
-                                    credentials: credentials
-                                )
+
+                        ForEach(Array(viewModel.shelves.enumerated()), id: \.offset) { _, shelf in
+                            CategoryShelf(title: shelf.title, items: shelf.items)
+                        }
+
+                        if !viewModel.seriesShelves.isEmpty {
+                            ForEach(Array(viewModel.seriesShelves.enumerated()), id: \.offset) { _, shelf in
+                                CategoryShelf(title: shelf.title, items: shelf.items)
                             }
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 32)
-                        .padding(.bottom, 40)
+
+                        if !viewModel.liveItems.isEmpty {
+                            CategoryShelf(title: "Na żywo", items: viewModel.liveItems)
+                        }
+
+                        Spacer(minLength: 40)
                     }
                 }
             }
         }
-        .onReceive(timer) { _ in
-            guard !viewModel.heroBannerVODs.isEmpty else { return }
-            withAnimation(.easeInOut(duration: 0.8)) {
-                heroBannerIndex = (heroBannerIndex + 1) % viewModel.heroBannerVODs.count
-            }
-        }
-        .sheet(item: $selectedVOD) { vod in
-            VODDetailSheet(vod: vod, credentials: credentials, player: player)
-        }
-    }
-
-    // MARK: - Hero Banner
-
-    private var heroBanner: some View {
-        let vod = viewModel.heroBannerVODs[min(heroBannerIndex, viewModel.heroBannerVODs.count - 1)]
-        return ZStack(alignment: .bottomLeading) {
-            AsyncImage(url: vod.streamIcon.flatMap(URL.init)) { phase in
-                switch phase {
-                case .success(let img):
-                    img.resizable().aspectRatio(contentMode: .fill)
-                default:
-                    Color(.sRGB, red: 0.12, green: 0.12, blue: 0.12, opacity: 1)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 420)
-            .clipped()
-
-            LinearGradient(
-                colors: [.clear, Color.black.opacity(0.5), Color.black],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: 420)
-
-            VStack(alignment: .leading, spacing: 12) {
-                Text(vod.name)
-                    .font(.system(size: 42, weight: .bold))
-                    .foregroundStyle(.white)
-                    .shadow(radius: 4)
-                    .lineLimit(2)
-
-                if let rating = vod.rating, !rating.isEmpty, rating != "0" {
-                    Label(rating, systemImage: "star.fill")
-                        .foregroundStyle(.yellow)
-                        .font(.system(size: 14, weight: .medium))
-                }
-
-                HStack(spacing: 12) {
-                    Button(action: { player.play(vod.toChannel(credentials: credentials)) }) {
-                        Label("Odtwórz", systemImage: "play.fill")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.black)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                    .buttonStyle(.plain)
-
-                    Button(action: { selectedVOD = vod }) {
-                        Label("Info", systemImage: "info.circle")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.white.opacity(0.2))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                HStack(spacing: 6) {
-                    ForEach(0..<viewModel.heroBannerVODs.count, id: \.self) { i in
-                        Circle()
-                            .fill(i == heroBannerIndex ? Color.white : Color.white.opacity(0.4))
-                            .frame(
-                                width: i == heroBannerIndex ? 10 : 6,
-                                height: i == heroBannerIndex ? 10 : 6
-                            )
-                            .animation(.spring(duration: 0.3), value: heroBannerIndex)
-                    }
-                }
-            }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 36)
-        }
-        .animation(.easeInOut(duration: 0.6), value: heroBannerIndex)
+        .onAppear { viewModel.load(credentials: credentials) }
     }
 
     // MARK: - Loading skeleton
@@ -154,7 +52,7 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: 0)
                 .fill(Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1))
                 .frame(maxWidth: .infinity)
-                .frame(height: 420)
+                .frame(height: 380)
                 .shimmer()
 
             VStack(alignment: .leading, spacing: 32) {
@@ -168,73 +66,18 @@ struct HomeView: View {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
                                 ForEach(0..<8, id: \.self) { _ in
-                                    RoundedRectangle(cornerRadius: 8)
+                                    RoundedRectangle(cornerRadius: 12)
                                         .fill(Color(.sRGB, red: 0.18, green: 0.18, blue: 0.18, opacity: 1))
-                                        .frame(width: 130, height: 195)
+                                        .frame(width: 160, height: 240)
                                         .shimmer()
                                 }
                             }
+                            .padding(.horizontal, 20)
                         }
                     }
                 }
             }
-            .padding(.horizontal, 24)
-        }
-    }
-}
-
-// MARK: - ShelfRow (VOD)
-
-struct ShelfRow: View {
-    let title: String
-    let items: [XstreamVOD]
-    @Bindable var player: PlayerCore
-    let credentials: XstreamCredentials
-
-    @State private var selectedVOD: XstreamVOD?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
-                    ForEach(items) { vod in
-                        VODCard(vod: vod)
-                            .onTapGesture { selectedVOD = vod }
-                    }
-                }
-            }
-        }
-        .sheet(item: $selectedVOD) { vod in
-            VODDetailSheet(vod: vod, credentials: credentials, player: player)
-        }
-    }
-}
-
-// MARK: - SeriesShelfRow
-
-struct SeriesShelfRow: View {
-    let title: String
-    let items: [XstreamSeries]
-    @Bindable var player: PlayerCore
-    let credentials: XstreamCredentials
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
-                    ForEach(items) { series in
-                        SeriesCard(series: series)
-                    }
-                }
-            }
+            .padding(.horizontal, 0)
         }
     }
 }

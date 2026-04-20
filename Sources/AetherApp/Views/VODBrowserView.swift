@@ -1,276 +1,99 @@
 import SwiftUI
 import AetherCore
 
-/// VOD browser — shown when a playlist uses Xtream Codes and has VOD available.
+// MARK: - VODBrowserView
+
 struct VODBrowserView: View {
-    let credentials: XstreamCredentials
+    @ObservedObject var homeViewModel: HomeViewModel
     @Bindable var player: PlayerCore
-    var isEmbedded: Bool = false
+    let credentials: XstreamCredentials
 
-    @State private var categories: [XstreamCategory] = []
-    @State private var allStreams: [XstreamVOD] = []
-    @State private var streamsByCategory: [String: [XstreamVOD]] = [:]
-    @State private var selectedCategory: XstreamCategory?
-    @State private var isLoadingCategories = false
-    @State private var isLoadingStreams = false
-    @State private var searchText = ""
     @State private var selectedVOD: XstreamVOD?
+    @State private var heroBannerItems: [HeroBannerItem] = []
 
-    private let service: XstreamService
-
+    /// Convenience init for embedded usage (FloatingChannelPanel) without shared HomeViewModel.
     init(credentials: XstreamCredentials, player: PlayerCore, isEmbedded: Bool = false) {
         self.credentials = credentials
         self.player = player
-        self.isEmbedded = isEmbedded
-        self.service = XstreamService(credentials: credentials)
+        let vm = HomeViewModel()
+        self._homeViewModel = ObservedObject(wrappedValue: vm)
     }
 
-    @Environment(\.dismiss) private var dismiss
+    /// Primary init — shared HomeViewModel (ContentView main layout).
+    init(homeViewModel: HomeViewModel, player: PlayerCore, credentials: XstreamCredentials) {
+        self._homeViewModel = ObservedObject(wrappedValue: homeViewModel)
+        self.player = player
+        self.credentials = credentials
+    }
 
     var body: some View {
-        if isEmbedded {
-            embeddedLayout
-        } else {
-            NavigationSplitView {
-                categoryList
-            } detail: {
-                vodGrid
-            }
-            .navigationTitle("VOD Browser")
-            .frame(minWidth: 720, minHeight: 500)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                        .keyboardShortcut(.cancelAction)
-                }
-            }
-            .task { await loadCategories() }
-            .sheet(item: $selectedVOD) { vod in
-                VODDetailSheet(vod: vod, credentials: credentials, player: player)
-            }
-        }
-    }
+        ZStack {
+            Color(.sRGB, red: 0.05, green: 0.05, blue: 0.05, opacity: 1).ignoresSafeArea()
 
-    // MARK: - Embedded layout
-
-    private var embeddedLayout: some View {
-        HStack(spacing: 0) {
-            // Category rail
-            VStack(spacing: 0) {
-                Text("Categories")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-
-                Divider()
-
-                if isLoadingCategories {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List(selection: $selectedCategory) {
-                        ForEach(categories) { cat in
-                            Text(cat.name)
-                                .font(.system(size: 12))
-                                .lineLimit(2)
-                                .tag(cat)
-                        }
-                    }
-                    .listStyle(.plain)
-                }
-            }
-            .frame(width: 140)
-            .background(Color.aetherSurface)
-            .onChange(of: selectedCategory) { _, cat in
-                guard let cat else { return }
-                Task { await loadStreams(for: cat) }
-            }
-
-            Divider()
-
-            // Content area
-            VStack(spacing: 0) {
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 12))
-                    TextField("Search VOD…", text: $searchText)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 12))
-                    if !searchText.isEmpty {
-                        Button { searchText = "" } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
-                                .font(.system(size: 12))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(Color.aetherSurface)
-
-                Divider()
-
-                vodGridContent
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task { await loadCategories() }
-        .sheet(item: $selectedVOD) { vod in
-            VODDetailSheet(vod: vod, credentials: credentials, player: player)
-        }
-    }
-
-    // MARK: - Category list (standalone)
-
-    private var categoryList: some View {
-        List(selection: $selectedCategory) {
-            if isLoadingCategories {
-                ProgressView("Loading categories…")
+            if homeViewModel.shelves.isEmpty && !homeViewModel.isFullyLoaded {
+                vodLoadingSkeleton
             } else {
-                ForEach(categories) { cat in
-                    Text(cat.name)
-                        .font(.aetherBody)
-                        .tag(cat)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        if !heroBannerItems.isEmpty {
+                            HeroBanner(items: heroBannerItems)
+                        }
+
+                        ForEach(Array(homeViewModel.shelves.enumerated()), id: \.offset) { _, shelf in
+                            CategoryShelf(title: shelf.title, items: shelf.items)
+                        }
+
+                        Spacer(minLength: 40)
+                    }
                 }
             }
         }
-        .navigationTitle("Categories")
-        .onChange(of: selectedCategory) { _, cat in
-            guard let cat else { return }
-            Task { await loadStreams(for: cat) }
+        .onChange(of: homeViewModel.shelves.count) { _, _ in updateHeroBanner() }
+        .onAppear {
+            homeViewModel.load(credentials: credentials)
+            updateHeroBanner()
         }
     }
 
-    // MARK: - VOD grid (standalone)
-
-    private var vodGrid: some View {
-        vodGridContent
-            .searchable(text: $searchText, prompt: "Search VOD")
-    }
-
-    // MARK: - VOD grid content (Netflix-style sections)
-
-    private var vodGridContent: some View {
-        Group {
-            if isLoadingStreams {
-                ProgressView("Loading…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if displayedStreams.isEmpty && selectedCategory == nil && searchText.isEmpty {
-                ContentUnavailableView(
-                    "Select a category",
-                    systemImage: "film",
-                    description: Text("Choose a category on the left")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if displayedStreams.isEmpty {
-                ContentUnavailableView(
-                    "No VOD content",
-                    systemImage: "film",
-                    description: Text("No streams match your search")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                netflixGrid
-            }
+    private func updateHeroBanner() {
+        guard let first = homeViewModel.shelves.first else { return }
+        heroBannerItems = first.items.prefix(3).map { item in
+            HeroBannerItem(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
         }
     }
 
-    private var netflixGrid: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 24, pinnedViews: []) {
-                if !searchText.isEmpty {
-                    // Flat grid when searching
-                    sectionBlock(title: "Results", streams: displayedStreams)
-                } else if selectedCategory != nil {
-                    // Single-category view
-                    sectionBlock(title: selectedCategory?.name ?? "", streams: displayedStreams)
-                } else {
-                    // All categories with section headers
-                    ForEach(categories) { cat in
-                        if let streams = streamsByCategory[cat.id], !streams.isEmpty {
-                            sectionBlock(title: cat.name, streams: streams)
+    // MARK: - Loading skeleton
+
+    private var vodLoadingSkeleton: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            RoundedRectangle(cornerRadius: 0)
+                .fill(Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1))
+                .frame(maxWidth: .infinity)
+                .frame(height: 380)
+                .shimmer()
+
+            VStack(alignment: .leading, spacing: 32) {
+                ForEach(0..<4, id: \.self) { _ in
+                    VStack(alignment: .leading, spacing: 12) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1))
+                            .frame(width: 200, height: 22)
+                            .shimmer()
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(0..<8, id: \.self) { _ in
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.sRGB, red: 0.18, green: 0.18, blue: 0.18, opacity: 1))
+                                        .frame(width: 160, height: 240)
+                                        .shimmer()
+                                }
+                            }
+                            .padding(.horizontal, 20)
                         }
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
-    }
-
-    @ViewBuilder
-    private func sectionBlock(title: String, streams: [XstreamVOD]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Netflix-style section header
-            HStack {
-                Text(title)
-                    .font(.system(.title3, design: .default, weight: .bold))
-                    .foregroundStyle(.primary)
-                Spacer()
-                Text("\(streams.count)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Rectangle()
-                .fill(Color.aetherPrimary)
-                .frame(height: 2)
-                .frame(maxWidth: 40)
-
-            LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 160), spacing: 12)],
-                spacing: 16
-            ) {
-                ForEach(streams) { vod in
-                    VODCard(vod: vod)
-                        .onTapGesture { selectedVOD = vod }
-                }
-            }
-        }
-    }
-
-    // MARK: - Filtered streams
-
-    private var displayedStreams: [XstreamVOD] {
-        let base: [XstreamVOD]
-        if let cat = selectedCategory {
-            base = streamsByCategory[cat.id] ?? []
-        } else if !streamsByCategory.isEmpty {
-            base = categories.flatMap { streamsByCategory[$0.id] ?? [] }
-        } else {
-            base = allStreams
-        }
-        guard !searchText.isEmpty else { return base }
-        return base.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
-
-    // MARK: - Data loading
-
-    private func loadCategories() async {
-        isLoadingCategories = true
-        defer { isLoadingCategories = false }
-        do {
-            categories = try await service.vodCategories()
-        } catch {
-            print("Failed to load VOD categories: \(error)")
-        }
-    }
-
-    private func loadStreams(for category: XstreamCategory) async {
-        isLoadingStreams = true
-        defer { isLoadingStreams = false }
-        do {
-            let fetched = try await service.vodStreams(categoryID: category.id)
-            streamsByCategory[category.id] = fetched
-            allStreams = categories.flatMap { streamsByCategory[$0.id] ?? [] }
-        } catch {
-            print("Failed to load VOD streams: \(error)")
         }
     }
 }
@@ -282,39 +105,34 @@ struct VODCard: View {
     @State private var isHovered = false
 
     private let cardWidth: CGFloat = 160
-    private var cardHeight: CGFloat { cardWidth * 3 / 2 }  // 2:3 ratio
+    private var cardHeight: CGFloat { cardWidth * 3 / 2 }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Poster image
             AsyncImage(url: vod.streamIcon.flatMap(URL.init(string:))) { phase in
                 switch phase {
                 case .empty:
-                    ShimmerView()
+                    VODShimmerView()
                 case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
+                    image.resizable().scaledToFill()
                 case .failure:
                     ZStack {
-                        Color.aetherSurface
+                        Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
                         Image(systemName: "film")
                             .font(.largeTitle)
                             .foregroundStyle(.secondary)
                     }
                 @unknown default:
-                    Color.aetherSurface
+                    Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
                 }
             }
             .frame(width: cardWidth, height: cardHeight)
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            // Hover overlay with gradient, title, rating
             if isHovered {
                 VStack(alignment: .leading, spacing: 6) {
                     Spacer()
 
-                    // Rating badge
                     if let rating = vod.rating, !rating.isEmpty, let ratingValue = Double(rating), ratingValue > 0 {
                         HStack(spacing: 3) {
                             Image(systemName: "star.fill")
@@ -360,22 +178,17 @@ struct VODCard: View {
     }
 }
 
-// MARK: - ShimmerView
+// MARK: - VODShimmerView
 
-private struct ShimmerView: View {
+private struct VODShimmerView: View {
     @State private var phase: CGFloat = 0
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                Color.aetherSurface
-
+                Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
                 LinearGradient(
-                    colors: [
-                        .clear,
-                        .white.opacity(0.25),
-                        .clear
-                    ],
+                    colors: [.clear, .white.opacity(0.25), .clear],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
@@ -400,14 +213,13 @@ struct VODDetailSheet: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 20) {
-            // Large poster (2:3)
             AsyncImage(url: vod.streamIcon.flatMap(URL.init(string:))) { phase in
                 switch phase {
                 case .success(let img):
                     img.resizable().scaledToFill()
                 default:
                     ZStack {
-                        Color.aetherSurface
+                        Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
                         Image(systemName: "film")
                             .font(.system(size: 40))
                             .foregroundStyle(.secondary)
@@ -417,7 +229,6 @@ struct VODDetailSheet: View {
             .frame(width: 140, height: 210)
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            // Info + actions
             VStack(alignment: .leading, spacing: 12) {
                 Text(vod.name)
                     .font(.system(.title2, design: .default, weight: .bold))
@@ -463,7 +274,6 @@ struct VODDetailSheet: View {
         }
         .padding(24)
         .frame(width: 420, height: 270)
-        .background(Color.aetherBackground)
     }
 
     private func playVOD() {

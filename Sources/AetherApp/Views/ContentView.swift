@@ -246,13 +246,13 @@ struct ContentView: View {
                 }
             case .movies:
                 if let creds = activeCredentials {
-                    VODBrowserView(credentials: creds, player: playerCore)
+                    VODBrowserView(homeViewModel: homeViewModel, player: playerCore, credentials: creds)
                 } else {
                     noPlaylistPrompt
                 }
             case .series:
                 if let creds = activeCredentials {
-                    SeriesBrowserView(credentials: creds, player: playerCore)
+                    SeriesBrowserView(homeViewModel: homeViewModel, player: playerCore, credentials: creds)
                 } else {
                     noPlaylistPrompt
                 }

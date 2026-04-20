@@ -331,9 +331,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
         self.ffmpegProcess = process
 
         // 3. Wait for first segment (VOD needs more time to probe MKV headers over HTTP)
-        let maxWaitIterations = isVOD ? 150 : 100  // 30s for VOD (large files), 20s for Live
+        let maxWaitIterations = isVOD ? 200 : 67  // 30s for VOD (200*150ms), 10s for Live (67*150ms)
         for i in 0..<maxWaitIterations {
-            try await Task.sleep(nanoseconds: 200_000_000) // 200ms
+            try await Task.sleep(nanoseconds: 150_000_000) // 150ms
 
             // Check if process died unexpectedly (still running is normal for VOD during mux)
             if !process.isRunning {
@@ -351,14 +351,13 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 throw ProxyError.ffmpegFailed(trimmed.isEmpty ? "FFmpeg exited with no output" : trimmed)
             }
 
-            // Check if playlist has at least 2 segment references before handing off
-            if FileManager.default.fileExists(atPath: m3u8Path),
+            // Check if the first segment file exists and playlist references it
+            let seg0Path = outputDir.appendingPathComponent("seg_00000.ts").path
+            if FileManager.default.fileExists(atPath: seg0Path),
+               FileManager.default.fileExists(atPath: m3u8Path),
                let content = try? String(contentsOf: URL(fileURLWithPath: m3u8Path), encoding: .utf8),
-               content.contains(".ts"),
-               (content.components(separatedBy: ".ts").count - 1) >= 2 {
-                print("[HLSProxy] Ready after \(Double(i + 1) * 0.2)s")
-                // Brief pause so AVPlayer doesn't race the muxer on the first segment
-                try await Task.sleep(nanoseconds: 200_000_000)
+               content.contains(".ts") {
+                print("[HLSProxy] Ready (seg_00000.ts present) after \(Double(i + 1) * 0.15)s")
                 return
             }
         }

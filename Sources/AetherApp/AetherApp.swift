@@ -172,6 +172,24 @@ extension AetherApp {
     /// Removes the SQLite store if it contains entities that no longer exist in the current schema.
     /// Prevents NSCocoaErrorDomain 134100 (incompatible model) on first launch after a schema change.
     private static func resetStoreIfIncompatible(storeURL: URL) {
+        // Nuclear reset (v4): wipe all store files once after schema overhaul
+        let resetKey = "store_reset_v4"
+        if !UserDefaults.standard.bool(forKey: resetKey) {
+            let appSupport = storeURL.deletingLastPathComponent()
+            let fm = FileManager.default
+            if let items = try? fm.contentsOfDirectory(at: appSupport, includingPropertiesForKeys: nil) {
+                for item in items {
+                    let ext = item.pathExtension.lowercased()
+                    if ["sqlite", "store", "wal", "shm"].contains(ext) {
+                        try? fm.removeItem(at: item)
+                    }
+                }
+            }
+            UserDefaults.standard.set(true, forKey: resetKey)
+            print("[AetherDB] Nuclear store reset (v4) complete")
+            return
+        }
+
         guard FileManager.default.fileExists(atPath: storeURL.path) else { return }
 
         let metadata: [String: Any]

@@ -1,258 +1,99 @@
 import SwiftUI
 import AetherCore
 
+// MARK: - SeriesBrowserView
+
 struct SeriesBrowserView: View {
-    let credentials: XstreamCredentials
+    @ObservedObject var homeViewModel: HomeViewModel
     @Bindable var player: PlayerCore
-    var isEmbedded: Bool = false
+    let credentials: XstreamCredentials
 
-    @State private var categories: [XstreamSeriesCategory] = []
-    @State private var seriesByCategory: [String: [XstreamSeries]] = [:]
-    @State private var selectedCategory: XstreamSeriesCategory?
-    @State private var isLoadingCategories = false
-    @State private var isLoadingList = false
-    @State private var searchText = ""
-    @State private var selectedSeries: XstreamSeries?
+    @State private var heroBannerItems: [HeroBannerItem] = []
 
-    private let service: XstreamService
-
+    /// Convenience init for embedded usage (FloatingChannelPanel) without shared HomeViewModel.
     init(credentials: XstreamCredentials, player: PlayerCore, isEmbedded: Bool = false) {
         self.credentials = credentials
         self.player = player
-        self.isEmbedded = isEmbedded
-        self.service = XstreamService(credentials: credentials)
+        let vm = HomeViewModel()
+        self._homeViewModel = ObservedObject(wrappedValue: vm)
     }
 
-    @Environment(\.dismiss) private var dismiss
+    /// Primary init — shared HomeViewModel (ContentView main layout).
+    init(homeViewModel: HomeViewModel, player: PlayerCore, credentials: XstreamCredentials) {
+        self._homeViewModel = ObservedObject(wrappedValue: homeViewModel)
+        self.player = player
+        self.credentials = credentials
+    }
 
     var body: some View {
-        if isEmbedded {
-            embeddedLayout
-        } else {
-            NavigationSplitView {
-                categoryList
-            } detail: {
-                seriesGrid
-            }
-            .navigationTitle("Series")
-            .frame(minWidth: 720, minHeight: 500)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                        .keyboardShortcut(.cancelAction)
-                }
-            }
-            .task { await loadCategories() }
-            .sheet(item: $selectedSeries) { series in
-                SeriesDetailView(series: series, credentials: credentials, player: player)
-            }
-        }
-    }
+        ZStack {
+            Color(.sRGB, red: 0.05, green: 0.05, blue: 0.05, opacity: 1).ignoresSafeArea()
 
-    // MARK: - Embedded layout
-
-    private var embeddedLayout: some View {
-        HStack(spacing: 0) {
-            // Category rail
-            VStack(spacing: 0) {
-                Text("Categories")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-
-                Divider()
-
-                if isLoadingCategories {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List(selection: $selectedCategory) {
-                        ForEach(categories) { cat in
-                            Text(cat.name)
-                                .font(.system(size: 12))
-                                .lineLimit(2)
-                                .tag(cat)
-                        }
-                    }
-                    .listStyle(.plain)
-                }
-            }
-            .frame(width: 140)
-            .background(Color.aetherSurface)
-            .onChange(of: selectedCategory) { _, cat in
-                guard let cat else { return }
-                Task { await loadList(for: cat) }
-            }
-
-            Divider()
-
-            // Content area
-            VStack(spacing: 0) {
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 12))
-                    TextField("Search series…", text: $searchText)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 12))
-                    if !searchText.isEmpty {
-                        Button { searchText = "" } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
-                                .font(.system(size: 12))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(Color.aetherSurface)
-
-                Divider()
-
-                seriesGridContent
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task { await loadCategories() }
-        .sheet(item: $selectedSeries) { series in
-            SeriesDetailView(series: series, credentials: credentials, player: player)
-        }
-    }
-
-    // MARK: - Category list (standalone)
-
-    private var categoryList: some View {
-        List(selection: $selectedCategory) {
-            if isLoadingCategories {
-                ProgressView("Loading categories…")
+            if homeViewModel.seriesShelves.isEmpty && !homeViewModel.isFullyLoaded {
+                seriesLoadingSkeleton
             } else {
-                ForEach(categories) { cat in
-                    Text(cat.name)
-                        .font(.aetherBody)
-                        .tag(cat)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        if !heroBannerItems.isEmpty {
+                            HeroBanner(items: heroBannerItems)
+                        }
+
+                        ForEach(Array(homeViewModel.seriesShelves.enumerated()), id: \.offset) { _, shelf in
+                            CategoryShelf(title: shelf.title, items: shelf.items)
+                        }
+
+                        Spacer(minLength: 40)
+                    }
                 }
             }
         }
-        .navigationTitle("Categories")
-        .onChange(of: selectedCategory) { _, cat in
-            guard let cat else { return }
-            Task { await loadList(for: cat) }
+        .onChange(of: homeViewModel.seriesShelves.count) { _, _ in updateHeroBanner() }
+        .onAppear {
+            homeViewModel.load(credentials: credentials)
+            updateHeroBanner()
         }
     }
 
-    private var seriesGrid: some View {
-        seriesGridContent
-            .searchable(text: $searchText, prompt: "Search series")
-            .background(Color.aetherBackground)
-    }
-
-    // MARK: - Grid content (Netflix-style sections)
-
-    private var seriesGridContent: some View {
-        Group {
-            if isLoadingList {
-                ProgressView("Loading…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if displayedSeries.isEmpty && selectedCategory == nil && searchText.isEmpty {
-                ContentUnavailableView(
-                    "Pick a Category",
-                    systemImage: "rectangle.stack.fill",
-                    description: Text("Select a category on the left.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if displayedSeries.isEmpty {
-                ContentUnavailableView("No Series", systemImage: "tv")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                netflixGrid
-            }
+    private func updateHeroBanner() {
+        guard let first = homeViewModel.seriesShelves.first else { return }
+        heroBannerItems = first.items.prefix(3).map { item in
+            HeroBannerItem(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
         }
-        .background(Color.aetherBackground)
     }
 
-    private var netflixGrid: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 24) {
-                if !searchText.isEmpty {
-                    sectionBlock(title: "Results", seriesList: displayedSeries)
-                } else if selectedCategory != nil {
-                    sectionBlock(title: selectedCategory?.name ?? "", seriesList: displayedSeries)
-                } else {
-                    ForEach(categories) { cat in
-                        if let list = seriesByCategory[cat.id], !list.isEmpty {
-                            sectionBlock(title: cat.name, seriesList: list)
+    // MARK: - Loading skeleton
+
+    private var seriesLoadingSkeleton: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            RoundedRectangle(cornerRadius: 0)
+                .fill(Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1))
+                .frame(maxWidth: .infinity)
+                .frame(height: 380)
+                .shimmer()
+
+            VStack(alignment: .leading, spacing: 32) {
+                ForEach(0..<3, id: \.self) { _ in
+                    VStack(alignment: .leading, spacing: 12) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1))
+                            .frame(width: 200, height: 22)
+                            .shimmer()
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(0..<8, id: \.self) { _ in
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.sRGB, red: 0.18, green: 0.18, blue: 0.18, opacity: 1))
+                                        .frame(width: 160, height: 240)
+                                        .shimmer()
+                                }
+                            }
+                            .padding(.horizontal, 20)
                         }
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
         }
-    }
-
-    @ViewBuilder
-    private func sectionBlock(title: String, seriesList: [XstreamSeries]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(title)
-                    .font(.system(.title3, design: .default, weight: .bold))
-                    .foregroundStyle(.primary)
-                Spacer()
-                Text("\(seriesList.count)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Rectangle()
-                .fill(Color.aetherPrimary)
-                .frame(height: 2)
-                .frame(maxWidth: 40)
-
-            LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 160), spacing: 12)],
-                spacing: 16
-            ) {
-                ForEach(seriesList) { series in
-                    SeriesCard(series: series)
-                        .onTapGesture { selectedSeries = series }
-                }
-            }
-        }
-    }
-
-    // MARK: - Filtered series
-
-    private var displayedSeries: [XstreamSeries] {
-        let base: [XstreamSeries]
-        if let cat = selectedCategory {
-            base = seriesByCategory[cat.id] ?? []
-        } else if !seriesByCategory.isEmpty {
-            base = categories.flatMap { seriesByCategory[$0.id] ?? [] }
-        } else {
-            base = []
-        }
-        guard !searchText.isEmpty else { return base }
-        return base.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-    }
-
-    // MARK: - Data loading
-
-    private func loadCategories() async {
-        isLoadingCategories = true
-        defer { isLoadingCategories = false }
-        categories = (try? await service.seriesCategories()) ?? []
-    }
-
-    private func loadList(for category: XstreamSeriesCategory) async {
-        isLoadingList = true
-        defer { isLoadingList = false }
-        let fetched = (try? await service.seriesList(categoryID: category.id)) ?? []
-        seriesByCategory[category.id] = fetched
     }
 }
 
@@ -263,37 +104,34 @@ struct SeriesCard: View {
     @State private var isHovered = false
 
     private let cardWidth: CGFloat = 160
-    private var cardHeight: CGFloat { cardWidth * 3 / 2 }  // 2:3 ratio
+    private var cardHeight: CGFloat { cardWidth * 3 / 2 }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Poster image
             AsyncImage(url: series.cover.flatMap(URL.init(string:))) { phase in
                 switch phase {
                 case .success(let img):
                     img.resizable().scaledToFill()
                 case .empty:
-                    ShimmerView()
+                    SeriesShimmerView()
                 case .failure:
                     ZStack {
-                        Color.aetherSurface
+                        Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
                         Image(systemName: "tv")
                             .font(.largeTitle)
                             .foregroundStyle(.secondary)
                     }
                 @unknown default:
-                    Color.aetherSurface
+                    Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
                 }
             }
             .frame(width: cardWidth, height: cardHeight)
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            // Hover overlay
             if isHovered {
                 VStack(alignment: .leading, spacing: 6) {
                     Spacer()
 
-                    // Rating badge
                     if let rating = series.rating, let ratingValue = Double(rating), ratingValue > 0 {
                         HStack(spacing: 3) {
                             Image(systemName: "star.fill")
@@ -308,7 +146,6 @@ struct SeriesCard: View {
                         .clipShape(Capsule())
                     }
 
-                    // Title + year
                     VStack(alignment: .leading, spacing: 2) {
                         Text(series.name)
                             .font(.system(size: 13, weight: .bold))
@@ -347,15 +184,15 @@ struct SeriesCard: View {
     }
 }
 
-// MARK: - ShimmerView
+// MARK: - SeriesShimmerView
 
-private struct ShimmerView: View {
+private struct SeriesShimmerView: View {
     @State private var phase: CGFloat = 0
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                Color.aetherSurface
+                Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
                 LinearGradient(
                     colors: [.clear, .white.opacity(0.25), .clear],
                     startPoint: .leading,
