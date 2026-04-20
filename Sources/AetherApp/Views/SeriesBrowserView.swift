@@ -7,7 +7,7 @@ struct SeriesBrowserView: View {
     var isEmbedded: Bool = false
 
     @State private var categories: [XstreamSeriesCategory] = []
-    @State private var seriesList: [XstreamSeries] = []
+    @State private var seriesByCategory: [String: [XstreamSeries]] = [:]
     @State private var selectedCategory: XstreamSeriesCategory?
     @State private var isLoadingCategories = false
     @State private var isLoadingList = false
@@ -49,7 +49,8 @@ struct SeriesBrowserView: View {
         }
     }
 
-    // Inline layout for panel embedding (no NavigationSplitView)
+    // MARK: - Embedded layout
+
     private var embeddedLayout: some View {
         HStack(spacing: 0) {
             // Category rail
@@ -123,6 +124,8 @@ struct SeriesBrowserView: View {
         }
     }
 
+    // MARK: - Category list (standalone)
+
     private var categoryList: some View {
         List(selection: $selectedCategory) {
             if isLoadingCategories {
@@ -148,40 +151,96 @@ struct SeriesBrowserView: View {
             .background(Color.aetherBackground)
     }
 
+    // MARK: - Grid content (Netflix-style sections)
+
     private var seriesGridContent: some View {
         Group {
             if isLoadingList {
                 ProgressView("Loading…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if selectedCategory == nil {
+            } else if displayedSeries.isEmpty && selectedCategory == nil && searchText.isEmpty {
                 ContentUnavailableView(
                     "Pick a Category",
                     systemImage: "rectangle.stack.fill",
                     description: Text("Select a category on the left.")
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if filteredList.isEmpty {
+            } else if displayedSeries.isEmpty {
                 ContentUnavailableView("No Series", systemImage: "tv")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
-                        ForEach(filteredList) { series in
-                            SeriesCard(series: series)
-                                .onTapGesture { selectedSeries = series }
-                        }
-                    }
-                    .padding(12)
-                }
+                netflixGrid
             }
         }
         .background(Color.aetherBackground)
     }
 
-    private var filteredList: [XstreamSeries] {
-        guard !searchText.isEmpty else { return seriesList }
-        return seriesList.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    private var netflixGrid: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 24) {
+                if !searchText.isEmpty {
+                    sectionBlock(title: "Results", seriesList: displayedSeries)
+                } else if selectedCategory != nil {
+                    sectionBlock(title: selectedCategory?.name ?? "", seriesList: displayedSeries)
+                } else {
+                    ForEach(categories) { cat in
+                        if let list = seriesByCategory[cat.id], !list.isEmpty {
+                            sectionBlock(title: cat.name, seriesList: list)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
     }
+
+    @ViewBuilder
+    private func sectionBlock(title: String, seriesList: [XstreamSeries]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(title)
+                    .font(.system(.title3, design: .default, weight: .bold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Text("\(seriesList.count)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Rectangle()
+                .fill(Color.aetherPrimary)
+                .frame(height: 2)
+                .frame(maxWidth: 40)
+
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 160), spacing: 12)],
+                spacing: 16
+            ) {
+                ForEach(seriesList) { series in
+                    SeriesCard(series: series)
+                        .onTapGesture { selectedSeries = series }
+                }
+            }
+        }
+    }
+
+    // MARK: - Filtered series
+
+    private var displayedSeries: [XstreamSeries] {
+        let base: [XstreamSeries]
+        if let cat = selectedCategory {
+            base = seriesByCategory[cat.id] ?? []
+        } else if !seriesByCategory.isEmpty {
+            base = categories.flatMap { seriesByCategory[$0.id] ?? [] }
+        } else {
+            base = []
+        }
+        guard !searchText.isEmpty else { return base }
+        return base.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
+
+    // MARK: - Data loading
 
     private func loadCategories() async {
         isLoadingCategories = true
@@ -190,10 +249,10 @@ struct SeriesBrowserView: View {
     }
 
     private func loadList(for category: XstreamSeriesCategory) async {
-        seriesList = []
         isLoadingList = true
         defer { isLoadingList = false }
-        seriesList = (try? await service.seriesList(categoryID: category.id)) ?? []
+        let fetched = (try? await service.seriesList(categoryID: category.id)) ?? []
+        seriesByCategory[category.id] = fetched
     }
 }
 
@@ -203,64 +262,88 @@ private struct SeriesCard: View {
     let series: XstreamSeries
     @State private var isHovered = false
 
+    private let cardWidth: CGFloat = 160
+    private var cardHeight: CGFloat { cardWidth * 3 / 2 }  // 2:3 ratio
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ZStack(alignment: .bottom) {
-                AsyncImage(url: series.cover.flatMap(URL.init(string:))) { phase in
-                    switch phase {
-                    case .success(let img):
-                        img.resizable().scaledToFill()
-                    case .failure, .empty:
-                        ZStack {
-                            Color.aetherSurface
-                            Image(systemName: "tv")
-                                .font(.largeTitle)
-                                .foregroundStyle(.secondary)
+        ZStack(alignment: .bottom) {
+            // Poster image
+            AsyncImage(url: series.cover.flatMap(URL.init(string:))) { phase in
+                switch phase {
+                case .success(let img):
+                    img.resizable().scaledToFill()
+                case .empty:
+                    ShimmerView()
+                case .failure:
+                    ZStack {
+                        Color.aetherSurface
+                        Image(systemName: "tv")
+                            .font(.largeTitle)
+                            .foregroundStyle(.secondary)
+                    }
+                @unknown default:
+                    Color.aetherSurface
+                }
+            }
+            .frame(width: cardWidth, height: cardHeight)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+
+            // Hover overlay
+            if isHovered {
+                VStack(alignment: .leading, spacing: 6) {
+                    Spacer()
+
+                    // Rating badge
+                    if let rating = series.rating, let ratingValue = Double(rating), ratingValue > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 10))
+                            Text(String(format: "%.1f", ratingValue))
+                                .font(.system(size: 11, weight: .semibold))
                         }
-                    @unknown default:
-                        ShimmerView()
+                        .foregroundStyle(.yellow)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(.black.opacity(0.65))
+                        .clipShape(Capsule())
+                    }
+
+                    // Title + year
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(series.name)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(2)
+
+                        if let year = series.releaseDate?.prefix(4) {
+                            Text(String(year))
+                                .font(.system(size: 11))
+                                .foregroundStyle(.white.opacity(0.75))
+                        }
                     }
                 }
-                .frame(width: 110, height: 165)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                if isHovered {
+                .padding(10)
+                .frame(width: cardWidth, height: cardHeight, alignment: .bottomLeading)
+                .background(
                     LinearGradient(
-                        colors: [.clear, .black.opacity(0.7)],
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: .black.opacity(0.5), location: 0.55),
+                            .init(color: .black.opacity(0.9), location: 1)
+                        ],
                         startPoint: .top,
                         endPoint: .bottom
                     )
-                    .frame(width: 110, height: 165)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .transition(.opacity)
             }
-            .onHover { isHovered = $0 }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(series.name)
-                    .font(.aetherCaption)
-                    .foregroundStyle(Color.aetherText)
-                    .lineLimit(2)
-
-                HStack(spacing: 6) {
-                    if let year = series.releaseDate?.prefix(4) {
-                        Text(String(year))
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                    if let rating = series.rating, let ratingValue = Double(rating), ratingValue > 0 {
-                        HStack(spacing: 2) {
-                            Text("⭐")
-                                .font(.system(size: 10))
-                            Text(String(format: "%.1f", ratingValue))
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-            .frame(width: 110, alignment: .leading)
         }
+        .frame(width: cardWidth, height: cardHeight)
+        .scaleEffect(isHovered ? 1.03 : 1.0)
+        .shadow(color: .black.opacity(isHovered ? 0.4 : 0), radius: 12, y: 6)
+        .animation(.easeInOut(duration: 0.18), value: isHovered)
+        .onHover { isHovered = $0 }
     }
 }
 
@@ -270,19 +353,20 @@ private struct ShimmerView: View {
     @State private var phase: CGFloat = 0
 
     var body: some View {
-        LinearGradient(
-            colors: [
-                Color.aetherSurface,
-                Color.aetherSurface.opacity(0.7),
+        GeometryReader { geometry in
+            ZStack {
                 Color.aetherSurface
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        .offset(x: phase)
+                LinearGradient(
+                    colors: [.clear, .white.opacity(0.25), .clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .offset(x: phase * geometry.size.width * 2 - geometry.size.width)
+            }
+        }
         .onAppear {
             withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                phase = 300
+                phase = 1
             }
         }
     }
