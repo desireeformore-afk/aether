@@ -280,7 +280,9 @@ public final class PlayerCore {
                 do {
                     try await proxy.start(from: url)
                     guard let self, self.currentChannel?.id == channel.id else { return }
-                    self.isLoadingProxy = false
+                    // isLoadingProxy stays true until AVPlayer confirms readyToPlay or fails.
+                    // Clearing it here would open a window where a duplicate play() call could
+                    // stop the proxy before AVPlayer has had a chance to connect to it.
 
                     // Use AVURLAsset with explicit options for local proxy streams.
                     // AVURLAssetPreferPreciseDurationAndTimingKey: false avoids the DRM
@@ -742,6 +744,8 @@ public final class PlayerCore {
                 guard let self, let item else { return }
                 switch status {
                 case .readyToPlay:
+                    // Proxy (if any) is confirmed usable by AVPlayer — safe to allow new play() calls.
+                    self.isLoadingProxy = false
                     print("[PlayerCore] ✅ readyToPlay")
                     self.retryCount = 0
                     self.retrySourceItem = nil
@@ -760,6 +764,7 @@ public final class PlayerCore {
                         self.startProgressTracking(channel: ch)
                     }
                 case .failed:
+                    self.isLoadingProxy = false
                     let err = item.error?.localizedDescription ?? "unknown"
                     print("[PlayerCore] ❌ FAILED: \(err)")
                     if let underlying = (item.error as NSError?)?.userInfo[NSUnderlyingErrorKey] as? NSError {
