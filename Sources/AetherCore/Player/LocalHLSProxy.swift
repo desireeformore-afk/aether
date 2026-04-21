@@ -108,6 +108,11 @@ public final class LocalHLSProxy: @unchecked Sendable {
     private let outputDir: URL
     private let id = UUID().uuidString.prefix(8)
 
+    /// Set by stop() to signal the startup loop to abort without triggering a retry.
+    private var isCancelled = false
+    /// Set after process.run() succeeds — guards stop() so we know whether to waitUntilExit.
+    private var ffmpegStarted = false
+
     public init() {
         outputDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("aether-hls-\(id)")
@@ -203,6 +208,10 @@ public final class LocalHLSProxy: @unchecked Sendable {
     /// Returns when the first HLS segment is ready (or throws on timeout/error).
     public func start(from sourceURL: URL) async throws {
         stop()
+        // Reset flags AFTER stop() so any in-progress polling loop is aborted first,
+        // then we start fresh for this invocation.
+        isCancelled = false
+        ffmpegStarted = false
 
         guard let ffmpeg = Self.ffmpegURL else {
             throw ProxyError.ffmpegNotFound
@@ -342,7 +351,14 @@ public final class LocalHLSProxy: @unchecked Sendable {
             throw ProxyError.ffmpegFailed("Temp directory removed before FFmpeg could start: \(outputDir.path)")
         }
 
+        // FIX 2: If stop() was called while we were setting up, abort cleanly without leaving
+        // a dangling process or triggering a retry loop in the caller.
+        guard !isCancelled else {
+            throw ProxyError.ffmpegFailed("Proxy cancelled before FFmpeg start")
+        }
+
         try process.run()
+        ffmpegStarted = true
         self.ffmpegProcess = process
 
         // 3. Wait for first segment — 30s for both VOD and Live (200*150ms)
@@ -350,6 +366,11 @@ public final class LocalHLSProxy: @unchecked Sendable {
         var stderrLines: [String] = []
         for i in 0..<maxWaitIterations {
             try await Task.sleep(nanoseconds: 150_000_000) // 150ms
+
+            // FIX 2: Abort polling if stop() was called while we were waiting.
+            if isCancelled {
+                throw ProxyError.ffmpegFailed("Proxy cancelled during startup")
+            }
 
             // Check if process died unexpectedly (still running is normal for VOD during mux)
             if !process.isRunning {
@@ -393,9 +414,18 @@ public final class LocalHLSProxy: @unchecked Sendable {
 
     /// Stop the FFmpeg process, HTTP server, and clean up temp files.
     public func stop() {
-        if let process = ffmpegProcess, process.isRunning {
-            process.terminate()
-            print("[HLSProxy] Stopped FFmpeg")
+        // Signal the startup polling loop to abort before we tear anything down.
+        isCancelled = true
+
+        if let process = ffmpegProcess {
+            if process.isRunning {
+                process.terminate()
+                // Wait for the process to fully exit before removing the temp directory —
+                // removing it while FFmpeg is still writing causes spurious file-not-found
+                // errors in FFmpeg's output, and on the next start() we get a clean dir.
+                process.waitUntilExit()
+            }
+            print("[HLSProxy] Stopped FFmpeg (started: \(ffmpegStarted))")
         }
         ffmpegProcess = nil
 

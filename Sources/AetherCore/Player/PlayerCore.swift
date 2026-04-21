@@ -158,6 +158,11 @@ public final class PlayerCore {
     /// FFmpeg HLS proxy — remuxes TS/MKV to local HLS segments for AVPlayer
     private var hlsProxy: LocalHLSProxy?
 
+    /// True while a LocalHLSProxy is in the process of starting up (between proxy creation and
+    /// first-segment ready). Guards against rapid duplicate play() calls that stop the proxy
+    /// before FFmpeg has a chance to write its first segment.
+    private var isLoadingProxy: Bool = false
+
     /// Tracks when the current channel started playing.
     private var watchStartTime: Date?
 
@@ -205,6 +210,14 @@ public final class PlayerCore {
 
     /// Starts playback of `channel`.
     public func play(_ channel: Channel) {
+        // FIX 1: Deduplicate rapid play() calls for the same channel while the HLS proxy is
+        // still starting. Each call would stop the previous proxy (removing its temp dir) before
+        // FFmpeg writes its first segment, causing a cascade of "Temp directory removed" errors.
+        if currentChannel?.id == channel.id, isLoadingProxy {
+            print("[PlayerCore] play(\(channel.name)) skipped — proxy already starting")
+            return
+        }
+
         // Persist before switching
         lastChannelStore.save(channel)
         // End previous watch session before switching
@@ -212,6 +225,7 @@ public final class PlayerCore {
         endWatchSession()
 
         // Clean up previous player item and observers
+        isLoadingProxy = false
         hlsProxy?.stop()
         removeRetryObservers()
         statusObserver?.cancel()
@@ -258,6 +272,7 @@ public final class PlayerCore {
 
             let proxy = LocalHLSProxy()
             self.hlsProxy = proxy
+            isLoadingProxy = true
 
             print("[PlayerCore]   Using FFmpeg HLS proxy")
 
@@ -265,6 +280,7 @@ public final class PlayerCore {
                 do {
                     try await proxy.start(from: url)
                     guard let self, self.currentChannel?.id == channel.id else { return }
+                    self.isLoadingProxy = false
 
                     // Use AVURLAsset with explicit options for local proxy streams.
                     // AVURLAssetPreferPreciseDurationAndTimingKey: false avoids the DRM
@@ -284,8 +300,19 @@ public final class PlayerCore {
                     self.registerRetryObservers(for: item)
                 } catch {
                     guard let self, self.currentChannel?.id == channel.id else { return }
+                    self.isLoadingProxy = false
                     let errMsg = error.localizedDescription
                     print("[PlayerCore] HLS proxy error: \(errMsg)")
+
+                    // FIX 3: Internal proxy errors caused by rapid channel switching (temp dir
+                    // removed or proxy cancelled before FFmpeg started) are not network errors —
+                    // retrying would just repeat the cascade. Go idle silently.
+                    let isInternalCancel = errMsg.contains("Proxy cancelled") || errMsg.contains("Temp directory removed")
+                    if isInternalCancel {
+                        print("[PlayerCore] HLS proxy cancelled by channel switch — no retry")
+                        self.state = .idle
+                        return
+                    }
 
                     // HTTP 458 = non-standard IPTV server rejection — retry with alternate extension
                     let is458 = errMsg.contains("458") || errMsg.contains("Server returned 4")
@@ -342,6 +369,7 @@ public final class PlayerCore {
 
     /// Stops playback and clears the current channel.
     public func stop() {
+        isLoadingProxy = false
         stopProgressTracking()
         endWatchSession()
         removeRetryObservers()
