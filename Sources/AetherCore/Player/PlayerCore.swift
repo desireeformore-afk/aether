@@ -187,7 +187,7 @@ public final class PlayerCore {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.handleMemoryPressure()
             }
         }
@@ -478,8 +478,9 @@ public final class PlayerCore {
             BufferingConfig.applyAdaptive(to: currentItem)
         }
 
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(delay))
+            guard let self else { return }
             // Only retry if we're still on the same channel
             guard self.currentChannel?.id == channel.id else {
                 self.isRetrying = false
@@ -692,8 +693,9 @@ public final class PlayerCore {
         print("[PlayerCore] 🔔 Banner: \(message)")
         streamErrorBanner = message
         state = .idle
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(5))
+            guard let self else { return }
             if self.streamErrorBanner == message {
                 self.streamErrorBanner = nil
             }
@@ -728,8 +730,8 @@ public final class PlayerCore {
             let rawDuration = self.player.currentItem?.duration.seconds ?? 0
             let duration = rawDuration.isNaN || rawDuration.isInfinite ? 0 : rawDuration
             if current > 0 {
-                Task { @MainActor in
-                    self.onProgressUpdate?(channel.id, current, duration)
+                Task { @MainActor [weak self] in
+                    self?.onProgressUpdate?(channel.id, current, duration)
                 }
             }
         }
