@@ -21,10 +21,10 @@ public enum PlaylistImporter {
         }
     }
 
-    /// Imports channels from an M3U file.
+    /// Imports channels from an M3U file, creating a `PlaylistRecord` in SwiftData.
     /// Returns the number of channels imported.
     @MainActor
-    public static func `import`(from url: URL) async throws -> Int {
+    public static func `import`(from url: URL, name: String, modelContext: ModelContext) async throws -> Int {
         let content: String
         do {
             content = try String(contentsOf: url, encoding: .utf8)
@@ -42,8 +42,15 @@ public enum PlaylistImporter {
             throw ImportError.noChannels
         }
 
-        // TODO: Save channels to SwiftData
-        // For now, just return the count
+        let record = PlaylistRecord(
+            name: name,
+            urlString: url.absoluteString,
+            lastRefreshed: Date(),
+            playlistType: .m3u
+        )
+        modelContext.insert(record)
+        try await ChannelCache.shared.save(channels: channels, playlistID: record.id)
+
         return channels.count
     }
 }

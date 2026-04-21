@@ -71,50 +71,53 @@ struct ContinueWatchingCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ZStack(alignment: .bottomLeading) {
-                posterImage(url: record.logoURLString.flatMap { URL(string: $0) })
-                    .frame(width: 160, height: 240)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            Button(action: resumePlayback) {
+                ZStack(alignment: .bottomLeading) {
+                    posterImage(url: record.logoURLString.flatMap { URL(string: $0) })
+                        .frame(width: 160, height: 240)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                // Gradient + progress bar
-                VStack(spacing: 0) {
-                    Spacer()
-                    LinearGradient(
-                        colors: [.clear, .black.opacity(0.8)],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                    .frame(height: 60)
+                    // Gradient + progress bar
+                    VStack(spacing: 0) {
+                        Spacer()
+                        LinearGradient(
+                            colors: [.clear, .black.opacity(0.8)],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                        .frame(height: 60)
 
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Rectangle()
-                                .fill(Color.white.opacity(0.25))
-                                .frame(height: 3)
-                            Rectangle()
-                                .fill(Color.blue)
-                                .frame(width: geo.size.width * record.progressFraction, height: 3)
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.25))
+                                    .frame(height: 3)
+                                Rectangle()
+                                    .fill(Color.blue)
+                                    .frame(width: geo.size.width * record.progressFraction, height: 3)
+                            }
                         }
+                        .frame(height: 3)
+                        .padding(.horizontal, 8)
+                        .padding(.bottom, 8)
                     }
-                    .frame(height: 3)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 8)
-                }
-                .frame(width: 160, height: 240)
+                    .frame(width: 160, height: 240)
 
-                if isHovered {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(.black.opacity(0.4))
-                        .frame(width: 160, height: 240)
-                    Image(systemName: "play.circle.fill")
-                        .font(.system(size: 44))
-                        .foregroundStyle(.white)
-                        .frame(width: 160, height: 240)
+                    if isHovered {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.black.opacity(0.4))
+                            .frame(width: 160, height: 240)
+                        Image(systemName: "play.circle.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.white)
+                            .frame(width: 160, height: 240)
+                    }
                 }
+                .contentShape(Rectangle())
+                .scaleEffect(isHovered ? 1.04 : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: isHovered)
             }
-            .scaleEffect(isHovered ? 1.04 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isHovered)
+            .buttonStyle(.plain)
             .onHover { isHovered = $0 }
-            .onTapGesture { resumePlayback() }
             .contextMenu {
                 Button("Usuń z historii", role: .destructive) {
                     modelContext.delete(record)

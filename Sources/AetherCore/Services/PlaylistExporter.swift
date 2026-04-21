@@ -1,5 +1,4 @@
 import Foundation
-import SwiftData
 
 /// Exports playlists to M3U format.
 public enum PlaylistExporter {
@@ -18,21 +17,14 @@ public enum PlaylistExporter {
         }
     }
 
-    /// Exports all channels from the current playlist to an M3U file.
+    /// Exports the given channels to an M3U file at the specified URL.
     @MainActor
-    public static func export(to url: URL) async throws {
-        // For now, we'll export a basic M3U structure
-        // In a real implementation, you'd fetch channels from SwiftData
-
-        var m3uContent = "#EXTM3U\n"
-
-        // TODO: Fetch channels from SwiftData context
-        // For now, create a placeholder implementation
-        let channels: [Channel] = []
-
+    public static func export(to url: URL, channels: [Channel]) async throws {
         guard !channels.isEmpty else {
             throw ExportError.noChannels
         }
+
+        var m3uContent = "#EXTM3U\n"
 
         for channel in channels {
             m3uContent += "#EXTINF:-1"

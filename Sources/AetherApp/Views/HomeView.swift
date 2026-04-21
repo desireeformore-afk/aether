@@ -52,6 +52,22 @@ struct HomeView: View {
                     }
                 }
             }
+
+            if let error = viewModel.errorMessage {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.yellow)
+                        Text(error)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white.opacity(0.85))
+                    }
+                    .padding(12)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .padding(.bottom, 16)
+                }
+            }
         }
         .onAppear {
             viewModel.load(credentials: credentials)

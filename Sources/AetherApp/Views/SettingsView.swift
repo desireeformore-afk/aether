@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import AetherCore
 import AetherUI
 import AppKit
@@ -7,6 +8,8 @@ import AppKit
 struct SettingsView: View {
     @Environment(EPGStore.self) private var epgStore
     @Environment(ThemeService.self) private var themeService
+    @Environment(\.modelContext) private var modelContext
+    @Query private var playlists: [PlaylistRecord]
 
     // MARK: - UserDefaults-backed preferences
 
@@ -468,11 +471,17 @@ struct SettingsView: View {
         panel.nameFieldStringValue = "playlist.m3u"
         panel.message = "Export playlist to M3U file"
 
+        let snapshotPlaylists = playlists
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
             Task { @MainActor in
                 do {
-                    try await PlaylistExporter.export(to: url)
+                    var allChannels: [Channel] = []
+                    for playlist in snapshotPlaylists {
+                        let channels = await ChannelCache.shared.load(playlistID: playlist.id)
+                        allChannels.append(contentsOf: channels)
+                    }
+                    try await PlaylistExporter.export(to: url, channels: allChannels)
                     exportMessage = "✓ Playlist exported successfully"
                 } catch {
                     exportMessage = "Error: \(error.localizedDescription)"
@@ -490,9 +499,10 @@ struct SettingsView: View {
 
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
+            let name = url.deletingPathExtension().lastPathComponent
             Task { @MainActor in
                 do {
-                    let count = try await PlaylistImporter.import(from: url)
+                    let count = try await PlaylistImporter.import(from: url, name: name, modelContext: modelContext)
                     importMessage = "✓ Imported \(count) channels successfully"
                 } catch {
                     importMessage = "Error: \(error.localizedDescription)"
