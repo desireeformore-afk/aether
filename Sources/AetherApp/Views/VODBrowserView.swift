@@ -125,7 +125,8 @@ struct VODBrowserView: View {
 
     private func updateHeroBanner() {
         guard let first = homeViewModel.shelves.first else { return }
-        heroBannerItems = first.items.prefix(3).map { item in
+        let tapped = shelfItemsWithTap(first.items)
+        heroBannerItems = tapped.prefix(3).map { item in
             HeroBannerItem(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
         }
     }

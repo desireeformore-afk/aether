@@ -15,6 +15,7 @@ struct ShelfItem: Identifiable {
     let imageURL: String?
     var vod: XstreamVOD?
     var series: XstreamSeries?
+    var stream: XstreamStream?
     let onTap: () -> Void
 }
 

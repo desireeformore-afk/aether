@@ -44,7 +44,7 @@ struct HomeView: View {
                         }
 
                         if !viewModel.liveItems.isEmpty {
-                            CategoryShelf(title: "Na żywo", items: viewModel.liveItems)
+                            CategoryShelf(title: "Na żywo", items: shelfItemsWithTap(viewModel.liveItems, credentials: credentials))
                         }
 
                         Spacer(minLength: 40)
@@ -80,6 +80,14 @@ struct HomeView: View {
                     vod: nil,
                     series: series,
                     onTap: { selectedSeries = series }
+                )
+            } else if let liveStream = item.stream {
+                return ShelfItem(
+                    id: item.id,
+                    title: item.title,
+                    imageURL: item.imageURL,
+                    stream: liveStream,
+                    onTap: { player.play(liveStream.toChannel(credentials: credentials)) }
                 )
             }
             return item

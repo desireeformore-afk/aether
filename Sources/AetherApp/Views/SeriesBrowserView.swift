@@ -9,6 +9,7 @@ struct SeriesBrowserView: View {
     let credentials: XstreamCredentials
 
     @State private var heroBannerItems: [HeroBannerItem] = []
+    @State private var selectedSeries: XstreamSeries?
 
     var body: some View {
         ZStack {
@@ -27,7 +28,7 @@ struct SeriesBrowserView: View {
                         }
 
                         ForEach(Array(homeViewModel.seriesShelves.enumerated()), id: \.offset) { _, shelf in
-                            CategoryShelf(title: shelf.title, items: shelf.items)
+                            CategoryShelf(title: shelf.title, items: shelfItemsWithTap(shelf.items))
                         }
 
                         Spacer(minLength: 40)
@@ -40,11 +41,28 @@ struct SeriesBrowserView: View {
             homeViewModel.load(credentials: credentials)
             updateHeroBanner()
         }
+        .sheet(item: $selectedSeries) { series in
+            SeriesDetailView(series: series, credentials: credentials, player: player)
+        }
+    }
+
+    private func shelfItemsWithTap(_ items: [ShelfItem]) -> [ShelfItem] {
+        items.map { item in
+            guard let series = item.series else { return item }
+            return ShelfItem(
+                id: item.id,
+                title: item.title,
+                imageURL: item.imageURL,
+                series: series,
+                onTap: { selectedSeries = series }
+            )
+        }
     }
 
     private func updateHeroBanner() {
         guard let first = homeViewModel.seriesShelves.first else { return }
-        heroBannerItems = first.items.prefix(3).map { item in
+        let tapped = shelfItemsWithTap(first.items)
+        heroBannerItems = tapped.prefix(3).map { item in
             HeroBannerItem(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
         }
     }

@@ -221,7 +221,7 @@ final class HomeViewModel: ObservableObject {
     private func loadLiveInBackground(_ svc: XstreamService) async {
         let streams = (try? await svc.liveStreams()) ?? []
         let items = streams.prefix(20).map { stream in
-            ShelfItem(id: "\(stream.id)", title: stream.name, imageURL: stream.streamIcon, onTap: {})
+            ShelfItem(id: "\(stream.id)", title: stream.name, imageURL: stream.streamIcon, stream: stream, onTap: {})
         }
         liveItems = Array(items)
         Self.cachedLive = Array(items)
