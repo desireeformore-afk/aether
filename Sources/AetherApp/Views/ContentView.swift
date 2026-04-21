@@ -77,9 +77,14 @@ struct ContentView: View {
         .preferredColorScheme(resolvedColorScheme)
         .onChange(of: playerCore.state) { _, newState in
             switch newState {
-            case .loading, .playing:
+            case .loading:
+                // Show player container but don't touch fullscreen flag yet —
+                // suppressNextFullscreen must survive until .playing fires.
+                isFullscreenPlayer = true
+            case .playing:
                 if suppressNextFullscreen {
                     suppressNextFullscreen = false
+                    isFullscreenPlayer = false
                 } else {
                     isFullscreenPlayer = true
                 }
