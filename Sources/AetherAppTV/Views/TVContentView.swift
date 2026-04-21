@@ -14,6 +14,7 @@ struct TVContentView: View {
 
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var showChannelList = false
+    @FocusState private var isSidebarFocused: Bool
 
     var body: some View {
         ZStack {
@@ -27,6 +28,7 @@ struct TVContentView: View {
                     player: playerCore,
                     isVisible: $showChannelList
                 )
+                .focused($isSidebarFocused)
                 .transition(.move(edge: .leading))
             }
 
@@ -55,6 +57,12 @@ struct TVContentView: View {
             playerCore.currentXstreamCredentials = playlist.xstreamCredentials
             Task { await epgStore.loadGuide(for: playlist) }
         }
+        .onChange(of: showChannelList) { _, newValue in
+            if newValue { isSidebarFocused = true }
+        }
+        .onChange(of: isSidebarFocused) { _, focused in
+            if !focused { showChannelList = false }
+        }
     }
 }
 
@@ -69,6 +77,8 @@ private struct TVChannelPickerOverlay: View {
     @State private var channels: [Channel] = []
     @State private var searchText = ""
     @State private var isLoading = false
+    @FocusState private var focusedChannel: Channel.ID?
+    @FocusState private var focusedPlaylist: PlaylistRecord.ID?
 
     private var filteredChannels: [Channel] {
         guard !searchText.isEmpty else { return channels }
@@ -87,6 +97,7 @@ private struct TVChannelPickerOverlay: View {
 
                 List(playlists, selection: $selectedPlaylist) { playlist in
                     Text(playlist.name).font(.body).tag(playlist)
+                        .focused($focusedPlaylist, equals: playlist.id)
                 }
                 .listStyle(.grouped)
             }
@@ -124,6 +135,7 @@ private struct TVChannelPickerOverlay: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .focused($focusedChannel, equals: channel.id)
                     }
                     .listStyle(.grouped)
                 }

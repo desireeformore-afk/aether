@@ -81,7 +81,7 @@ targets:
     platform: tvOS
     deploymentTarget: "17.0"
     sources:
-      - path: Sources/AetherApptvOS
+      - path: Sources/AetherAppTV
       - path: Sources/AetherCore
       - path: Sources/AetherUI
     info:
