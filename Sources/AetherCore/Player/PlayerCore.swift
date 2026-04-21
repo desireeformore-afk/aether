@@ -141,6 +141,10 @@ public final class PlayerCore {
     /// The underlying AVPlayer instance.
     public let player: AVPlayer = AVPlayer()
 
+    // Warmup buffer — preloads the next channel so switching is near-instant
+    private var warmupPlayer: AVPlayer? = nil
+    private var warmupChannel: Channel? = nil
+
     private var statusObserver: AnyCancellable?
     private var stallObserver: NSObjectProtocol?
     private var failedObserver: NSObjectProtocol?
@@ -240,6 +244,11 @@ public final class PlayerCore {
 
     /// Internal play — no debounce. Used by playNext/playPrevious/scheduleRetry.
     private func playInternal(_ channel: Channel) {
+        // Capture warmup item before clearing state
+        let preloadedItem = (warmupChannel?.id == channel.id) ? warmupPlayer?.currentItem : nil
+        warmupPlayer = nil
+        warmupChannel = nil
+
         // Persist before switching
         lastChannelStore.save(channel)
         // End previous watch session before switching
@@ -358,9 +367,16 @@ public final class PlayerCore {
         }
 
         // Direct playback for MP4 and other AVPlayer-compatible formats
-        let asset = AVURLAsset(url: url)
-        let item = AVPlayerItem(asset: asset)
-        item.preferredForwardBufferDuration = 4
+        let item: AVPlayerItem
+        if let warm = preloadedItem {
+            // Use already-buffered item — fast path (< 500ms switch)
+            print("[PlayerCore] ⚡ Using preloaded item for: \(channel.name)")
+            item = warm
+        } else {
+            let asset = AVURLAsset(url: url)
+            item = AVPlayerItem(asset: asset)
+            item.preferredForwardBufferDuration = 4
+        }
 
         player.replaceCurrentItem(with: item)
         player.play()
@@ -407,6 +423,8 @@ public final class PlayerCore {
         retrySourceItem = nil
         shouldBlockRetry = false
         failedProxyURLs.removeAll()
+        warmupPlayer = nil
+        warmupChannel = nil
         state = .idle
     }
 
@@ -723,6 +741,26 @@ public final class PlayerCore {
         registerRetryObservers(for: item)
     }
 
+    // MARK: - Warmup preload
+
+    @MainActor
+    private func warmupNextChannel() {
+        guard !channelList.isEmpty,
+              let current = currentChannel,
+              let idx = channelList.firstIndex(where: { $0.id == current.id }),
+              channelList.count > 1 else { return }
+        let nextIdx = (idx + 1) % channelList.count
+        let next = channelList[nextIdx]
+        guard next.id != warmupChannel?.id else { return }
+        warmupChannel = next
+        let item = AVPlayerItem(url: next.streamURL)
+        item.preferredForwardBufferDuration = 10
+        warmupPlayer = AVPlayer(playerItem: item)
+        warmupPlayer?.isMuted = true
+        warmupPlayer?.playImmediately(atRate: 0)
+        print("[PlayerCore] 🔄 Warming up: \(next.name)")
+    }
+
     // MARK: - Private
 
     private func startProgressTracking(channel: Channel) {
@@ -784,6 +822,11 @@ public final class PlayerCore {
                     // Start progress tracking for Continue Watching
                     if let ch = self.currentChannel {
                         self.startProgressTracking(channel: ch)
+                    }
+                    // Preload next channel 2s after playback starts
+                    Task { [weak self] in
+                        try? await Task.sleep(for: .seconds(2))
+                        await self?.warmupNextChannel()
                     }
                 case .failed:
                     self.isLoadingProxy = false
