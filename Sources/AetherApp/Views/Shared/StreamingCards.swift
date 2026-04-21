@@ -32,59 +32,62 @@ struct PosterCard: View {
     private var cardHeight: CGFloat { cardWidth * 3 / 2 }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            AsyncImage(url: imageURL.flatMap(URL.init(string:))) { phase in
-                switch phase {
-                case .empty:
-                    CardShimmerView()
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                case .failure:
-                    ZStack {
+        Button(action: onTap) {
+            ZStack(alignment: .bottom) {
+                AsyncImage(url: imageURL.flatMap(URL.init(string:))) { phase in
+                    switch phase {
+                    case .empty:
+                        CardShimmerView()
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    case .failure:
+                        ZStack {
+                            Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
+                            Image(systemName: "film")
+                                .font(.largeTitle)
+                                .foregroundStyle(.secondary)
+                        }
+                    @unknown default:
                         Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
-                        Image(systemName: "film")
-                            .font(.largeTitle)
-                            .foregroundStyle(.secondary)
                     }
-                @unknown default:
-                    Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
+                }
+                .frame(width: cardWidth, height: cardHeight)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                if isHovered {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Spacer()
+                        Text(title)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .padding(10)
+                    .frame(width: cardWidth, height: cardHeight, alignment: .bottomLeading)
+                    .background(
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0),
+                                .init(color: .black.opacity(0.5), location: 0.55),
+                                .init(color: .black.opacity(0.92), location: 1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .transition(.opacity)
                 }
             }
             .frame(width: cardWidth, height: cardHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-
-            if isHovered {
-                VStack(alignment: .leading, spacing: 4) {
-                    Spacer()
-                    Text(title)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                }
-                .padding(10)
-                .frame(width: cardWidth, height: cardHeight, alignment: .bottomLeading)
-                .background(
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0),
-                            .init(color: .black.opacity(0.5), location: 0.55),
-                            .init(color: .black.opacity(0.92), location: 1)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .transition(.opacity)
-            }
+            .scaleEffect(isHovered ? 1.05 : 1.0)
+            .shadow(color: .black.opacity(isHovered ? 0.5 : 0), radius: 14, y: 8)
+            .animation(.easeInOut(duration: 0.2), value: isHovered)
+            .contentShape(Rectangle())
         }
-        .frame(width: cardWidth, height: cardHeight)
-        .scaleEffect(isHovered ? 1.05 : 1.0)
-        .shadow(color: .black.opacity(isHovered ? 0.5 : 0), radius: 14, y: 8)
-        .animation(.easeInOut(duration: 0.2), value: isHovered)
+        .buttonStyle(.plain)
         .onHover { isHovered = $0 }
-        .onTapGesture { onTap() }
     }
 }
 

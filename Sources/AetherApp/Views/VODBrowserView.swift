@@ -9,6 +9,7 @@ struct VODBrowserView: View {
     let credentials: XstreamCredentials
 
     @State private var selectedVOD: XstreamVOD?
+    @State private var selectedSeries: XstreamSeries?
     @State private var heroBannerItems: [HeroBannerItem] = []
     @State private var selectedServiceTitle: String = ""
     @State private var selectedServiceItems: [ShelfItem] = []
@@ -82,6 +83,9 @@ struct VODBrowserView: View {
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
         }
+        .sheet(item: $selectedSeries) { series in
+            SeriesDetailView(series: series, credentials: credentials, player: player)
+        }
         .sheet(isPresented: $showServiceDetail) {
             StreamingServiceDetailView(
                 title: selectedServiceTitle,
@@ -111,15 +115,20 @@ struct VODBrowserView: View {
 
     private func shelfItemsWithTap(_ items: [ShelfItem]) -> [ShelfItem] {
         items.map { item in
-            guard let vod = item.vod else { return item }
-            return ShelfItem(
-                id: item.id,
-                title: item.title,
-                imageURL: item.imageURL,
-                vod: vod,
-                series: nil,
-                onTap: { selectedVOD = vod }
-            )
+            if let vod = item.vod {
+                return ShelfItem(
+                    id: item.id, title: item.title, imageURL: item.imageURL,
+                    vod: vod, series: nil,
+                    onTap: { selectedVOD = vod }
+                )
+            } else if let series = item.series {
+                return ShelfItem(
+                    id: item.id, title: item.title, imageURL: item.imageURL,
+                    vod: nil, series: series,
+                    onTap: { selectedSeries = series }
+                )
+            }
+            return item
         }
     }
 
