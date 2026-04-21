@@ -70,6 +70,25 @@ struct ContentView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                    .overlay {
+                        if playerCore.state == .loading {
+                            ZStack {
+                                Color.black.opacity(0.6)
+                                VStack(spacing: 12) {
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                        .scaleEffect(1.5)
+                                        .tint(.white)
+                                    if let channel = playerCore.currentChannel {
+                                        Text(channel.name)
+                                            .font(.caption)
+                                            .foregroundStyle(.white.opacity(0.8))
+                                            .lineLimit(1)
+                                    }
+                                }
+                            }
+                        }
+                    }
             } else {
                 mainLayout
             }

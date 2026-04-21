@@ -257,6 +257,8 @@ public final class PlayerCore {
 
         // Clean up previous player item and observers
         isLoadingProxy = false
+        player.pause()
+        player.replaceCurrentItem(with: nil)
         hlsProxy?.stop()
         removeRetryObservers()
         statusObserver?.cancel()
