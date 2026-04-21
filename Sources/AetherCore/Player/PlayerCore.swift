@@ -565,6 +565,7 @@ public final class PlayerCore {
                 guard let self,
                       let item,
                       item === self.player.currentItem else { return }
+                guard !self.isLoadingProxy else { return }
                 // If we have an HLS proxy, check if it's still alive before retrying.
                 // A dead proxy means we must restart it and replace the AVPlayerItem —
                 // simply retrying the old URL (on the old port) will get Connection refused.

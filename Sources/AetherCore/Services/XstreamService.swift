@@ -152,6 +152,17 @@ public struct XstreamSeriesCategory: Decodable, Sendable, Identifiable, Hashable
     }
 }
 
+/// Decodes a JSON value that may be either an Int or a numeric String.
+private struct FlexInt: Decodable {
+    let value: Int
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if let i = try? c.decode(Int.self) { value = i; return }
+        if let s = try? c.decode(String.self), let i = Int(s) { value = i; return }
+        value = 0
+    }
+}
+
 /// Top-level series entry (list view).
 public struct XstreamSeries: Decodable, Sendable, Identifiable, Hashable {
     public let id: Int
@@ -172,6 +183,23 @@ public struct XstreamSeries: Decodable, Sendable, Identifiable, Hashable {
         case releaseDate = "releaseDate"
         case categoryID = "category_id"
         case categoryName = "category_name"
+    }
+}
+
+extension XstreamSeries {
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(FlexInt.self, forKey: .id).value
+        name = try c.decode(String.self, forKey: .name)
+        cover = try c.decodeIfPresent(String.self, forKey: .cover)
+        plot = try c.decodeIfPresent(String.self, forKey: .plot)
+        cast = try c.decodeIfPresent(String.self, forKey: .cast)
+        director = try c.decodeIfPresent(String.self, forKey: .director)
+        genre = try c.decodeIfPresent(String.self, forKey: .genre)
+        releaseDate = try c.decodeIfPresent(String.self, forKey: .releaseDate)
+        rating = try c.decodeIfPresent(String.self, forKey: .rating)
+        categoryID = try c.decodeIfPresent(String.self, forKey: .categoryID)
+        categoryName = try c.decodeIfPresent(String.self, forKey: .categoryName)
     }
 }
 
@@ -223,7 +251,7 @@ public struct XstreamSeriesInfo: Decodable, Sendable {
         let categoryID: String?
         let categoryName: String?
         // series_id may appear here on some servers but is unreliable
-        let seriesID: Int?
+        let seriesID: FlexInt?
 
         enum CodingKeys: String, CodingKey {
             case name, cover, plot, cast, director, genre, rating
@@ -242,8 +270,8 @@ public struct XstreamSeriesInfo: Decodable, Sendable {
     public init(from decoder: Decoder) throws {
         let root = try decoder.container(keyedBy: RootKeys.self)
         let body = try root.decode(SeriesInfoBody.self, forKey: .info)
-        let rootSeriesID = try root.decodeIfPresent(Int.self, forKey: .seriesID)
-        let resolvedID = rootSeriesID ?? body.seriesID ?? 0
+        let rootSeriesID = try root.decodeIfPresent(FlexInt.self, forKey: .seriesID)?.value
+        let resolvedID = rootSeriesID ?? body.seriesID?.value ?? 0
         series = XstreamSeries(
             id: resolvedID,
             name: body.name,
