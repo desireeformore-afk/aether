@@ -211,7 +211,7 @@ public final class PlayerCore {
 
     // MARK: - Public API
 
-    /// Starts playback of `channel`.
+    /// Starts playback of `channel`. Includes debounce guard for UI events.
     public func play(_ channel: Channel) {
         // Guard: same channel, proxy still starting
         if currentChannel?.id == channel.id, isLoadingProxy {
@@ -235,6 +235,11 @@ public final class PlayerCore {
         }
         lastPlayRequestedAt = now
 
+        playInternal(channel)
+    }
+
+    /// Internal play — no debounce. Used by playNext/playPrevious/scheduleRetry.
+    private func playInternal(_ channel: Channel) {
         // Persist before switching
         lastChannelStore.save(channel)
         // End previous watch session before switching
@@ -425,7 +430,7 @@ public final class PlayerCore {
               let idx = channelList.firstIndex(of: current),
               idx + 1 < channelList.count else { return }
         retryCount = 0
-        play(channelList[idx + 1])
+        playInternal(channelList[idx + 1])
     }
 
     /// Plays the previous channel in `channelList`.
@@ -434,7 +439,7 @@ public final class PlayerCore {
               let idx = channelList.firstIndex(of: current),
               idx > 0 else { return }
         retryCount = 0
-        play(channelList[idx - 1])
+        playInternal(channelList[idx - 1])
     }
 
     /// Adjusts volume by delta (-1.0 to +1.0), clamped to 0–1.
@@ -490,7 +495,7 @@ public final class PlayerCore {
             self.isRetrying = false
             self.retrySourceItem = nil
             self.removeRetryObservers()
-            self.play(channel)
+            self.playInternal(channel)
         }
     }
 
