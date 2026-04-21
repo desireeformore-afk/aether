@@ -118,12 +118,14 @@ struct GlobalContentSearchView: View {
             return
         }
 
-        let lower = query.lowercased()
-
         // Fast local search if cached data is available
         if isLocalSearchAvailable {
-            vodResults = homeViewModel.allVODs.filter { $0.name.lowercased().contains(lower) }
-            seriesResults = homeViewModel.allSeries.filter { $0.name.lowercased().contains(lower) }
+            vodResults = homeViewModel.allVODs
+                .filter { fuzzyScore(query, in: $0.name) > 0 }
+                .sorted { fuzzyScore(query, in: $0.name) > fuzzyScore(query, in: $1.name) }
+            seriesResults = homeViewModel.allSeries
+                .filter { fuzzyScore(query, in: $0.name) > 0 }
+                .sorted { fuzzyScore(query, in: $0.name) > fuzzyScore(query, in: $1.name) }
             return
         }
 
@@ -131,6 +133,21 @@ struct GlobalContentSearchView: View {
         guard let svc = service else { return }
         vodResults = await svc.searchVODs(query: query)
         seriesResults = await svc.searchSeries(query: query)
+    }
+
+    private func fuzzyScore(_ query: String, in text: String) -> Int {
+        let q = query.lowercased()
+        let t = text.lowercased()
+        if t.contains(q) { return 100 }
+        var qi = q.startIndex
+        var score = 0
+        for ch in t {
+            if qi < q.endIndex && ch == q[qi] {
+                score += 1
+                qi = q.index(after: qi)
+            }
+        }
+        return qi == q.endIndex ? score : 0
     }
 
     private func cleanCategoryName(_ name: String?) -> String? {

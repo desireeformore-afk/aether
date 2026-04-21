@@ -20,9 +20,25 @@ struct CommandPaletteView: View {
     private var results: [Channel] {
         guard !query.isEmpty else { return Array(channels.prefix(12)) }
         return channels
-            .filter { $0.name.localizedCaseInsensitiveContains(query) }
+            .filter { fuzzyScore(query, in: $0.name) > 0 }
+            .sorted { fuzzyScore(query, in: $0.name) > fuzzyScore(query, in: $1.name) }
             .prefix(12)
             .map { $0 }
+    }
+
+    private func fuzzyScore(_ query: String, in text: String) -> Int {
+        let q = query.lowercased()
+        let t = text.lowercased()
+        if t.contains(q) { return 100 }
+        var qi = q.startIndex
+        var score = 0
+        for ch in t {
+            if qi < q.endIndex && ch == q[qi] {
+                score += 1
+                qi = q.index(after: qi)
+            }
+        }
+        return qi == q.endIndex ? score : 0
     }
 
     var body: some View {
