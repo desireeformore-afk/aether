@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var sidebarSelection: SidebarItem = .home
     @State private var selectedPlaylist: PlaylistRecord?
     @State private var isFullscreenPlayer = false
+    @State private var suppressNextFullscreen = false
     @State private var sidebarVisibility: NavigationSplitViewVisibility = .all
     @StateObject private var homeViewModel = HomeViewModel()
     @Query private var allPlaylists: [PlaylistRecord]
@@ -75,7 +76,16 @@ struct ContentView: View {
         }
         .preferredColorScheme(resolvedColorScheme)
         .onChange(of: playerCore.state) { _, newState in
-            if case .playing = newState { isFullscreenPlayer = true }
+            switch newState {
+            case .loading, .playing:
+                if suppressNextFullscreen {
+                    suppressNextFullscreen = false
+                } else {
+                    isFullscreenPlayer = true
+                }
+            case .idle, .error:
+                break
+            }
         }
         .onChange(of: selectedPlaylist) { _, newPlaylist in
             guard let playlist = newPlaylist else {
@@ -91,6 +101,7 @@ struct ContentView: View {
             keyboardHandler.startMonitoring()
             #endif
             if let channel = playerCore.restoreLastChannel() {
+                suppressNextFullscreen = true
                 playerCore.play(channel)
             }
         }
