@@ -502,10 +502,9 @@ public final class PlayerCore {
     private func registerRetryObservers(for item: AVPlayerItem) {
         let center = NotificationCenter.default
 
-        // Failed to play to end — bind to the specific item to avoid cross-item noise
         failedObserver = center.addObserver(
             forName: .AVPlayerItemFailedToPlayToEndTime,
-            object: item,
+            object: nil,
             queue: .main
         ) { [weak self] notification in
             let item = notification.object as? AVPlayerItem
@@ -538,10 +537,9 @@ public final class PlayerCore {
             }
         }
 
-        // Playback stalled — bind to the specific item to avoid cross-item noise
         stallObserver = center.addObserver(
             forName: .AVPlayerItemPlaybackStalled,
-            object: item,
+            object: nil,
             queue: .main
         ) { [weak self] notification in
             let item = notification.object as? AVPlayerItem
