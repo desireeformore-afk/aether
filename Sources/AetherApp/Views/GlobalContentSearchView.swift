@@ -10,6 +10,7 @@ struct GlobalContentSearchView: View {
     @State private var query = ""
     @State private var vodResults: [XstreamVOD] = []
     @State private var seriesResults: [XstreamSeries] = []
+    @State private var isSearching = false
     @State private var debounceTask: Task<Void, Never>?
     @State private var selectedVOD: XstreamVOD?
     @State private var selectedSeries: XstreamSeries?
@@ -46,6 +47,15 @@ struct GlobalContentSearchView: View {
                     systemImage: "magnifyingglass",
                     description: Text("Wpisz tytuł filmu lub serialu")
                 )
+            } else if isSearching {
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Szukam…")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if !homeViewModel.isPhase1Loaded && service == nil {
                 ContentUnavailableView(
                     "Ładowanie...",
@@ -97,10 +107,18 @@ struct GlobalContentSearchView: View {
         .background(Color.black)
         .onChange(of: query) { _, newVal in
             debounceTask?.cancel()
+            if newVal.isEmpty {
+                isSearching = false
+                vodResults = []
+                seriesResults = []
+                return
+            }
+            isSearching = true
             debounceTask = Task {
                 try? await Task.sleep(for: .milliseconds(200))
                 guard !Task.isCancelled else { return }
                 await runSearch(query: newVal)
+                isSearching = false
             }
         }
         .sheet(item: $selectedVOD) { vod in

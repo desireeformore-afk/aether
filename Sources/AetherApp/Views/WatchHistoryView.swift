@@ -362,12 +362,14 @@ struct WatchHistoryView: View {
         for idx in offsets {
             modelContext.delete(records[idx])
         }
+        try? modelContext.save()
     }
 
     private func clearAll() {
         for record in history {
             modelContext.delete(record)
         }
+        try? modelContext.save()
     }
 }
 

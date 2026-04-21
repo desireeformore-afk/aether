@@ -195,7 +195,7 @@ struct ContentView: View {
                             .font(.system(size: 13))
                             .foregroundStyle(.white)
                         Spacer()
-                        Button("✕") { }
+                        Button("✕") { playerCore.clearStreamErrorBanner() }
                             .buttonStyle(.plain)
                             .foregroundStyle(.white.opacity(0.6))
                     }

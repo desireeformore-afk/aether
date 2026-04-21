@@ -464,6 +464,17 @@ public final class PlayerCore {
         playInternal(channelList[idx - 1])
     }
 
+    /// Seeks forward or backward by `seconds` (positive = forward, negative = backward).
+    /// No-op for live streams.
+    public func seek(by seconds: Double) {
+        guard !isLiveStream else { return }
+        let current = player.currentTime().seconds
+        guard current.isFinite else { return }
+        let target = max(0, current + seconds)
+        let cmTime = CMTime(seconds: target, preferredTimescale: 600)
+        player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
     /// Adjusts volume by delta (-1.0 to +1.0), clamped to 0–1.
     /// Used by scroll wheel gesture over the player.
     public func adjustVolume(delta: Float) {
@@ -713,6 +724,11 @@ public final class PlayerCore {
     }
 
     // MARK: - Banner helper
+
+    /// Clears the stream error banner immediately.
+    public func clearStreamErrorBanner() {
+        streamErrorBanner = nil
+    }
 
     /// Shows a transient error banner and returns player to idle after 5s.
     private func showStreamErrorBanner(_ message: String) {

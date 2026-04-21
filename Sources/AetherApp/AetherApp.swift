@@ -129,6 +129,7 @@ struct AetherApp: App {
                 .environment(epgStore)
                 .environment(themeService)
                 .environment(parentalService)
+                .environment(analyticsService)
         }
         #endif
     }

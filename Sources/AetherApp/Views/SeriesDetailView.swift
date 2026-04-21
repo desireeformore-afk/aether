@@ -9,6 +9,7 @@ struct SeriesDetailView: View {
 
     @State private var info: XstreamSeriesInfo?
     @State private var isLoading = true
+    @State private var loadError: String?
     @State private var selectedSeason: String = "1"
 
     private let service: XstreamService
@@ -61,6 +62,22 @@ struct SeriesDetailView: View {
             if isLoading {
                 ProgressView("Loading episodes…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let error = loadError {
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.circle")
+                        .font(.system(size: 44))
+                        .foregroundStyle(.secondary)
+                    Text("Failed to load episodes")
+                        .font(.headline)
+                    Text(error)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                    Button("Retry") { Task { await loadInfo() } }
+                        .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let info {
                 let seasons = info.episodes.keys.sorted { Int($0) ?? 0 < Int($1) ?? 0 }
                 Picker("Season", selection: $selectedSeason) {
@@ -110,8 +127,15 @@ struct SeriesDetailView: View {
 
     private func loadInfo() async {
         isLoading = true
+        loadError = nil
         defer { isLoading = false }
-        info = try? await service.seriesInfo(seriesID: series.id)
+        do {
+            info = try await service.seriesInfo(seriesID: series.id)
+        } catch {
+            if info == nil {
+                loadError = error.localizedDescription
+            }
+        }
     }
 
     private func playEpisode(_ ep: XstreamEpisode) {

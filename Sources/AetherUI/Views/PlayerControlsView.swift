@@ -14,9 +14,13 @@ public struct PlayerControlsView: View {
 
     private var isPlaying: Bool { player.state == .playing }
 
+    private var isVOD: Bool {
+        player.currentChannel.map { $0.contentType != .liveTV } ?? false
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
-            if let channel = player.currentChannel, channel.contentType != .liveTV {
+            if isVOD {
                 SeekBarView(player: player)
                     .padding(.horizontal)
                     .padding(.top, 8)
@@ -28,6 +32,15 @@ public struct PlayerControlsView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Previous channel")
 
+                if isVOD {
+                    Button { player.seek(by: -10) } label: {
+                        Image(systemName: "gobackward.10")
+                            .font(.system(size: 18))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Skip back 10 seconds")
+                }
+
                 Button { player.togglePlayPause() } label: {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.title2)
@@ -35,11 +48,28 @@ public struct PlayerControlsView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(isPlaying ? "Pause" : "Play")
 
+                if isVOD {
+                    Button { player.seek(by: 10) } label: {
+                        Image(systemName: "goforward.10")
+                            .font(.system(size: 18))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Skip forward 10 seconds")
+                }
+
                 Button { player.playNext() } label: {
                     Image(systemName: "forward.fill")
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Next channel")
+
+                if let channel = player.currentChannel {
+                    Text(channel.name)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
 
                 Spacer()
 

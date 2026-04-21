@@ -49,6 +49,9 @@ struct ChannelListView: View {
     @State private var cachedGrouped: [(group: String, channels: [Channel])] = []
     @State private var cachedAllGroups: [String] = []
 
+    // Cached favorite IDs — avoids per-row SwiftData fetch during list rendering
+    @State private var cachedFavoriteIDs: Set<UUID> = []
+
     init(playlist: PlaylistRecord, selectedChannel: Binding<Channel?>, player: PlayerCore, searchActivationToken: Int = 0) {
         self.playlist = playlist
         self._selectedChannel = selectedChannel
@@ -90,6 +93,7 @@ struct ChannelListView: View {
                 collapsedGroups = decoded
             }
 
+            refreshFavoriteCache()
             await loadFromCache()
             let cacheAge = await ChannelCache.shared.lastModified(playlistID: playlist.id)
                 .map { Date().timeIntervalSince($0) } ?? .infinity
@@ -652,11 +656,12 @@ struct ChannelListView: View {
     }
 
     private func isFavoriteChannel(_ channel: Channel) -> Bool {
-        let channelID = channel.id
-        let records = (try? modelContext.fetch(
-            FetchDescriptor<FavoriteRecord>(predicate: #Predicate { $0.channelID == channelID })
-        )) ?? []
-        return !records.isEmpty
+        cachedFavoriteIDs.contains(channel.id)
+    }
+
+    private func refreshFavoriteCache() {
+        let records = (try? modelContext.fetch(FetchDescriptor<FavoriteRecord>())) ?? []
+        cachedFavoriteIDs = Set(records.map { $0.channelID })
     }
 
     private func toggleFavorite(channel: Channel) {
@@ -666,8 +671,10 @@ struct ChannelListView: View {
         )) ?? []
         if let record = existing.first {
             modelContext.delete(record)
+            cachedFavoriteIDs.remove(channelID)
         } else {
             modelContext.insert(FavoriteRecord(channel: channel))
+            cachedFavoriteIDs.insert(channelID)
         }
         try? modelContext.save()
     }

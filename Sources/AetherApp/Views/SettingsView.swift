@@ -277,7 +277,7 @@ struct SettingsView: View {
 
     // MARK: - Parental Controls Tab
 
-    @State private var parentalService = ParentalControlService()
+    @Environment(ParentalControlService.self) private var parentalService
 
     private var parentalControlsTab: some View {
         ParentalControlsView(service: parentalService)
@@ -285,7 +285,7 @@ struct SettingsView: View {
 
     // MARK: - Analytics Tab
 
-    @State private var analyticsService = AnalyticsService()
+    @Environment(AnalyticsService.self) private var analyticsService
     @State private var showAnalytics = false
 
     private var analyticsTab: some View {
@@ -465,6 +465,22 @@ struct SettingsView: View {
 
     // MARK: - Playlist Import/Export
 
+    private func showExportMessage(_ msg: String) {
+        exportMessage = msg
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            if exportMessage == msg { exportMessage = nil }
+        }
+    }
+
+    private func showImportMessage(_ msg: String) {
+        importMessage = msg
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            if importMessage == msg { importMessage = nil }
+        }
+    }
+
     private func exportPlaylist() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.init(filenameExtension: "m3u")!]
@@ -482,9 +498,9 @@ struct SettingsView: View {
                         allChannels.append(contentsOf: channels)
                     }
                     try await PlaylistExporter.export(to: url, channels: allChannels)
-                    exportMessage = "✓ Playlist exported successfully"
+                    showExportMessage("✓ Playlist exported successfully")
                 } catch {
-                    exportMessage = "Error: \(error.localizedDescription)"
+                    showExportMessage("Error: \(error.localizedDescription)")
                 }
             }
         }
@@ -503,9 +519,9 @@ struct SettingsView: View {
             Task { @MainActor in
                 do {
                     let count = try await PlaylistImporter.import(from: url, name: name, modelContext: modelContext)
-                    importMessage = "✓ Imported \(count) channels successfully"
+                    showImportMessage("✓ Imported \(count) channels successfully")
                 } catch {
-                    importMessage = "Error: \(error.localizedDescription)"
+                    showImportMessage("Error: \(error.localizedDescription)")
                 }
             }
         }
