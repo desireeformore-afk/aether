@@ -12,6 +12,7 @@ struct GlobalContentSearchView: View {
     @State private var seriesResults: [XstreamSeries] = []
     @State private var debounceTask: Task<Void, Never>?
     @State private var selectedVOD: XstreamVOD?
+    @State private var selectedSeries: XstreamSeries?
 
     private var isLocalSearchAvailable: Bool {
         !homeViewModel.allVODs.isEmpty || !homeViewModel.allSeries.isEmpty
@@ -83,6 +84,8 @@ struct GlobalContentSearchView: View {
                                     subtitle: series.genre,
                                     rating: series.rating
                                 )
+                                .contentShape(Rectangle())
+                                .onTapGesture { selectedSeries = series }
                             }
                         }
                     }
@@ -102,6 +105,9 @@ struct GlobalContentSearchView: View {
         }
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
+        }
+        .sheet(item: $selectedSeries) { series in
+            SeriesDetailView(series: series, credentials: credentials, player: player)
         }
     }
 
