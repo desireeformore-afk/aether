@@ -211,9 +211,53 @@ public struct XstreamSeriesInfo: Decodable, Sendable {
     /// Key = season number string ("1", "2", …)
     public let episodes: [String: [XstreamEpisode]]
 
-    enum CodingKeys: String, CodingKey {
-        case series = "info"
-        case episodes
+    private struct SeriesInfoBody: Decodable {
+        let name: String
+        let cover: String?
+        let plot: String?
+        let cast: String?
+        let director: String?
+        let genre: String?
+        let releaseDate: String?
+        let rating: String?
+        let categoryID: String?
+        let categoryName: String?
+        // series_id may appear here on some servers but is unreliable
+        let seriesID: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case name, cover, plot, cast, director, genre, rating
+            case releaseDate = "releaseDate"
+            case categoryID = "category_id"
+            case categoryName = "category_name"
+            case seriesID = "series_id"
+        }
+    }
+
+    private enum RootKeys: String, CodingKey {
+        case info, episodes
+        case seriesID = "series_id"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let root = try decoder.container(keyedBy: RootKeys.self)
+        let body = try root.decode(SeriesInfoBody.self, forKey: .info)
+        let rootSeriesID = try root.decodeIfPresent(Int.self, forKey: .seriesID)
+        let resolvedID = rootSeriesID ?? body.seriesID ?? 0
+        series = XstreamSeries(
+            id: resolvedID,
+            name: body.name,
+            cover: body.cover,
+            plot: body.plot,
+            cast: body.cast,
+            director: body.director,
+            genre: body.genre,
+            releaseDate: body.releaseDate,
+            rating: body.rating,
+            categoryID: body.categoryID,
+            categoryName: body.categoryName
+        )
+        episodes = (try? root.decode([String: [XstreamEpisode]].self, forKey: .episodes)) ?? [:]
     }
 }
 

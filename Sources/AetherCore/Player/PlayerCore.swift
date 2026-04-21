@@ -826,7 +826,7 @@ public final class PlayerCore {
                     // Preload next channel 2s after playback starts
                     Task { [weak self] in
                         try? await Task.sleep(for: .seconds(2))
-                        await self?.warmupNextChannel()
+                        self?.warmupNextChannel()
                     }
                 case .failed:
                     self.isLoadingProxy = false
