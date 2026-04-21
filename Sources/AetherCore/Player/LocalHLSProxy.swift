@@ -162,6 +162,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
             "-probesize", "2000000",
             "-analyzeduration", "2000000",
             "-headers", "User-Agent: \(userAgent)\r\n",
+            "-rw_timeout", "5000000",
             url.absoluteString
         ]
 

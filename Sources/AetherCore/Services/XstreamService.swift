@@ -233,6 +233,18 @@ public struct XstreamEpisode: Decodable, Sendable, Identifiable {
     }
 }
 
+extension XstreamEpisode {
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(FlexInt.self, forKey: .id).value
+        title = try c.decode(String.self, forKey: .title)
+        season = (try? c.decodeIfPresent(FlexInt.self, forKey: .season))?.value ?? 0
+        episodeNum = (try? c.decodeIfPresent(FlexInt.self, forKey: .episodeNum))?.value ?? 0
+        containerExtension = try? c.decodeIfPresent(String.self, forKey: .containerExtension)
+        info = try? c.decodeIfPresent(EpisodeInfo.self, forKey: .info)
+    }
+}
+
 /// Detailed series info with episodes grouped by season.
 public struct XstreamSeriesInfo: Decodable, Sendable {
     public let series: XstreamSeries

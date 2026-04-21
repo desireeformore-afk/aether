@@ -410,6 +410,8 @@ public final class PlayerCore {
     /// Stops playback and clears the current channel.
     public func stop() {
         isLoadingProxy = false
+        hlsProxy?.stop()
+        hlsProxy = nil
         stopProgressTracking()
         endWatchSession()
         removeRetryObservers()
