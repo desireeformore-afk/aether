@@ -149,7 +149,7 @@ extension AetherApp {
         // This happens when entities were added/removed during development.
         resetStoreIfIncompatible(storeURL: storeURL)
 
-        let config = ModelConfiguration(url: storeURL)
+        let config = ModelConfiguration(url: storeURL, cloudKitDatabase: .none)
         do {
             let container = try ModelContainer(
                 for: PlaylistRecord.self, FavoriteRecord.self, WatchHistoryRecord.self,
@@ -358,13 +358,10 @@ final class HistoryCoordinator {
     func bind(playerCore: PlayerCore) {
         guard !isBound else { return }
         isBound = true
-        // Build a background ModelContext using the shared container
-        guard let container = try? ModelContainer(for:
-            PlaylistRecord.self,
-            FavoriteRecord.self,
-            WatchHistoryRecord.self
-        ) else { return }
-        let ctx = ModelContext(container)
+        // Use the shared container so watch history lands in the same store the app reads from.
+        // Previously created a new ModelContainer (default path) which caused history to be
+        // written to a different database than AetherApp.sharedModelContainer.
+        let ctx = ModelContext(AetherApp.sharedModelContainer)
         self.modelContext = ctx
 
         playerCore.onWatchSessionEnd = { [weak self] channel, watchedAt, duration in

@@ -336,6 +336,12 @@ public final class LocalHLSProxy: @unchecked Sendable {
         print("[HLSProxy] Starting FFmpeg: \(sourceURL.lastPathComponent)")
         print("[HLSProxy] Serving at: \(playlistURL.absoluteString)")
 
+        // Guard: verify outputDir still exists — a concurrent stop() call (e.g. user switches
+        // channel while the HTTP server was starting) can remove it after the initial check above.
+        guard FileManager.default.fileExists(atPath: outputDir.path) else {
+            throw ProxyError.ffmpegFailed("Temp directory removed before FFmpeg could start: \(outputDir.path)")
+        }
+
         try process.run()
         self.ffmpegProcess = process
 
