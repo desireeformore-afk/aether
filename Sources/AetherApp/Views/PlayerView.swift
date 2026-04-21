@@ -485,7 +485,7 @@ struct VideoPlayerLayer: NSViewRepresentable {
     weak var playerCore: PlayerCore?
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(playerCore: playerCore)
     }
 
     func makeNSView(context: Context) -> AVPlayerView {
@@ -502,6 +502,7 @@ struct VideoPlayerLayer: NSViewRepresentable {
 
     func updateNSView(_ nsView: AVPlayerView, context: Context) {
         if nsView.player !== avPlayer { nsView.player = avPlayer }
+        context.coordinator.playerCore = playerCore
     }
 
     static func dismantleNSView(_ nsView: AVPlayerView, coordinator: Coordinator) {
@@ -510,9 +511,19 @@ struct VideoPlayerLayer: NSViewRepresentable {
     // MARK: - Coordinator
 
     final class Coordinator: NSObject, AVPlayerViewPictureInPictureDelegate {
+        weak var playerCore: PlayerCore?
+
+        init(playerCore: PlayerCore?) {
+            self.playerCore = playerCore
+        }
+
         nonisolated func playerViewWillStartPicture(inPicture playerView: AVPlayerView) {}
-        nonisolated func playerViewDidStartPicture(inPicture playerView: AVPlayerView) {}
+        nonisolated func playerViewDidStartPicture(inPicture playerView: AVPlayerView) {
+            Task { @MainActor [weak self] in self?.playerCore?.setPiPActive(true) }
+        }
         nonisolated func playerViewWillStopPicture(inPicture playerView: AVPlayerView) {}
-        nonisolated func playerViewDidStopPicture(inPicture playerView: AVPlayerView) {}
+        nonisolated func playerViewDidStopPicture(inPicture playerView: AVPlayerView) {
+            Task { @MainActor [weak self] in self?.playerCore?.setPiPActive(false) }
+        }
     }
 }

@@ -10,6 +10,7 @@ struct HomeView: View {
 
     @State private var selectedVOD: XstreamVOD?
     @State private var selectedSeries: XstreamSeries?
+    @State private var heroBannerItems: [HeroBannerItem] = []
 
     var body: some View {
         ZStack {
@@ -22,8 +23,8 @@ struct HomeView: View {
                     VStack(spacing: 0) {
                         WatchHistoryShelf(player: player)
 
-                        if !viewModel.heroBannerItems.isEmpty {
-                            HeroBanner(items: viewModel.heroBannerItems)
+                        if !heroBannerItems.isEmpty {
+                            HeroBanner(items: heroBannerItems)
                                 .padding(.bottom, -20)
                         }
 
@@ -52,12 +53,24 @@ struct HomeView: View {
                 }
             }
         }
-        .onAppear { viewModel.load(credentials: credentials) }
+        .onAppear {
+            viewModel.load(credentials: credentials)
+            updateHeroBanner()
+        }
+        .onChange(of: viewModel.shelves.count) { _, _ in updateHeroBanner() }
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
         }
         .sheet(item: $selectedSeries) { series in
             SeriesDetailView(series: series, credentials: credentials, player: player)
+        }
+    }
+
+    private func updateHeroBanner() {
+        guard let first = viewModel.shelves.first else { return }
+        let tapped = shelfItemsWithTap(first.items, credentials: credentials)
+        heroBannerItems = tapped.prefix(5).map { item in
+            HeroBannerItem(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
         }
     }
 

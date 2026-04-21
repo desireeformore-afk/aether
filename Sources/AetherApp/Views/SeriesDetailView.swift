@@ -118,8 +118,13 @@ struct SeriesDetailView: View {
         let ext = ep.containerExtension ?? "mp4"
         let url = credentials.streamURL(type: "series", id: ep.id, ext: ext)
 
+        // Deterministic UUID from episode ID (series namespace offset: 0xC00000000000)
+        // so watch history can track the same episode across sessions.
+        let epUID = ep.id + 0xC00000000000
+        let deterministicID = UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", epUID))") ?? UUID()
+
         let channel = Channel(
-            id: UUID(),
+            id: deterministicID,
             name: "\(series.name) — S\(ep.season)E\(ep.episodeNum) \(ep.title)",
             streamURL: url,
             logoURL: series.cover.flatMap(URL.init(string:)),

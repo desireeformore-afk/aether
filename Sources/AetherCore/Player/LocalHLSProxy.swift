@@ -453,7 +453,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
             case .ffmpegFailed(let msg):
                 return "FFmpeg error: \(msg.prefix(200))"
             case .timeout:
-                return "Stream timed out — server did not send data within 45s. The stream may be offline or require a VPN."
+                return "Stream timed out — server did not send data within 30s. The stream may be offline or require a VPN."
             }
         }
     }
