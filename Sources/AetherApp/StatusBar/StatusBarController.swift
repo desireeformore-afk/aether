@@ -21,12 +21,8 @@ final class StatusBarController {
     }
 
     private func setupModelContainer() {
-        do {
-            modelContainer = try ModelContainer(for: FavoriteRecord.self)
-            loadFavorites()
-        } catch {
-            print("Failed to setup ModelContainer: \(error)")
-        }
+        modelContainer = AetherApp.sharedModelContainer
+        loadFavorites()
     }
 
     private func loadFavorites() {

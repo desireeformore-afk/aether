@@ -94,6 +94,7 @@ struct ChannelListView: View {
             }
 
             refreshFavoriteCache()
+            recommendationService = RecommendationService(analyticsService: analyticsService)
             await loadFromCache()
             let cacheAge = await ChannelCache.shared.lastModified(playlistID: playlist.id)
                 .map { Date().timeIntervalSince($0) } ?? .infinity
@@ -261,9 +262,7 @@ struct ChannelListView: View {
     // MARK: - Favorites Channels List
 
     private var favoritesChannelsList: some View {
-        let favoriteIDs = (try? modelContext.fetch(FetchDescriptor<FavoriteRecord>())) ?? []
-        let favoriteChannelIDs = Set(favoriteIDs.map { $0.channelID })
-        let favoriteChannels = channels.filter { favoriteChannelIDs.contains($0.id) }
+        let favoriteChannels = channels.filter { cachedFavoriteIDs.contains($0.id) }
         
         return VStack(spacing: 0) {
             if favoriteChannels.isEmpty {

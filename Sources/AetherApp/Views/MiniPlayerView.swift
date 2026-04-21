@@ -138,6 +138,7 @@ public final class MiniPlayerWindowController {
 
     private var window: NSWindow?
     private let player: PlayerCore
+    public var epgStore: EPGStore = EPGStore()
 
     public init(player: PlayerCore) {
         self.player = player
@@ -153,7 +154,7 @@ public final class MiniPlayerWindowController {
             get: { self.isShowing },
             set: { self.isShowing = $0 }
         ))
-        .environment(EPGStore())
+        .environment(epgStore)
 
         let hostingController = NSHostingController(rootView: contentView)
 

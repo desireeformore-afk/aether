@@ -99,6 +99,8 @@ struct AetherApp: App {
                 .environment(memoryMonitor)
                 .environment(analyticsService)
                 .task {
+                    // Wire shared EPGStore into mini player window (it creates its own NSWindow)
+                    miniPlayerController.epgStore = epgStore
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)
                     // Wire sleep timer → stop
