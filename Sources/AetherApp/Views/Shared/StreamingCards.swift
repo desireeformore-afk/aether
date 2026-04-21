@@ -165,6 +165,7 @@ struct HeroBanner: View {
                         .padding(.vertical, 12)
                         .background(Color.blue)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
 

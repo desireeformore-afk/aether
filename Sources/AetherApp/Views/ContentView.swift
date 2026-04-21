@@ -97,9 +97,9 @@ struct ContentView: View {
         .onChange(of: playerCore.state) { _, newState in
             switch newState {
             case .loading:
-                // Show player container but don't touch fullscreen flag yet —
-                // suppressNextFullscreen must survive until .playing fires.
-                isFullscreenPlayer = true
+                if !suppressNextFullscreen {
+                    isFullscreenPlayer = true
+                }
             case .playing:
                 if suppressNextFullscreen {
                     suppressNextFullscreen = false
@@ -107,7 +107,11 @@ struct ContentView: View {
                 } else {
                     isFullscreenPlayer = true
                 }
-            case .idle, .error, .paused:
+            case .error:
+                isFullscreenPlayer = false
+            case .idle:
+                isFullscreenPlayer = false
+            case .paused:
                 break
             }
         }
@@ -124,10 +128,6 @@ struct ContentView: View {
             setupKeyboardHandlerCallbacks()
             keyboardHandler.startMonitoring()
             #endif
-            if let channel = playerCore.restoreLastChannel() {
-                suppressNextFullscreen = true
-                playerCore.play(channel)
-            }
         }
         .onDisappear {
             #if os(macOS)
@@ -184,6 +184,29 @@ struct ContentView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
             }
             #endif
+
+            if let banner = playerCore.streamErrorBanner {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.yellow)
+                        Text(banner)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white)
+                        Spacer()
+                        Button("✕") { }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    .padding(12)
+                    .background(.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.easeInOut(duration: 0.3), value: playerCore.streamErrorBanner)
+            }
         }
     }
 

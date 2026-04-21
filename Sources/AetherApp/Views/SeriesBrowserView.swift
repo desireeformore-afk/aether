@@ -10,6 +10,7 @@ struct SeriesBrowserView: View {
 
     @State private var heroBannerItems: [HeroBannerItem] = []
     @State private var selectedSeries: XstreamSeries?
+    @State private var selectedVOD: XstreamVOD?
 
     var body: some View {
         ZStack {
@@ -44,10 +45,22 @@ struct SeriesBrowserView: View {
         .sheet(item: $selectedSeries) { series in
             SeriesDetailView(series: series, credentials: credentials, player: player)
         }
+        .sheet(item: $selectedVOD) { vod in
+            VODDetailSheet(vod: vod, credentials: credentials, player: player)
+        }
     }
 
     private func shelfItemsWithTap(_ items: [ShelfItem]) -> [ShelfItem] {
         items.map { item in
+            if let vod = item.vod {
+                return ShelfItem(
+                    id: item.id,
+                    title: item.title,
+                    imageURL: item.imageURL,
+                    vod: vod,
+                    onTap: { selectedVOD = vod }
+                )
+            }
             guard let series = item.series else { return item }
             return ShelfItem(
                 id: item.id,

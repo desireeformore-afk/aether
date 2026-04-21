@@ -127,6 +127,12 @@ struct VODBrowserView: View {
                     vod: nil, series: series,
                     onTap: { selectedSeries = series }
                 )
+            } else if let stream = item.stream {
+                return ShelfItem(
+                    id: item.id, title: item.title, imageURL: item.imageURL,
+                    stream: stream,
+                    onTap: { player.play(stream.toChannel(credentials: credentials)) }
+                )
             }
             return item
         }
