@@ -17,7 +17,8 @@ public final class MemoryMonitorService {
     private var cancellables = Set<AnyCancellable>()
     private let memoryWarningThreshold: Double = 0.8 // 80% of available memory
     private var memoryCheckTimer: Timer?
-    private let originalCache: URLCache
+    private var savedDiskCapacity: Int = 0
+    private var savedMemoryCapacity: Int = 0
 
     public enum MemoryPressureLevel: String, Codable {
         case normal
@@ -51,8 +52,6 @@ public final class MemoryMonitorService {
     private let maxEventsToKeep = 100
 
     public init() {
-        // Save original cache config to restore later
-        self.originalCache = URLCache.shared
         setupMemoryMonitoring()
     }
 
@@ -63,9 +62,7 @@ public final class MemoryMonitorService {
     public func stop() {
         memoryCheckTimer?.invalidate()
         memoryCheckTimer = nil
-        // Restore original URLCache settings
-        URLCache.shared.memoryCapacity = originalCache.memoryCapacity
-        URLCache.shared.diskCapacity = originalCache.diskCapacity
+        restoreURLCacheIfNeeded()
     }
 
     private func setupMemoryMonitoring() {
@@ -119,8 +116,9 @@ public final class MemoryMonitorService {
         if memoryPressure != previousLevel {
             logMemoryEvent(level: memoryPressure, action: "Memory pressure changed from \(previousLevel.description) to \(memoryPressure.description)")
 
-            // Trigger cleanup if needed
-            if memoryPressure != .normal {
+            if memoryPressure == .normal {
+                restoreURLCacheIfNeeded()
+            } else {
                 Task {
                     await performMemoryCleanup(aggressive: memoryPressure == .critical)
                 }
@@ -163,7 +161,11 @@ public final class MemoryMonitorService {
         // ImageCache.shared.clear()
 
         if aggressive {
-            // More aggressive cleanup
+            // Save capacities only once (don't overwrite already-saved zeros)
+            if savedDiskCapacity == 0 {
+                savedDiskCapacity = URLCache.shared.diskCapacity
+                savedMemoryCapacity = URLCache.shared.memoryCapacity
+            }
             URLCache.shared.diskCapacity = 0
             URLCache.shared.memoryCapacity = 0
             actions.append("Disabled URL caching")
@@ -174,6 +176,14 @@ public final class MemoryMonitorService {
         }
 
         logMemoryEvent(level: memoryPressure, action: "Performed cleanup: \(actions.joined(separator: ", "))")
+    }
+
+    private func restoreURLCacheIfNeeded() {
+        guard savedDiskCapacity > 0 else { return }
+        URLCache.shared.diskCapacity = savedDiskCapacity
+        URLCache.shared.memoryCapacity = savedMemoryCapacity
+        savedDiskCapacity = 0
+        savedMemoryCapacity = 0
     }
 
     private func logMemoryEvent(level: MemoryPressureLevel, action: String) {
