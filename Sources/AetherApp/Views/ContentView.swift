@@ -83,7 +83,7 @@ struct ContentView: View {
                 } else {
                     isFullscreenPlayer = true
                 }
-            case .idle, .error:
+            case .idle, .error, .paused:
                 break
             }
         }
