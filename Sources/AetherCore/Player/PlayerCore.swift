@@ -163,6 +163,9 @@ public final class PlayerCore {
     /// before FFmpeg has a chance to write its first segment.
     private var isLoadingProxy: Bool = false
 
+    /// Timestamp of the last accepted play() call — used to debounce rapid consecutive calls.
+    private var lastPlayRequestedAt: Date = .distantPast
+
     /// Tracks when the current channel started playing.
     private var watchStartTime: Date?
 
@@ -210,13 +213,27 @@ public final class PlayerCore {
 
     /// Starts playback of `channel`.
     public func play(_ channel: Channel) {
-        // FIX 1: Deduplicate rapid play() calls for the same channel while the HLS proxy is
-        // still starting. Each call would stop the previous proxy (removing its temp dir) before
-        // FFmpeg writes its first segment, causing a cascade of "Temp directory removed" errors.
+        // Guard: same channel, proxy still starting
         if currentChannel?.id == channel.id, isLoadingProxy {
             print("[PlayerCore] play(\(channel.name)) skipped — proxy already starting")
             return
         }
+
+        // Guard: same channel, already playing — nothing to do
+        if currentChannel?.id == channel.id, state == .playing {
+            print("[PlayerCore] play(\(channel.name)) skipped — already playing")
+            return
+        }
+
+        // Debounce: ignore play() calls arriving within 500ms of the previous one.
+        // Rapid UI events (accidental double-tap, SwiftUI body re-renders) can cascade
+        // proxy restarts where each new play() kills the previous proxy before AVPlayer connects.
+        let now = Date.now
+        if now.timeIntervalSince(lastPlayRequestedAt) < 0.5 {
+            print("[PlayerCore] play(\(channel.name)) debounced — \(Int(now.timeIntervalSince(lastPlayRequestedAt) * 1000))ms since last call")
+            return
+        }
+        lastPlayRequestedAt = now
 
         // Persist before switching
         lastChannelStore.save(channel)
