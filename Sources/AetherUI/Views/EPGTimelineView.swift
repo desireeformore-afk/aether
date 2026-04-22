@@ -417,7 +417,7 @@ private struct EPGProgrammePopover: View {
                         isReminderSet ? "Remove Reminder" : "Remind Me (5 min before)",
                         systemImage: isReminderSet ? "bell.slash" : "bell.badge"
                     )
-                    .foregroundStyle(isReminderSet ? .secondary : .accentColor)
+                    .foregroundStyle(isReminderSet ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
                 }
                 .buttonStyle(.plain)
             }

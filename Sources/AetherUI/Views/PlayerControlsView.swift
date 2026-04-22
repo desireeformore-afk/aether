@@ -172,7 +172,7 @@ struct TrackPickerView: View {
                 Text("Audio")
                     .font(.headline)
                     .padding(.bottom, 2)
-                ForEach(player.availableAudioOptions, id: \.self) { option in
+                ForEach(Array(player.availableAudioOptions.enumerated()), id: \.offset) { _, option in
                     Button {
                         player.selectAudioOption(option)
                     } label: {
@@ -207,7 +207,7 @@ struct TrackPickerView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                ForEach(player.availableSubtitleOptions, id: \.self) { option in
+                ForEach(Array(player.availableSubtitleOptions.enumerated()), id: \.offset) { _, option in
                     Button {
                         player.selectSubtitleOption(option)
                     } label: {
