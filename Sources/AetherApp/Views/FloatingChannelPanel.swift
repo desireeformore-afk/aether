@@ -51,7 +51,7 @@ struct FloatingChannelPanel: View {
                         .background(Color.aetherBackground)
                     }
                 }
-                .frame(width: 420)
+                .frame(minWidth: 420)
             }
             .frame(maxHeight: .infinity)
             .background(Color.aetherBackground.opacity(0.97))

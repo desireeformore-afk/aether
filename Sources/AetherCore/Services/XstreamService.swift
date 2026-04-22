@@ -234,6 +234,23 @@ public struct XstreamEpisode: Decodable, Sendable, Identifiable {
 }
 
 extension XstreamEpisode {
+    /// Converts this episode to a `Channel` for playback.
+    public func toChannel(credentials: XstreamCredentials, seriesName: String = "") -> Channel {
+        let ext = containerExtension ?? "mp4"
+        let streamURL = credentials.streamURL(type: "series", id: id, ext: ext)
+        let seriesOffset = id + 0x400000000000
+        let deterministicID = UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", seriesOffset))") ?? UUID()
+        let episodeName = title.isEmpty ? "S\(season)E\(episodeNum)" : title
+        let channelName = seriesName.isEmpty ? episodeName : "\(seriesName) — \(episodeName)"
+        return Channel(
+            id: deterministicID,
+            name: channelName,
+            streamURL: streamURL,
+            groupTitle: "",
+            contentType: .series
+        )
+    }
+
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(FlexInt.self, forKey: .id).value

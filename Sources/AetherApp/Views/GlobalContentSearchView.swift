@@ -80,7 +80,7 @@ struct GlobalContentSearchView: View {
                                     rating: vod.rating
                                 )
                                 .contentShape(Rectangle())
-                                .onTapGesture { selectedVOD = vod }
+                                .onTapGesture { player.play(vod.toChannel(credentials: credentials)) }
                             }
                         }
                     }

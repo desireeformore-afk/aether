@@ -349,10 +349,15 @@ public final class PlayerCore {
                         return
                     }
 
+                    // HTTP 400 Bad Request — not recoverable, set error state immediately
+                    let is400 = errMsg.contains("400") || errMsg.contains("Bad Request")
                     // HTTP 458 = non-standard IPTV server rejection — retry with alternate extension
-                    let is458 = errMsg.contains("458") || errMsg.contains("Server returned 4")
+                    let is458 = !is400 && (errMsg.contains("458") || errMsg.contains("Server returned 4"))
                     let isTimeout = errMsg.contains("timed out") || errMsg.contains("timeout")
-                    if is458 {
+                    if is400 {
+                        self.state = .error("HTTP 400 — Nieprawidłowe żądanie")
+                        return
+                    } else if is458 {
                         await self.retry458WithAlternateExtension(originalURL: url, channel: channel)
                     } else if isTimeout {
                         // Proxy timeout → fall back to direct AVPlayer silently
