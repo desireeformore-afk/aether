@@ -70,7 +70,7 @@ struct GlobalContentSearchView: View {
                     Image(systemName: "rectangle.slash")
                         .font(.system(size: 48))
                         .foregroundStyle(.secondary)
-                    Text("Brak wyników dla „\(query)"")
+                    Text("Brak wyników dla \"\(query)\"")
                         .font(.title3.bold())
                     Button("Wyczyść") { query = "" }
                         .buttonStyle(.bordered)
