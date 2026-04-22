@@ -28,10 +28,7 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
         config.waitsForConnectivity = true
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 120
-        // Force HTTP/1.1 to avoid HTTP/2 partial message errors
-        if #available(macOS 12.0, *) {
-            config.assumesHTTP3Capable = false
-        }
+        // Force HTTP/1.1 to avoid HTTP/2 partial message errors (no public API to disable HTTP/3)
         return URLSession(configuration: config)
     }()
 
@@ -91,7 +88,6 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
                     #endif
                     let freshConfig = URLSessionConfiguration.ephemeral
                     freshConfig.httpShouldUsePipelining = false
-                    if #available(macOS 12.0, *) { freshConfig.assumesHTTP3Capable = false }
                     let freshSession = URLSession(configuration: freshConfig)
                     let retryTask = freshSession.dataTask(with: mutableRequest) { [weak self] d2, r2, e2 in
                         guard let self else { return }
