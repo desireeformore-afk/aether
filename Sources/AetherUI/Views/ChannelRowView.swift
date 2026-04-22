@@ -16,17 +16,9 @@ public struct ChannelRowView: View {
 
     public var body: some View {
         HStack(spacing: 12) {
-            // Logo — circular, 40x40
-            AsyncImage(url: channel.logoURL) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                Image(systemName: "tv")
-                    .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
-                    .font(.system(size: 16))
-            }
-            .frame(width: 40, height: 40)
-            .clipShape(Circle())
-            .accessibilityHidden(true)
+            ChannelLogoView(url: channel.logoURL, size: 40, channelName: channel.name)
+                .clipShape(Circle())
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(channel.name)

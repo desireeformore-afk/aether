@@ -96,6 +96,7 @@ struct PosterCard: View {
 struct HeroBanner: View {
     let items: [HeroBannerItem]
     @State private var currentIndex = 0
+    @State private var appeared = false
 
     private let timer = Timer.publish(every: 6, on: .main, in: .common).autoconnect()
 
@@ -107,6 +108,12 @@ struct HeroBanner: View {
                 EmptyView()
             } else {
                 bannerContent
+                    .opacity(appeared ? 1 : 0)
+                    .onAppear {
+                        withAnimation(.easeIn(duration: 0.5)) {
+                            appeared = true
+                        }
+                    }
             }
         }
     }
@@ -115,7 +122,7 @@ struct HeroBanner: View {
     private var bannerContent: some View {
         let item = items[min(currentIndex, items.count - 1)]
         ZStack(alignment: .bottomLeading) {
-            // Cross-fade background image
+            // Cross-fade background images
             ZStack {
                 ForEach(Array(items.enumerated()), id: \.offset) { index, bannerItem in
                     AsyncImage(url: bannerItem.imageURL.flatMap(URL.init(string:))) { phase in
@@ -136,49 +143,67 @@ struct HeroBanner: View {
             .frame(maxWidth: .infinity)
             .frame(height: bannerHeight)
 
-            // Strong gradient — darker at bottom 40%
+            // Left vignette for text contrast
+            HStack(spacing: 0) {
+                LinearGradient(
+                    colors: [Color.black.opacity(0.6), .clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: 340)
+                Spacer()
+            }
+            .frame(height: bannerHeight)
+
+            // Bottom gradient — fades to solid black
             LinearGradient(
                 stops: [
                     .init(color: .clear, location: 0),
-                    .init(color: Color.black.opacity(0.2), location: 0.45),
-                    .init(color: Color.black.opacity(0.75), location: 0.72),
+                    .init(color: Color.black.opacity(0.15), location: 0.38),
+                    .init(color: Color.black.opacity(0.72), location: 0.68),
                     .init(color: Color.black, location: 1.0)
                 ],
-                startPoint: .top, endPoint: .bottom
+                startPoint: .top,
+                endPoint: .bottom
             )
             .frame(height: bannerHeight)
 
-            // Content: title + play button + dots — bottom-left
+            // Content: title + play button + progress dots
             VStack(alignment: .leading, spacing: 14) {
                 Text(item.title)
                     .font(.system(size: 42, weight: .bold))
                     .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.6), radius: 6, y: 2)
+                    .shadow(color: .black.opacity(0.7), radius: 6, y: 2)
                     .lineLimit(2)
-                    .animation(.easeInOut(duration: 0.4), value: currentIndex)
+                    .id("hero-title-\(currentIndex)")
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .offset(y: 10)),
+                        removal: .opacity
+                    ))
 
                 Button(action: item.onTap) {
-                    Label("▶ Odtwórz", systemImage: "play.fill")
+                    Label("Odtwórz", systemImage: "play.fill")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 26)
                         .padding(.vertical, 12)
-                        .background(Color.blue)
+                        .background(Color.accentColor)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .id("hero-button-\(currentIndex)")
 
                 if items.count > 1 {
                     HStack(spacing: 6) {
                         ForEach(0..<items.count, id: \.self) { i in
-                            Circle()
+                            Capsule()
                                 .fill(i == currentIndex ? Color.white : Color.white.opacity(0.35))
                                 .frame(
-                                    width: i == currentIndex ? 9 : 5,
-                                    height: i == currentIndex ? 9 : 5
+                                    width: i == currentIndex ? 20 : 6,
+                                    height: 5
                                 )
-                                .animation(.spring(duration: 0.3), value: currentIndex)
+                                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: currentIndex)
                         }
                     }
                 }
@@ -188,7 +213,7 @@ struct HeroBanner: View {
         }
         .onReceive(timer) { _ in
             guard !items.isEmpty else { return }
-            withAnimation {
+            withAnimation(.easeInOut(duration: 0.4)) {
                 currentIndex = (currentIndex + 1) % items.count
             }
         }

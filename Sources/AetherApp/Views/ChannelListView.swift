@@ -33,6 +33,7 @@ struct ChannelListView: View {
     @FocusState private var isSearchFocused: Bool
     @State private var recommendationService: RecommendationService
     @State private var showPINLock = false
+    @State private var blockedChannel: Channel? = nil
 
     @AppStorage("channelViewMode") private var savedViewMode: String = ChannelViewMode.list.rawValue
     
@@ -122,9 +123,9 @@ struct ChannelListView: View {
         // Use onChange(of: selectedChannel) — the List's native selection IS reliable.
         .onChange(of: selectedChannel) { _, newChannel in
             guard let ch = newChannel else { return }
-            // Parental control check
             let isBlocked = parentalService.settings.isEnabled && !parentalService.isChannelAllowed(ch)
             if isBlocked {
+                blockedChannel = ch
                 showPINLock = true
             } else {
                 player.play(ch)
@@ -290,12 +291,27 @@ struct ChannelListView: View {
     }
 
     // MARK: - Content View
-    
+
     private var contentView: some View {
         VStack(spacing: 0) {
             tabPicker
             Divider()
             tabContent
+        }
+        .sheet(isPresented: $showPINLock) {
+            PINLockView(
+                reason: "This channel is restricted by parental controls",
+                service: parentalService,
+                onUnlock: {
+                    if let ch = blockedChannel { player.play(ch) }
+                    showPINLock = false
+                    blockedChannel = nil
+                },
+                onCancel: {
+                    showPINLock = false
+                    blockedChannel = nil
+                }
+            )
         }
     }
     
@@ -652,18 +668,16 @@ struct ChannelListView: View {
             isFavorite: isFavorite,
             epgTitle: nowPlaying[epgKey]?.title,
             onTap: {
-                if isBlocked { showPINLock = true } else { play(ch) }
+                if isBlocked {
+                    blockedChannel = ch
+                    showPINLock = true
+                } else {
+                    play(ch)
+                }
             },
             onFavoriteTap: { toggleFavorite(channel: ch) }
         )
-        .sheet(isPresented: $showPINLock) {
-            PINLockView(
-                reason: "This channel is restricted by parental controls",
-                service: parentalService,
-                onUnlock: { showPINLock = false },
-                onCancel: { showPINLock = false }
-            )
-        }
+        .id(ch.id)
     }
 
     private func isFavoriteChannel(_ channel: Channel) -> Bool {
