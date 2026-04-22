@@ -346,23 +346,20 @@ struct VODCard: View {
 // MARK: - VODShimmerView
 
 private struct VODShimmerView: View {
-    @State private var phase: CGFloat = 0
+    @State private var phase: CGFloat = -0.5
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
-                LinearGradient(
-                    colors: [.clear, .white.opacity(0.25), .clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .offset(x: phase * geometry.size.width * 2 - geometry.size.width)
-            }
+        ZStack {
+            Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
+            LinearGradient(
+                colors: [.clear, .white.opacity(0.25), .clear],
+                startPoint: UnitPoint(x: phase, y: 0),
+                endPoint: UnitPoint(x: phase + 0.5, y: 0)
+            )
         }
         .onAppear {
             withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                phase = 1
+                phase = 1.0
             }
         }
     }

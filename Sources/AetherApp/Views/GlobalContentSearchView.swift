@@ -51,7 +51,7 @@ struct GlobalContentSearchView: View {
             } else if isSearching {
                 VStack(spacing: 12) {
                     ProgressView()
-                        .scaleEffect(1.2)
+                        .frame(width: 38, height: 38)
                     Text("Szukam…")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -165,13 +165,29 @@ struct GlobalContentSearchView: View {
         seriesResults = await svc.searchSeries(query: query)
     }
 
+    private func strippedTitle(_ name: String) -> String {
+        // Strip IPTV quality/provider prefixes like "4K-AMZ - ", "A+ - ", "HD| "
+        var s = name
+        // Repeat to handle double-prefixed titles
+        for _ in 0..<3 {
+            if let range = s.range(of: #"^[A-Z0-9\+\-\.]{1,10}[\s]*[\-\|][\s]+"#,
+                                   options: [.regularExpression, .caseInsensitive]) {
+                s.removeSubrange(range)
+            } else { break }
+        }
+        return s
+    }
+
     private func fuzzyScore(_ query: String, in text: String) -> Int {
         let q = query.lowercased()
         let t = text.lowercased()
+        let ts = strippedTitle(t)
         if t.contains(q) { return 100 }
+        if ts.contains(q) { return 95 }
+        // Fuzzy character-by-character match on stripped title
         var qi = q.startIndex
         var score = 0
-        for ch in t {
+        for ch in ts {
             if qi < q.endIndex && ch == q[qi] {
                 score += 1
                 qi = q.index(after: qi)

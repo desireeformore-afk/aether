@@ -19,7 +19,7 @@ struct RecommendationsView: View {
 
                 if recommendationService.isGenerating {
                     ProgressView()
-                        .scaleEffect(0.8)
+                        .frame(width: 26, height: 26)
                 }
 
                 Button {

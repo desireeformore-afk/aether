@@ -628,7 +628,7 @@ struct VideoPlayerLayer: NSViewRepresentable {
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
         view.player = avPlayer
-        view.controlsStyle = .floating
+        view.controlsStyle = .none
         view.allowsPictureInPicturePlayback = true
         view.showsFullScreenToggleButton = true
         view.pictureInPictureDelegate = context.coordinator

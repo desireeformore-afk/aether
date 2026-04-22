@@ -89,8 +89,7 @@ struct SettingsView: View {
                 .tabItem { Label("O aplikacji", systemImage: "info.circle") }
                 .tag("about")
         }
-        .padding(20)
-        .frame(width: 520)
+        .frame(minWidth: 500, idealWidth: 520, minHeight: 400)
         .toolbar {
             ToolbarItem(placement: .destructiveAction) {
                 Button("Zamknij") { NSApp.keyWindow?.close() }
@@ -307,7 +306,7 @@ struct SettingsView: View {
                 }
                 if epgStore.isLoading {
                     LabeledContent("") {
-                        ProgressView().scaleEffect(0.7)
+                        ProgressView().frame(width: 16, height: 16)
                     }
                 }
                 if let err = epgStore.lastError {
@@ -367,19 +366,16 @@ struct SettingsView: View {
     // MARK: - Appearance Tab
 
     private var appearanceTab: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+        Form {
+            Section {
                 AppearancePickerView()
-                    .padding(.bottom, 4)
-
-                Divider()
-
+            }
+            Section {
                 ThemePickerView()
                     .environment(themeService)
             }
-            .padding()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .formStyle(.grouped)
     }
 
     // MARK: - Parental Controls Tab

@@ -12,6 +12,7 @@ public typealias PlatformImage = UIImage
 // MARK: - ImageCache
 
 /// In-memory NSCache (200 images / 100 MB) backed by URLCache for disk persistence.
+/// In-flight deduplication prevents the same URL from being fetched multiple times concurrently.
 public actor ImageCache {
     public static let shared = ImageCache()
 
@@ -22,10 +23,14 @@ public actor ImageCache {
         return c
     }()
 
+    // Deduplicates concurrent requests for the same URL.
+    private var inFlight: [String: Task<PlatformImage?, Never>] = [:]
+
     private init() {}
 
     public func image(for url: URL) async -> PlatformImage? {
         let key = url.absoluteString as NSString
+        let strKey = url.absoluteString
 
         // 1. In-memory hit
         if let obj = store.object(forKey: key), let img = obj as? PlatformImage {
@@ -40,25 +45,38 @@ public actor ImageCache {
             return img
         }
 
-        // 3. Network fetch — URLSession.data is cancellation-aware in macOS 12+,
-        //    but we also check explicitly to avoid storing results for cancelled tasks.
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            try Task.checkCancellation()
-            guard let img = PlatformImage(data: data) else { return nil }
-            store.setObject(img as AnyObject, forKey: key, cost: data.count)
-            URLCache.shared.storeCachedResponse(
-                CachedURLResponse(response: response, data: data),
-                for: request
-            )
-            return img
-        } catch {
-            return nil
+        // 3. Deduplicate: join an existing in-flight fetch if one is already running.
+        if let existing = inFlight[strKey] {
+            return await existing.value
         }
+
+        // 4. Start a new network fetch and register it so concurrent callers can join.
+        let fetchTask = Task<PlatformImage?, Never> {
+            do {
+                let (data, response) = try await URLSession.shared.data(from: url)
+                try Task.checkCancellation()
+                guard let img = PlatformImage(data: data) else { return nil }
+                URLCache.shared.storeCachedResponse(
+                    CachedURLResponse(response: response, data: data),
+                    for: URLRequest(url: url)
+                )
+                return img
+            } catch {
+                return nil
+            }
+        }
+        inFlight[strKey] = fetchTask
+        let result = await fetchTask.value
+        inFlight.removeValue(forKey: strKey)
+        if let img = result {
+            store.setObject(img as AnyObject, forKey: key, cost: 0)
+        }
+        return result
     }
 
     public func clear() {
         store.removeAllObjects()
+        inFlight.removeAll()
     }
 }
 

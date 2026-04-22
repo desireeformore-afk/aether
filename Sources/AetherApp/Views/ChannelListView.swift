@@ -362,7 +362,7 @@ struct ChannelListView: View {
         ToolbarItem(placement: .primaryAction) {
             Button(action: { Task { await refresh() } }) {
                 if isRefreshing {
-                    ProgressView().scaleEffect(0.7)
+                    ProgressView().frame(width: 16, height: 16)
                 } else {
                     Image(systemName: "arrow.clockwise")
                 }
@@ -397,7 +397,7 @@ struct ChannelListView: View {
         VStack(spacing: 12) {
             if recommendationService.isGenerating {
                 ProgressView()
-                    .scaleEffect(1.2)
+                    .frame(width: 38, height: 38)
                 Text("Generating recommendations...")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -605,7 +605,7 @@ struct ChannelListView: View {
         .overlay(alignment: .top) {
             if isRefreshing {
                 ProgressView()
-                    .scaleEffect(0.8)
+                    .frame(width: 26, height: 26)
                     .padding(8)
                     .background(.ultraThinMaterial, in: Capsule())
                     .padding(.top, 8)
@@ -627,7 +627,7 @@ struct ChannelListView: View {
         .overlay(alignment: .top) {
             if isRefreshing {
                 ProgressView()
-                    .scaleEffect(0.8)
+                    .frame(width: 26, height: 26)
                     .padding(8)
                     .background(.ultraThinMaterial, in: Capsule())
                     .padding(.top, 8)

@@ -17,9 +17,7 @@ public struct PlayerControlsView: View {
 
     private var isPlaying: Bool { player.state == .playing }
 
-    private var isVOD: Bool {
-        player.currentChannel.map { $0.contentType != .liveTV } ?? false
-    }
+    private var isVOD: Bool { !player.isLiveStream }
 
     public var body: some View {
         VStack(spacing: 0) {

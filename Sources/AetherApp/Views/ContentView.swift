@@ -88,7 +88,7 @@ struct ContentView: View {
                                 VStack(spacing: 12) {
                                     ProgressView()
                                         .progressViewStyle(.circular)
-                                        .scaleEffect(1.5)
+                                        .frame(width: 48, height: 48)
                                         .tint(.white)
                                     if let channel = playerCore.currentChannel {
                                         Text(channel.name)
