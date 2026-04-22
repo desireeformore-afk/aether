@@ -78,6 +78,10 @@ struct ChannelListView: View {
                 isSearchFocused = true
                 return .handled
             }
+            .onKeyPress(.escape) {
+                player.stop()
+                return .handled
+            }
             #endif
             .onChange(of: searchActivationToken) { _, _ in
                 isSearchFocused = true

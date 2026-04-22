@@ -268,6 +268,8 @@ struct ContentView: View {
                 } else {
                     noPlaylistPrompt
                 }
+            case .favorites:
+                FavoritesView(player: playerCore)
             case .history:
                 WatchHistoryView()
             case .settings:

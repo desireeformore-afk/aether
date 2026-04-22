@@ -31,6 +31,8 @@ public struct SeekBarView: View {
                     }
                 }
             )
+            .accessibilityLabel("Seek position")
+            .accessibilityValue(Text(formatTime(isSeeking ? seekPosition * duration : player.currentTime)))
             .onReceive(timer) { _ in
                 if !isSeeking {
                     let raw = player.player.currentItem?.duration.seconds ?? 0

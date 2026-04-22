@@ -1,5 +1,6 @@
 import SwiftUI
 import AetherCore
+import AetherUI
 
 // MARK: - Data Models
 
@@ -34,22 +35,10 @@ struct PosterCard: View {
     var body: some View {
         Button(action: onTap) {
             ZStack(alignment: .bottom) {
-                AsyncImage(url: imageURL.flatMap(URL.init(string:))) { phase in
-                    switch phase {
-                    case .empty:
-                        CardShimmerView()
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    case .failure:
-                        ZStack {
-                            Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
-                            Image(systemName: "film")
-                                .font(.largeTitle)
-                                .foregroundStyle(.secondary)
-                        }
-                    @unknown default:
-                        Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1)
-                    }
+                CachedImageView(url: imageURL.flatMap(URL.init(string:))) {
+                    CardShimmerView()
+                } content: { image in
+                    image.resizable().scaledToFill()
                 }
                 .frame(width: cardWidth, height: cardHeight)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -125,13 +114,10 @@ struct HeroBanner: View {
             // Cross-fade background images
             ZStack {
                 ForEach(Array(items.enumerated()), id: \.offset) { index, bannerItem in
-                    AsyncImage(url: bannerItem.imageURL.flatMap(URL.init(string:))) { phase in
-                        switch phase {
-                        case .success(let img):
-                            img.resizable().aspectRatio(contentMode: .fill)
-                        default:
-                            Color(.sRGB, red: 0.12, green: 0.12, blue: 0.12, opacity: 1)
-                        }
+                    CachedImageView(url: bannerItem.imageURL.flatMap(URL.init(string:))) {
+                        Color(.sRGB, red: 0.12, green: 0.12, blue: 0.12, opacity: 1)
+                    } content: { img in
+                        img.resizable().aspectRatio(contentMode: .fill)
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: bannerHeight)

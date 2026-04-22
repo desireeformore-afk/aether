@@ -1,6 +1,7 @@
 import SwiftUI
+import AetherCore
 
-/// Channel logo with URLCache (memory + disk), gradient initial placeholder, and fade-in.
+/// Channel logo loaded via ImageCache, gradient initial placeholder, and fade-in.
 public struct ChannelLogoView: View {
     let url: URL?
     let size: CGFloat
@@ -73,33 +74,16 @@ private struct CachedAsyncImage: View {
     let size: CGFloat
     let channelName: String
 
-    /// 20 MB memory / 100 MB disk logo cache shared across the app.
-    private static let imageCache = URLCache(
-        memoryCapacity: 20 * 1024 * 1024,
-        diskCapacity: 100 * 1024 * 1024,
-        directory: FileManager.default
-            .urls(for: .cachesDirectory, in: .userDomainMask)
-            .first?
-            .appendingPathComponent("Aether/LogoCache")
-    )
-
     var body: some View {
-        AsyncImage(url: url, transaction: Transaction(animation: .easeIn(duration: 0.25))) { phase in
-            switch phase {
-            case .empty:
-                ChannelInitialView(name: channelName, size: size)
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: size, height: size)
-                    .clipShape(RoundedRectangle(cornerRadius: size * 0.15))
-                    .shadow(color: .black.opacity(0.18), radius: 3, y: 1)
-            case .failure:
-                ChannelInitialView(name: channelName, size: size)
-            @unknown default:
-                EmptyView()
-            }
+        CachedImageView(url: url) {
+            ChannelInitialView(name: channelName, size: size)
+        } content: { image in
+            image
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: size * 0.15))
+                .shadow(color: .black.opacity(0.18), radius: 3, y: 1)
         }
     }
 }

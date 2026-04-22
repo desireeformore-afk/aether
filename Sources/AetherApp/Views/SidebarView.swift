@@ -4,23 +4,25 @@ import AetherCore
 // MARK: - SidebarItem
 
 enum SidebarItem: String, CaseIterable, Hashable {
-    case home     = "Główna"
-    case vod      = "Filmy"
-    case series   = "Seriale"
-    case live     = "Na żywo"
-    case search   = "Szukaj"
-    case history  = "Historia"
-    case settings = "Ustawienia"
+    case home      = "Główna"
+    case vod       = "Filmy"
+    case series    = "Seriale"
+    case live      = "Na żywo"
+    case search    = "Szukaj"
+    case favorites = "Ulubione"
+    case history   = "Historia"
+    case settings  = "Ustawienia"
 
     var icon: String {
         switch self {
-        case .home:     return "house.fill"
-        case .vod:      return "film.fill"
-        case .series:   return "tv.fill"
-        case .live:     return "antenna.radiowaves.left.and.right"
-        case .search:   return "magnifyingglass"
-        case .history:  return "clock.arrow.circlepath"
-        case .settings: return "gearshape.fill"
+        case .home:      return "house.fill"
+        case .vod:       return "film.fill"
+        case .series:    return "tv.fill"
+        case .live:      return "antenna.radiowaves.left.and.right"
+        case .search:    return "magnifyingglass"
+        case .favorites: return "star.fill"
+        case .history:   return "clock.arrow.circlepath"
+        case .settings:  return "gearshape.fill"
         }
     }
 }
@@ -141,7 +143,7 @@ struct SidebarView: View {
     private let sidebarBg = Color(red: 0.05, green: 0.05, blue: 0.07)
     private let accentPurple = Color(red: 0.55, green: 0.35, blue: 1.0)
 
-    private let mainItems: [SidebarItem] = [.home, .vod, .series, .live, .search, .history]
+    private let mainItems: [SidebarItem] = [.home, .vod, .series, .live, .search, .favorites, .history]
 
     var body: some View {
         VStack(spacing: 0) {

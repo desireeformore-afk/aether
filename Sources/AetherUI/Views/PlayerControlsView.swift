@@ -92,5 +92,13 @@ public struct PlayerControlsView: View {
             .padding(.vertical, 8)
         }
         .background(.ultraThinMaterial)
+        .onKeyPress(.space) {
+            player.togglePlayPause()
+            return .handled
+        }
+        .onKeyPress(.escape) {
+            player.stop()
+            return .handled
+        }
     }
 }
