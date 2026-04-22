@@ -29,7 +29,7 @@ struct AetherApp: App {
     #endif
 
     @State private var epgStore = EPGStore()
-    @State private var playerCore = PlayerCore()
+    @State private var playerCore: PlayerCore
     @State private var historyCoordinator = HistoryCoordinator()
     @State private var sleepTimer = SleepTimerService()
     @State private var subtitleStore = SubtitleStore()
@@ -40,10 +40,10 @@ struct AetherApp: App {
     @State private var trackService = TrackService()
     @State private var miniPlayerController: MiniPlayerWindowController
     @State private var crashReportingService = CrashReportingService()
-    @State private var networkMonitor = NetworkMonitorService()
+    @State private var networkMonitor: NetworkMonitorService
     @State private var offlineQueue: OfflineQueueService
     @State private var memoryMonitor = MemoryMonitorService()
-    @State private var analyticsService = AnalyticsService()
+    @State private var analyticsService: AnalyticsService
     @State private var iCloudSync = iCloudSyncService()
     @State private var statusBarController: StatusBarController
 
@@ -109,6 +109,8 @@ struct AetherApp: App {
                     }
                     // Setup status bar
                     statusBarController.setup()
+                    // Request notification authorization once at startup
+                    Task { await NotificationManager.shared.requestAuthorization() }
                 }
                 .sheet(isPresented: .constant(!hasCompletedOnboarding)) {
                     OnboardingView(isPresented: Binding(
@@ -133,7 +135,7 @@ struct AetherApp: App {
                 Button("Stop") {
                     playerCore.stop()
                 }
-                .keyboardShortcut(".", modifiers: .command)
+                .keyboardShortcut(".", modifiers: [.command, .shift])
 
                 Divider()
 
@@ -152,7 +154,7 @@ struct AetherApp: App {
                 Button("Ulubione") {
                     NotificationCenter.default.post(name: .aetherNavigateFavorites, object: nil)
                 }
-                .keyboardShortcut("f", modifiers: .command)
+                .keyboardShortcut("b", modifiers: [.command, .shift])
 
                 Button("Wyszukaj") {
                     NotificationCenter.default.post(name: .aetherNavigateSearch, object: nil)
@@ -167,7 +169,7 @@ struct AetherApp: App {
                 Button("EPG / Na żywo") {
                     NotificationCenter.default.post(name: .aetherNavigateLive, object: nil)
                 }
-                .keyboardShortcut("e", modifiers: .command)
+                .keyboardShortcut("e", modifiers: [.command, .shift])
             }
 
             CommandMenu("Konto") {

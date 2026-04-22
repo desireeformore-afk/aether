@@ -17,7 +17,7 @@ struct SettingsView: View {
     @AppStorage("defaultStreamQuality") private var defaultStreamQuality: String = StreamQuality.auto.rawValue
     @AppStorage("useHardwareDecoding") private var useHardwareDecoding = true
     @AppStorage("preferredBufferDuration") private var preferredBufferDuration: Int = 30
-    @AppStorage("preferredColorScheme") private var preferredColorScheme: String = "auto"
+    @AppStorage("appearanceMode") private var preferredColorScheme: String = AppearanceMode.system.rawValue
     @AppStorage("preferredLanguage") private var preferredLanguage: String = "pl"
     @AppStorage("preferredCountry") private var preferredCountry: String = "PL"
 
@@ -138,9 +138,9 @@ struct SettingsView: View {
             }
             Section("Motyw") {
                 Picker("Schemat kolorów", selection: $preferredColorScheme) {
-                    Text("Systemowy").tag("auto")
-                    Text("Ciemny").tag("dark")
-                    Text("Jasny").tag("light")
+                    Text("Systemowy").tag(AppearanceMode.system.rawValue)
+                    Text("Ciemny").tag(AppearanceMode.dark.rawValue)
+                    Text("Jasny").tag(AppearanceMode.light.rawValue)
                 }
                 .pickerStyle(.segmented)
                 .help("Zmiana jest widoczna natychmiast — nie wymaga restartu.")

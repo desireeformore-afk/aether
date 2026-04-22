@@ -60,12 +60,14 @@ public final class PlaylistRecord {
     public var epgURL: URL? { epgURLString.flatMap(URL.init(string:)) }
 
     /// Xtream Codes credentials, if configured.
+    /// Password is loaded from Keychain first; falls back to the SwiftData field for existing records.
     public var xstreamCredentials: XstreamCredentials? {
         guard playlistType == .xtream,
               let host = xstreamHost, !host.isEmpty,
               let user = xstreamUsername, !user.isEmpty,
-              let pass = xstreamPassword,
               let baseURL = URL(string: host) else { return nil }
+        let pass = KeychainService.load(for: id.uuidString) ?? xstreamPassword ?? ""
+        guard !pass.isEmpty else { return nil }
         return XstreamCredentials(baseURL: baseURL, username: user, password: pass)
     }
 

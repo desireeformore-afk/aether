@@ -319,13 +319,18 @@ struct AddPlaylistSheet: View {
                 playlistType: .xtream,
                 xstreamHost: xtreamHost.trimmingCharacters(in: .whitespaces),
                 xstreamUsername: xtreamUser.trimmingCharacters(in: .whitespaces),
-                xstreamPassword: xtreamPass,
+                xstreamPassword: nil,
                 epgURLString: xtreamEPGURL.trimmingCharacters(in: .whitespaces).nilIfEmpty
             )
         }
 
         modelContext.insert(record)
         try? modelContext.save()
+
+        if mode == .xtream {
+            try? KeychainService.save(password: xtreamPass, for: record.id.uuidString)
+        }
+
         onAdded(record)
         dismiss()
     }

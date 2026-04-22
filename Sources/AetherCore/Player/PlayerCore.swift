@@ -950,7 +950,7 @@ public final class PlayerCore {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
 
         if let logoURL = channel.logoURL {
-            Task { [weak self] in await self?.loadArtwork(from: logoURL) }
+            Task { @MainActor [weak self] in await self?.loadArtwork(from: logoURL) }
         }
     }
 

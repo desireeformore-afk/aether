@@ -8,6 +8,7 @@ public struct PlayerControlsView: View {
     @Bindable public var player: PlayerCore
     @Binding public var showStats: Bool
     @State private var showTrackPicker = false
+    @FocusState private var isFocused: Bool
 
     public init(player: PlayerCore, showStats: Binding<Bool>) {
         self.player = player
@@ -120,6 +121,9 @@ public struct PlayerControlsView: View {
             .padding(.vertical, 8)
         }
         .background(.ultraThinMaterial)
+        .focusable()
+        .focused($isFocused)
+        .onAppear { isFocused = true }
         .onKeyPress(.space) {
             player.togglePlayPause()
             return .handled

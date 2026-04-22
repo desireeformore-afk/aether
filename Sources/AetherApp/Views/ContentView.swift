@@ -38,16 +38,13 @@ struct ContentView: View {
     private let keyboardHandler: KeyboardShortcutHandler
     #endif
 
-    @AppStorage("preferredColorScheme") private var preferredScheme: String = "auto"
+    @AppStorage("appearanceMode") private var storedAppearanceMode: String = AppearanceMode.system.rawValue
     @State private var showLanguagePicker = false
     @State private var pendingSearchQuery: String?
+    @State private var pendingDeepLinkURL: URL?
 
     private var resolvedColorScheme: ColorScheme? {
-        switch preferredScheme {
-        case "light": return .light
-        case "dark":  return .dark
-        default:      return nil
-        }
+        AppearanceMode(rawValue: storedAppearanceMode)?.colorScheme
     }
 
     private var activeCredentials: XstreamCredentials? {
@@ -172,6 +169,11 @@ struct ContentView: View {
             if let creds = activeCredentials {
                 homeViewModel.forceReload(credentials: creds)
             }
+        }
+        .onChange(of: playerCore.channelList) { _, list in
+            guard !list.isEmpty, let url = pendingDeepLinkURL else { return }
+            pendingDeepLinkURL = nil
+            handleDeepLink(url)
         }
         #endif
     }
@@ -365,6 +367,10 @@ struct ContentView: View {
 
         switch url.host {
         case "play":
+            if playerCore.channelList.isEmpty {
+                pendingDeepLinkURL = url
+                return
+            }
             if let idString = components.queryItems?.first(where: { $0.name == "id" })?.value,
                let uuid = UUID(uuidString: idString),
                let channel = playerCore.channelList.first(where: { $0.id == uuid }) {

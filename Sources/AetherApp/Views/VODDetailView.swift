@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import AetherCore
 
 // MARK: - VODDetailView
@@ -8,6 +9,7 @@ struct VODDetailView: View {
     let credentials: XstreamCredentials
     @Bindable var player: PlayerCore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -102,24 +104,70 @@ struct VODDetailView: View {
     }
 
     private var playButton: some View {
-        Button {
-            let ch = vod.toChannel(credentials: credentials)
-            Task { @MainActor in player.play(ch) }
-            dismiss()
-        } label: {
-            HStack(spacing: 9) {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 15, weight: .bold))
-                Text("Odtwórz")
-                    .font(.system(size: 16, weight: .bold))
+        HStack(spacing: 12) {
+            Button {
+                let ch = vod.toChannel(credentials: credentials)
+                Task { @MainActor in player.play(ch) }
+                dismiss()
+            } label: {
+                HStack(spacing: 9) {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 15, weight: .bold))
+                    Text("Odtwórz")
+                        .font(.system(size: 16, weight: .bold))
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .foregroundStyle(.white)
+                .background(Color.blue)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 48)
-            .foregroundStyle(.white)
-            .background(Color.blue)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .buttonStyle(.plain)
+
+            Button { toggleVODFavorite() } label: {
+                Image(systemName: isVODFavorited ? "star.fill" : "star")
+                    .font(.system(size: 22))
+                    .foregroundStyle(isVODFavorited ? .yellow : .secondary)
+                    .frame(width: 48, height: 48)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .buttonStyle(.plain)
+            .help(isVODFavorited ? "Usuń z ulubionych" : "Dodaj do ulubionych")
         }
-        .buttonStyle(.plain)
+    }
+
+    private var vodDeterministicID: UUID {
+        let offset = vod.id + 0xE00000000000
+        return UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", offset))") ?? UUID()
+    }
+
+    private var isVODFavorited: Bool {
+        let fav = vodDeterministicID
+        let matching = (try? modelContext.fetch(
+            FetchDescriptor<FavoriteRecord>(predicate: #Predicate { $0.channelID == fav })
+        )) ?? []
+        return !matching.isEmpty
+    }
+
+    private func toggleVODFavorite() {
+        let fav = vodDeterministicID
+        let matching = (try? modelContext.fetch(
+            FetchDescriptor<FavoriteRecord>(predicate: #Predicate { $0.channelID == fav })
+        )) ?? []
+        if let existing = matching.first {
+            modelContext.delete(existing)
+        } else {
+            let record = FavoriteRecord(
+                itemID: fav,
+                name: vod.name,
+                streamURLString: vod.streamIcon ?? "",
+                posterURLString: vod.streamIcon,
+                contentType: "vod"
+            )
+            modelContext.insert(record)
+        }
+        try? modelContext.save()
     }
 
     private var dismissButton: some View {

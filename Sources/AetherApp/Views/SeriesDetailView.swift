@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import AetherCore
 
 struct SeriesDetailView: View {
@@ -6,20 +7,13 @@ struct SeriesDetailView: View {
     let credentials: XstreamCredentials
     @Bindable var player: PlayerCore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     @State private var info: XstreamSeriesInfo?
     @State private var isLoading = true
     @State private var loadError: String?
     @State private var selectedSeason: String = "1"
-
-    private let service: XstreamService
-
-    init(series: XstreamSeries, credentials: XstreamCredentials, player: PlayerCore) {
-        self.series = series
-        self.credentials = credentials
-        self.player = player
-        self.service = XstreamService(credentials: credentials)
-    }
+    @State private var service: XstreamService?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -81,7 +75,10 @@ struct SeriesDetailView: View {
         }
         .frame(minWidth: 580, minHeight: 460)
         .background(Color.aetherBackground)
-        .task { await loadInfo() }
+        .task {
+            if service == nil { service = XstreamService(credentials: credentials) }
+            await loadInfo()
+        }
     }
 
     // MARK: - Header
@@ -115,10 +112,53 @@ struct SeriesDetailView: View {
                 }
             }
             Spacer()
+            Button {
+                toggleSeriesFavorite()
+            } label: {
+                Image(systemName: isSeriesFavorited ? "star.fill" : "star")
+                    .font(.system(size: 18))
+                    .foregroundStyle(isSeriesFavorited ? .yellow : .secondary)
+            }
+            .buttonStyle(.plain)
+            .help(isSeriesFavorited ? "Usuń z ulubionych" : "Dodaj do ulubionych")
+
             Button("Done") { dismiss() }
                 .keyboardShortcut(.cancelAction)
         }
         .padding()
+    }
+
+    private var seriesDeterministicID: UUID {
+        let offset = series.id + 0xD00000000000
+        return UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", offset))") ?? UUID()
+    }
+
+    private var isSeriesFavorited: Bool {
+        let fav = seriesDeterministicID
+        let matching = (try? modelContext.fetch(
+            FetchDescriptor<FavoriteRecord>(predicate: #Predicate { $0.channelID == fav })
+        )) ?? []
+        return !matching.isEmpty
+    }
+
+    private func toggleSeriesFavorite() {
+        let fav = seriesDeterministicID
+        let matching = (try? modelContext.fetch(
+            FetchDescriptor<FavoriteRecord>(predicate: #Predicate { $0.channelID == fav })
+        )) ?? []
+        if let existing = matching.first {
+            modelContext.delete(existing)
+        } else {
+            let record = FavoriteRecord(
+                itemID: fav,
+                name: series.name,
+                streamURLString: series.cover ?? "",
+                posterURLString: series.cover,
+                contentType: "series"
+            )
+            modelContext.insert(record)
+        }
+        try? modelContext.save()
     }
 
     // MARK: - Episode card
@@ -197,6 +237,7 @@ struct SeriesDetailView: View {
     }
 
     private func loadInfo() async {
+        guard let service else { return }
         isLoading = true
         loadError = nil
         defer { isLoading = false }

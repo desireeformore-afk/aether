@@ -22,6 +22,18 @@ struct FavoritesView: View {
     @State private var selectedTab: FavTab = .channels
     @State private var selectedChannel: Channel?
 
+    private var channelFavorites: [FavoriteRecord] {
+        favorites.filter { $0.contentType == "channel" || $0.contentType.isEmpty }
+    }
+
+    private var vodFavorites: [FavoriteRecord] {
+        favorites.filter { $0.contentType == "vod" }
+    }
+
+    private var seriesFavorites: [FavoriteRecord] {
+        favorites.filter { $0.contentType == "series" }
+    }
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -43,17 +55,9 @@ struct FavoritesView: View {
                 case .channels:
                     channelsContent
                 case .vod:
-                    emptyState(
-                        icon: "film",
-                        title: "Brak ulubionych filmów",
-                        subtitle: "Otwórz film i naciśnij gwiazdkę, aby dodać do ulubionych"
-                    )
+                    vodContent
                 case .series:
-                    emptyState(
-                        icon: "tv",
-                        title: "Brak ulubionych seriali",
-                        subtitle: "Otwórz serial i naciśnij gwiazdkę, aby dodać do ulubionych"
-                    )
+                    seriesContent
                 }
             }
         }
@@ -68,7 +72,7 @@ struct FavoritesView: View {
 
     @ViewBuilder
     private var channelsContent: some View {
-        let channels = favorites.compactMap { $0.toChannel() }
+        let channels = channelFavorites.compactMap { $0.toChannel() }
         if channels.isEmpty {
             emptyState(
                 icon: "star",
@@ -86,6 +90,87 @@ struct FavoritesView: View {
                 }
             }
             .listStyle(.sidebar)
+        }
+    }
+
+    // MARK: VOD
+
+    @ViewBuilder
+    private var vodContent: some View {
+        if vodFavorites.isEmpty {
+            emptyState(
+                icon: "film",
+                title: "Brak ulubionych filmów",
+                subtitle: "Otwórz film i naciśnij gwiazdkę, aby dodać do ulubionych"
+            )
+        } else {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120, maximum: 160), spacing: 12)], spacing: 16) {
+                    ForEach(vodFavorites) { record in
+                        posterCard(record: record)
+                            .onTapGesture {
+                                if let channel = record.toChannel() {
+                                    player.play(channel)
+                                }
+                            }
+                    }
+                }
+                .padding(16)
+            }
+        }
+    }
+
+    // MARK: Series
+
+    @ViewBuilder
+    private var seriesContent: some View {
+        if seriesFavorites.isEmpty {
+            emptyState(
+                icon: "tv",
+                title: "Brak ulubionych seriali",
+                subtitle: "Otwórz serial i naciśnij gwiazdkę, aby dodać do ulubionych"
+            )
+        } else {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120, maximum: 160), spacing: 12)], spacing: 16) {
+                    ForEach(seriesFavorites) { record in
+                        posterCard(record: record)
+                    }
+                }
+                .padding(16)
+            }
+        }
+    }
+
+    // MARK: Poster card (VOD / Series)
+
+    private func posterCard(record: FavoriteRecord) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            AsyncImage(url: record.logoURLString.flatMap(URL.init(string:))) { phase in
+                if case .success(let img) = phase {
+                    img.resizable().scaledToFill()
+                } else {
+                    Color(.sRGB, red: 0.15, green: 0.15, blue: 0.18, opacity: 1)
+                        .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
+                }
+            }
+            .frame(width: 120, height: 170)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            Text(record.channelName)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .frame(width: 120, alignment: .leading)
+
+            Button(role: .destructive) {
+                removeFavoriteRecord(record)
+            } label: {
+                Image(systemName: "star.slash")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -145,6 +230,11 @@ struct FavoritesView: View {
             )) ?? []
             matching.forEach { modelContext.delete($0) }
         }
+        try? modelContext.save()
+    }
+
+    private func removeFavoriteRecord(_ record: FavoriteRecord) {
+        modelContext.delete(record)
         try? modelContext.save()
     }
 }

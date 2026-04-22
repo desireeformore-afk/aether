@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// Lightweight SwiftData record for a favorited channel.
+/// Lightweight SwiftData record for a favorited item (channel, VOD, or series).
 @Model
 public final class FavoriteRecord {
     @Attribute(.unique) public var channelID: UUID
@@ -11,6 +11,8 @@ public final class FavoriteRecord {
     public var groupTitle: String
     public var epgId: String?
     public var addedAt: Date
+    /// Content type: "channel", "vod", or "series". Default "channel" for existing records.
+    public var contentType: String
 
     public init(channel: Channel) {
         self.channelID = channel.id
@@ -20,6 +22,18 @@ public final class FavoriteRecord {
         self.groupTitle = channel.groupTitle
         self.epgId = channel.epgId
         self.addedAt = Date()
+        self.contentType = "channel"
+    }
+
+    public init(itemID: UUID, name: String, streamURLString: String, posterURLString: String?, contentType: String) {
+        self.channelID = itemID
+        self.channelName = name
+        self.streamURLString = streamURLString
+        self.logoURLString = posterURLString
+        self.groupTitle = contentType
+        self.epgId = nil
+        self.addedAt = Date()
+        self.contentType = contentType
     }
 
     public func toChannel() -> Channel? {

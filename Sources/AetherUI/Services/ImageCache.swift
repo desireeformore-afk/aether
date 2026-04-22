@@ -40,9 +40,11 @@ public actor ImageCache {
             return img
         }
 
-        // 3. Network fetch
+        // 3. Network fetch — URLSession.data is cancellation-aware in macOS 12+,
+        //    but we also check explicitly to avoid storing results for cancelled tasks.
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
+            try Task.checkCancellation()
             guard let img = PlatformImage(data: data) else { return nil }
             store.setObject(img as AnyObject, forKey: key, cost: data.count)
             URLCache.shared.storeCachedResponse(
