@@ -87,6 +87,17 @@ public final class PlayerCore {
     /// Whether Picture-in-Picture is active.
     public private(set) var isPiPActive: Bool = false
 
+    /// Available audio tracks for the current item.
+    public private(set) var availableAudioOptions: [AVMediaSelectionOption] = []
+    /// Available subtitle/caption tracks for the current item.
+    public private(set) var availableSubtitleOptions: [AVMediaSelectionOption] = []
+    /// Currently selected audio option.
+    public private(set) var selectedAudioOption: AVMediaSelectionOption? = nil
+    /// Currently selected subtitle option.
+    public private(set) var selectedSubtitleOption: AVMediaSelectionOption? = nil
+    private var audioSelectionGroup: AVMediaSelectionGroup? = nil
+    private var subtitleSelectionGroup: AVMediaSelectionGroup? = nil
+
     /// Transient banner message shown after all retries exhausted (auto-dismisses after 5s).
     public private(set) var streamErrorBanner: String? = nil
 
@@ -273,6 +284,12 @@ public final class PlayerCore {
         isRetrying = false
         retrySourceItem = nil
         shouldBlockRetry = false
+        availableAudioOptions = []
+        availableSubtitleOptions = []
+        selectedAudioOption = nil
+        selectedSubtitleOption = nil
+        audioSelectionGroup = nil
+        subtitleSelectionGroup = nil
 
         let url = channel.streamURL
         let ext = url.pathExtension.lowercased()
@@ -438,6 +455,12 @@ public final class PlayerCore {
         failedProxyURLs.removeAll()
         warmupPlayer = nil
         warmupChannel = nil
+        availableAudioOptions = []
+        availableSubtitleOptions = []
+        selectedAudioOption = nil
+        selectedSubtitleOption = nil
+        audioSelectionGroup = nil
+        subtitleSelectionGroup = nil
         state = .idle
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
@@ -494,6 +517,25 @@ public final class PlayerCore {
     /// Called by the AVPlayerView coordinator when PiP state changes.
     public func setPiPActive(_ active: Bool) {
         isPiPActive = active
+    }
+
+    /// Posts a notification that VideoPlayerLayer's coordinator intercepts to call startPictureInPicture().
+    public func startPiP() {
+        NotificationCenter.default.post(name: .pipStartRequested, object: nil)
+    }
+
+    /// Selects the given audio track on the current player item.
+    public func selectAudioOption(_ option: AVMediaSelectionOption) {
+        guard let item = player.currentItem, let group = audioSelectionGroup else { return }
+        item.select(option, in: group)
+        selectedAudioOption = option
+    }
+
+    /// Selects the given subtitle track, or nil to disable subtitles.
+    public func selectSubtitleOption(_ option: AVMediaSelectionOption?) {
+        guard let item = player.currentItem, let group = subtitleSelectionGroup else { return }
+        item.select(option, in: group)
+        selectedSubtitleOption = option
     }
 
     // MARK: - Auto-retry
@@ -794,6 +836,24 @@ public final class PlayerCore {
 
     // MARK: - Private
 
+    private func loadMediaTracks(from item: AVPlayerItem) async {
+        let asset = item.asset
+        do {
+            if let group = try await asset.loadMediaSelectionGroup(for: .audible) {
+                audioSelectionGroup = group
+                availableAudioOptions = group.options
+                selectedAudioOption = item.currentMediaSelection.selectedMediaOption(in: group)
+            }
+            if let group = try await asset.loadMediaSelectionGroup(for: .legible) {
+                subtitleSelectionGroup = group
+                availableSubtitleOptions = group.options
+                selectedSubtitleOption = item.currentMediaSelection.selectedMediaOption(in: group)
+            }
+        } catch {
+            print("[PlayerCore] Failed to load media tracks: \(error)")
+        }
+    }
+
     private func startProgressTracking(channel: Channel) {
         progressTimer?.invalidate()
         progressTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
@@ -908,6 +968,8 @@ public final class PlayerCore {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
     }
 
+    // MARK: - observePlayerItem
+
     private func observePlayerItem(_ item: AVPlayerItem) {
         // Cancel previous observer to prevent memory leaks
         statusObserver?.cancel()
@@ -939,6 +1001,12 @@ public final class PlayerCore {
                     if let ch = self.currentChannel {
                         self.startProgressTracking(channel: ch)
                     }
+                    // Load available audio and subtitle tracks
+                    Task { [weak self] in
+                        guard let self else { return }
+                        guard let item = self.player.currentItem else { return }
+                        await self.loadMediaTracks(from: item)
+                    }
                     // Preload next channel 2s after playback starts
                     Task { [weak self] in
                         try? await Task.sleep(for: .seconds(2))
@@ -968,4 +1036,8 @@ public final class PlayerCore {
             }
     }
 
+}
+
+public extension Notification.Name {
+    static let pipStartRequested = Notification.Name("AetherPiPStartRequested")
 }

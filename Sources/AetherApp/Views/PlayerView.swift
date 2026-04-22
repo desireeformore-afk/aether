@@ -29,6 +29,8 @@ struct PlayerView: View {
     @State private var showPINLock = false
     @State private var blockedChannel: Channel?
     @State private var blockReason: String?
+    @State private var showControls = true
+    @State private var controlsHideTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -56,6 +58,57 @@ struct PlayerView: View {
                         .onHover { hovering in
                             if hovering {
                                 showEPGOverlayWithAutoHide()
+                                showControlsWithAutoHide()
+                            }
+                        }
+                        .onTapGesture(count: 1) {
+                            showControlsWithAutoHide()
+                        }
+                        .contextMenu {
+                            if let url = player.currentChannel?.streamURL {
+                                Button("Copy Stream URL") {
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString(url.absoluteString, forType: .string)
+                                }
+                                Divider()
+                            }
+                            Menu("Quality") {
+                                ForEach(player.qualityPresets) { preset in
+                                    Button {
+                                        player.selectedQuality = preset
+                                    } label: {
+                                        if player.selectedQuality.id == preset.id {
+                                            Label(preset.label, systemImage: "checkmark")
+                                        } else {
+                                            Text(preset.label)
+                                        }
+                                    }
+                                }
+                            }
+                            if !player.availableSubtitleOptions.isEmpty {
+                                Divider()
+                                Menu("Subtitles") {
+                                    Button {
+                                        player.selectSubtitleOption(nil)
+                                    } label: {
+                                        if player.selectedSubtitleOption == nil {
+                                            Label("Off", systemImage: "checkmark")
+                                        } else {
+                                            Text("Off")
+                                        }
+                                    }
+                                    ForEach(player.availableSubtitleOptions, id: \.self) { option in
+                                        Button {
+                                            player.selectSubtitleOption(option)
+                                        } label: {
+                                            if option == player.selectedSubtitleOption {
+                                                Label(option.displayName, systemImage: "checkmark")
+                                            } else {
+                                                Text(option.displayName)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                         #if os(macOS)
@@ -95,10 +148,12 @@ struct PlayerView: View {
 
                 Spacer(minLength: 8)
 
-                // Controls
+                // Controls — auto-hide after 3s of inactivity, shown on hover/tap
                 PlayerControlsView(player: player, showStats: $showStats)
                     .padding(.horizontal)
                     .padding(.bottom)
+                    .opacity(showControls ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.3), value: showControls)
             }
 
             // Stream error banner — auto-dismissing, appears at top of player
@@ -248,6 +303,17 @@ struct PlayerView: View {
         nowPlaying = await epgStore.service.nowPlaying(for: cid, at: now)
         nextUp    = await epgStore.service.nextUp(for: cid, at: now)
         allEPGEntries = await epgStore.service.entries(for: cid)
+    }
+
+    @MainActor
+    private func showControlsWithAutoHide() {
+        controlsHideTask?.cancel()
+        withAnimation(.easeInOut(duration: 0.2)) { showControls = true }
+        controlsHideTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.3)) { showControls = false }
+        }
     }
 
     @MainActor
@@ -502,11 +568,19 @@ struct VideoPlayerLayer: NSViewRepresentable {
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
         view.player = avPlayer
-        // Show native controls including fullscreen and PiP buttons
         view.controlsStyle = .floating
         view.allowsPictureInPicturePlayback = true
         view.showsFullScreenToggleButton = true
         view.pictureInPictureDelegate = context.coordinator
+        context.coordinator.playerView = view
+
+        // Double-click to toggle fullscreen
+        let doubleClick = NSClickGestureRecognizer(
+            target: context.coordinator,
+            action: #selector(Coordinator.handleDoubleClick(_:))
+        )
+        doubleClick.numberOfClicksRequired = 2
+        view.addGestureRecognizer(doubleClick)
 
         return view
     }
@@ -516,16 +590,35 @@ struct VideoPlayerLayer: NSViewRepresentable {
         context.coordinator.playerCore = playerCore
     }
 
-    static func dismantleNSView(_ nsView: AVPlayerView, coordinator: Coordinator) {
-    }
+    static func dismantleNSView(_ nsView: AVPlayerView, coordinator: Coordinator) {}
 
     // MARK: - Coordinator
 
     final class Coordinator: NSObject, AVPlayerViewPictureInPictureDelegate {
         weak var playerCore: PlayerCore?
+        weak var playerView: AVPlayerView?
 
         init(playerCore: PlayerCore?) {
             self.playerCore = playerCore
+            super.init()
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handlePiPStartRequest),
+                name: .pipStartRequested,
+                object: nil
+            )
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(self)
+        }
+
+        @objc private func handlePiPStartRequest() {
+            playerView?.startPictureInPicture()
+        }
+
+        @objc func handleDoubleClick(_ gesture: NSClickGestureRecognizer) {
+            gesture.view?.window?.toggleFullScreen(nil)
         }
 
         nonisolated func playerViewWillStartPicture(inPicture playerView: AVPlayerView) {}
