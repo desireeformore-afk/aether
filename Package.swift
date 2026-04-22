@@ -22,10 +22,10 @@ let package = Package(
         .target(
             name: "AetherCore",
             path: "Sources/AetherCore",
+            swiftSettings: swiftV5,
             linkerSettings: [
                 .linkedFramework("Security", .when(platforms: [.macOS, .iOS, .tvOS])),
-            ],
-            swiftSettings: swiftV5
+            ]
         ),
         // Shared SwiftUI components — all platforms
         .target(
