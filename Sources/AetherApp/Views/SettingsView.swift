@@ -16,6 +16,10 @@ struct SettingsView: View {
     @AppStorage("epgRefreshInterval") private var epgRefreshInterval: Double = 3600
     @AppStorage("defaultStreamQuality") private var defaultStreamQuality: String = StreamQuality.auto.rawValue
     @AppStorage("useHardwareDecoding") private var useHardwareDecoding = true
+    @AppStorage("preferredBufferDuration") private var preferredBufferDuration: Int = 30
+    @AppStorage("preferredColorScheme") private var preferredColorScheme: String = "auto"
+    @AppStorage("preferredLanguage") private var preferredLanguage: String = "pl"
+    @AppStorage("preferredCountry") private var preferredCountry: String = "PL"
 
     // MARK: - Local UI state
 
@@ -26,99 +30,270 @@ struct SettingsView: View {
     @State private var exportMessage: String?
     @State private var importMessage: String?
 
+    // Account tab
+    @State private var xtreamURL = ""
+    @State private var xtreamUser = ""
+    @State private var xtreamPass = ""
+    @State private var accountStatus: String?
+    @State private var isConnecting = false
+
+    // Advanced tab
+    @State private var showResetHistoryConfirm = false
+
     var body: some View {
         TabView {
             generalTab
-                .tabItem { Label("General", systemImage: "gearshape") }
+                .tabItem { Label("Ogólne", systemImage: "gearshape") }
+
+            playerTab
+                .tabItem { Label("Odtwarzacz", systemImage: "play.circle") }
+                .tag("player")
+
+            accountTab
+                .tabItem { Label("Konto", systemImage: "person.circle") }
+                .tag("account")
 
             playlistTab
-                .tabItem { Label("Playlists", systemImage: "list.bullet") }
+                .tabItem { Label("Playlisty", systemImage: "list.bullet") }
+                .tag("playlists")
 
             epgTab
                 .tabItem { Label("EPG", systemImage: "calendar") }
+                .tag("epg")
 
             cacheTab
                 .tabItem { Label("Cache", systemImage: "internaldrive") }
+                .tag("cache")
 
             SubtitleSettingsView()
-                .tabItem { Label("Subtitles", systemImage: "captions.bubble") }
+                .tabItem { Label("Napisy", systemImage: "captions.bubble") }
                 .tag("subtitles")
 
             appearanceTab
-                .tabItem { Label("Appearance", systemImage: "paintbrush") }
+                .tabItem { Label("Wygląd", systemImage: "paintbrush") }
                 .tag("appearance")
 
             parentalControlsTab
-                .tabItem { Label("Parental Controls", systemImage: "lock.shield") }
+                .tabItem { Label("Kontrola", systemImage: "lock.shield") }
                 .tag("parental")
 
             analyticsTab
-                .tabItem { Label("Analytics", systemImage: "chart.bar") }
+                .tabItem { Label("Analityka", systemImage: "chart.bar") }
                 .tag("analytics")
 
             iCloudSyncView()
-                .tabItem { Label("iCloud Sync", systemImage: "icloud") }
+                .tabItem { Label("iCloud", systemImage: "icloud") }
                 .tag("icloud")
 
             advancedTab
-                .tabItem { Label("Advanced", systemImage: "gearshape.2") }
+                .tabItem { Label("Zaawansowane", systemImage: "gearshape.2") }
                 .tag("advanced")
+
+            aboutTab
+                .tabItem { Label("O aplikacji", systemImage: "info.circle") }
+                .tag("about")
         }
         .padding(20)
-        .frame(width: 480)
+        .frame(width: 520)
         .toolbar {
             ToolbarItem(placement: .destructiveAction) {
-                Button("Close") { NSApp.keyWindow?.close() }
+                Button("Zamknij") { NSApp.keyWindow?.close() }
                     .keyboardShortcut("w", modifiers: .command)
             }
         }
         .onAppear { refreshCacheSize() }
     }
 
-    // MARK: - Tabs
+    // MARK: - General Tab
+
+    private let languages: [(code: String, label: String)] = [
+        ("pl", "🇵🇱 Polski"),
+        ("en", "🇺🇸 English"),
+        ("tr", "🇹🇷 Türkçe"),
+        ("de", "🇩🇪 Deutsch"),
+        ("fr", "🇫🇷 Français"),
+        ("es", "🇪🇸 Español"),
+        ("ar", "🇸🇦 العربية"),
+    ]
+
+    private let countries: [(code: String, label: String)] = [
+        ("PL", "🇵🇱 Polska"),
+        ("US", "🇺🇸 United States"),
+        ("TR", "🇹🇷 Türkiye"),
+        ("DE", "🇩🇪 Deutschland"),
+        ("FR", "🇫🇷 France"),
+        ("ES", "🇪🇸 España"),
+        ("AR", "🇸🇦 Arabia"),
+    ]
 
     private var generalTab: some View {
         Form {
-            Section("Playback") {
-                Picker("Default Quality", selection: $defaultStreamQuality) {
-                    ForEach(StreamQuality.allCases, id: \.rawValue) { q in
-                        Text(q.displayName).tag(q.rawValue)
+            Section("Język interfejsu") {
+                Picker("Język", selection: $preferredLanguage) {
+                    ForEach(languages, id: \.code) { lang in
+                        Text(lang.label).tag(lang.code)
                     }
                 }
-
-                Toggle("Use Hardware Decoding", isOn: $useHardwareDecoding)
-                    .help("Enable Apple Silicon / GPU-accelerated video decoding.")
+                Picker("Kraj / Region", selection: $preferredCountry) {
+                    ForEach(countries, id: \.code) { country in
+                        Text(country.label).tag(country.code)
+                    }
+                }
+            }
+            Section("Motyw") {
+                Picker("Schemat kolorów", selection: $preferredColorScheme) {
+                    Text("Systemowy").tag("auto")
+                    Text("Ciemny").tag("dark")
+                    Text("Jasny").tag("light")
+                }
+                .pickerStyle(.segmented)
+                .help("Zmiana jest widoczna natychmiast — nie wymaga restartu.")
             }
         }
         .formStyle(.grouped)
     }
 
+    // MARK: - Player Tab
+
+    private var playerTab: some View {
+        Form {
+            Section("Jakość strumienia") {
+                Picker("Domyślna jakość", selection: $defaultStreamQuality) {
+                    ForEach(StreamQuality.allCases, id: \.rawValue) { q in
+                        Text(q.displayName).tag(q.rawValue)
+                    }
+                }
+                Toggle("Dekodowanie sprzętowe", isOn: $useHardwareDecoding)
+                    .help("Włącz dekodowanie wideo przez GPU / Apple Silicon.")
+            }
+            Section("Buforowanie") {
+                Picker("Bufor wstępny", selection: $preferredBufferDuration) {
+                    Text("30 sekund").tag(30)
+                    Text("60 sekund").tag(60)
+                    Text("120 sekund").tag(120)
+                }
+                .help("Czas wyprzedzenia bufora AVPlayer dla strumieniowania na żywo.")
+            }
+            Section("Preferowane ścieżki") {
+                Text("Ścieżkę audio i napisy wybierz podczas odtwarzania, klikając ikonę ścieżki na pasku narzędzi odtwarzacza.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    // MARK: - Account Tab
+
+    private var accountTab: some View {
+        Form {
+            Section("Serwer Xtream Codes") {
+                TextField("URL serwera (np. http://example.com:8080)", text: $xtreamURL)
+                    .help("Adres URL panelu Xtream Codes — bez ukośnika na końcu.")
+                TextField("Nazwa użytkownika", text: $xtreamUser)
+                SecureField("Hasło", text: $xtreamPass)
+
+                Button {
+                    connectXtream()
+                } label: {
+                    HStack(spacing: 6) {
+                        if isConnecting {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .frame(width: 14, height: 14)
+                        }
+                        Text("Połącz i odśwież listę")
+                    }
+                }
+                .disabled(xtreamURL.isEmpty || xtreamUser.isEmpty || isConnecting)
+                .buttonStyle(.borderedProminent)
+            }
+
+            if let status = accountStatus {
+                Section {
+                    Text(status)
+                        .foregroundStyle(status.hasPrefix("✓") ? Color.green : Color.red)
+                        .font(.callout)
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .onAppear { loadExistingXtreamCredentials() }
+    }
+
+    private func loadExistingXtreamCredentials() {
+        guard let existing = playlists.first(where: { $0.playlistType == .xtream }) else { return }
+        xtreamURL = existing.xstreamHost ?? ""
+        xtreamUser = existing.xstreamUsername ?? ""
+        xtreamPass = existing.xstreamPassword ?? ""
+    }
+
+    private func connectXtream() {
+        let urlTrimmed = xtreamURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        let userTrimmed = xtreamUser.trimmingCharacters(in: .whitespacesAndNewlines)
+        let passTrimmed = xtreamPass.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard URL(string: urlTrimmed) != nil else {
+            accountStatus = "Błąd: nieprawidłowy URL serwera"
+            return
+        }
+
+        isConnecting = true
+        accountStatus = nil
+
+        if let existing = playlists.first(where: { $0.playlistType == .xtream }) {
+            existing.xstreamHost = urlTrimmed
+            existing.xstreamUsername = userTrimmed
+            existing.xstreamPassword = passTrimmed
+        } else {
+            let record = PlaylistRecord(
+                name: "Mój serwer IPTV",
+                urlString: "",
+                playlistType: .xtream,
+                xstreamHost: urlTrimmed,
+                xstreamUsername: userTrimmed,
+                xstreamPassword: passTrimmed
+            )
+            modelContext.insert(record)
+        }
+
+        do {
+            try modelContext.save()
+            accountStatus = "✓ Połączono pomyślnie. Wróć do głównego ekranu, aby odświeżyć listę kanałów."
+        } catch {
+            accountStatus = "Błąd zapisu: \(error.localizedDescription)"
+        }
+        isConnecting = false
+    }
+
+    // MARK: - Playlist Tab
+
     private var playlistTab: some View {
         Form {
             Section("Import / Export") {
-                Button("Export Playlist to M3U…") {
+                Button("Eksportuj playlistę do M3U…") {
                     exportPlaylist()
                 }
-                .help("Export the current playlist to an M3U file.")
+                .help("Eksportuj aktualną playlistę do pliku M3U.")
 
-                Button("Import M3U File…") {
+                Button("Importuj plik M3U…") {
                     importPlaylist()
                 }
-                .help("Import channels from an M3U file.")
+                .help("Importuj kanały z pliku M3U.")
             }
 
             if let message = exportMessage {
-                Section("Export Status") {
+                Section("Status eksportu") {
                     Text(message)
-                        .foregroundStyle(message.contains("Error") ? .red : .green)
+                        .foregroundStyle(message.contains("Error") || message.contains("Błąd") ? Color.red : Color.green)
                         .font(.aetherCaption)
                 }
             }
 
             if let message = importMessage {
-                Section("Import Status") {
+                Section("Status importu") {
                     Text(message)
-                        .foregroundStyle(message.contains("Error") ? .red : .green)
+                        .foregroundStyle(message.contains("Error") || message.contains("Błąd") ? Color.red : Color.green)
                         .font(.aetherCaption)
                 }
             }
@@ -126,18 +301,20 @@ struct SettingsView: View {
         .formStyle(.grouped)
     }
 
+    // MARK: - EPG Tab
+
     private var epgTab: some View {
         Form {
-            Section("Refresh") {
-                Picker("EPG Refresh Interval", selection: $epgRefreshInterval) {
-                    Text("Every 30 minutes").tag(1800.0)
-                    Text("Every hour").tag(3600.0)
-                    Text("Every 6 hours").tag(21600.0)
-                    Text("Every 12 hours").tag(43200.0)
-                    Text("Never").tag(0.0)
+            Section("Odświeżanie") {
+                Picker("Interwał odświeżania EPG", selection: $epgRefreshInterval) {
+                    Text("Co 30 minut").tag(1800.0)
+                    Text("Co godzinę").tag(3600.0)
+                    Text("Co 6 godzin").tag(21600.0)
+                    Text("Co 12 godzin").tag(43200.0)
+                    Text("Nigdy").tag(0.0)
                 }
 
-                Toggle("Background Auto-Refresh", isOn: Binding(
+                Toggle("Automatyczne odświeżanie w tle", isOn: Binding(
                     get: { epgRefreshInterval > 0 },
                     set: { enabled in
                         if !enabled {
@@ -147,18 +324,18 @@ struct SettingsView: View {
                         }
                     }
                 ))
-                .help("Automatically refresh EPG data in the background.")
+                .help("Automatycznie odświeżaj dane EPG w tle.")
 
-                Button("Refresh Now") {
+                Button("Odśwież teraz") {
                     Task { await epgStore.loadGuide(from: epgStore.currentEPGURL ?? URL(string: "about:blank")!, forceRefresh: true) }
                 }
                 .disabled(epgStore.currentEPGURL == nil)
-                .help("Force a fresh EPG download from the current source.")
+                .help("Wymuś natychmiastowe pobranie EPG z aktualnego źródła.")
             }
 
             Section("Status") {
-                LabeledContent("EPG Source") {
-                    Text(epgStore.currentEPGURL?.host() ?? "None")
+                LabeledContent("Źródło EPG") {
+                    Text(epgStore.currentEPGURL?.host() ?? "Brak")
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -169,7 +346,7 @@ struct SettingsView: View {
                     }
                 }
                 if let err = epgStore.lastError {
-                    LabeledContent("Last Error") {
+                    LabeledContent("Ostatni błąd") {
                         Text(err)
                             .foregroundStyle(.red)
                             .font(.aetherCaption)
@@ -180,37 +357,39 @@ struct SettingsView: View {
         .formStyle(.grouped)
     }
 
+    // MARK: - Cache Tab
+
     private var cacheTab: some View {
         Form {
-            Section("Disk Usage") {
-                LabeledContent("Cache Size", value: cacheSize)
+            Section("Zużycie dysku") {
+                LabeledContent("Rozmiar cache", value: cacheSize)
 
-                Button("Clear EPG Cache…", role: .destructive) {
+                Button("Wyczyść cache EPG…", role: .destructive) {
                     showClearConfirm = true
                 }
                 .confirmationDialog(
-                    "Clear EPG Cache?",
+                    "Wyczyścić cache EPG?",
                     isPresented: $showClearConfirm,
                     titleVisibility: .visible
                 ) {
-                    Button("Clear Cache", role: .destructive) {
+                    Button("Wyczyść cache", role: .destructive) {
                         Task {
                             await epgStore.clearCache()
                             refreshCacheSize()
                         }
                     }
-                    Button("Cancel", role: .cancel) {}
+                    Button("Anuluj", role: .cancel) {}
                 } message: {
-                    Text("This removes cached EPG data. EPG will be re-downloaded on next refresh.")
+                    Text("Usuwa zapisane dane EPG. Zostaną ponownie pobrane przy następnym odświeżeniu.")
                 }
             }
 
-            Section("Logo Cache") {
-                LabeledContent("Image Cache") {
+            Section("Cache logo") {
+                LabeledContent("Cache obrazów") {
                     Text(logosCacheDescription)
                         .foregroundStyle(.secondary)
                 }
-                Button("Clear Logo Cache") {
+                Button("Wyczyść cache logo") {
                     URLCache.shared.removeAllCachedResponses()
                     refreshCacheSize()
                 }
@@ -218,43 +397,6 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .onAppear { refreshCacheSize() }
-    }
-
-    // MARK: - Helpers
-
-    private var logosCacheDescription: String {
-        let mb = Double(URLCache.shared.currentDiskUsage) / 1_048_576
-        return String(format: "%.1f MB", mb)
-    }
-
-    private func refreshCacheSize() {
-        // Run on a background thread without Task.detached to avoid
-        // Swift 6 Sendable checks on FileManager.DirectoryEnumerator.
-        let result = Self.epgCacheSizeString()
-        cacheSize = result
-    }
-
-    /// Computes EPG cache size synchronously (call from MainActor is fine — fast FS op).
-    private static func epgCacheSizeString() -> String {
-        let fm = FileManager.default
-        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            return "Unknown"
-        }
-        let dir = appSupport
-            .appendingPathComponent("Aether")
-            .appendingPathComponent("EPGCache")
-        guard fm.fileExists(atPath: dir.path) else { return "Empty" }
-
-        var bytes: Int64 = 0
-        // Use contentsOfDirectory to avoid non-Sendable enumerator in Swift 6
-        if let files = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) {
-            for fileURL in files {
-                let size = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-                bytes += Int64(size)
-            }
-        }
-        guard bytes > 0 else { return "Empty" }
-        return String(format: "%.1f MB", Double(bytes) / 1_048_576)
     }
 
     // MARK: - Appearance Tab
@@ -290,47 +432,37 @@ struct SettingsView: View {
 
     private var analyticsTab: some View {
         Form {
-            Section("Viewing Statistics") {
+            Section("Statystyki oglądania") {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Total Watch Time")
+                        Text("Łączny czas oglądania")
                             .font(.body)
                         Text(formatDuration(analyticsService.viewingStats.totalWatchTime))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-
                     Spacer()
-
-                    Button("View Details") {
-                        showAnalytics = true
-                    }
-                    .buttonStyle(.bordered)
+                    Button("Szczegóły") { showAnalytics = true }
+                        .buttonStyle(.bordered)
                 }
 
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Total Sessions")
+                        Text("Liczba sesji")
                             .font(.body)
                         Text("\(analyticsService.viewingStats.totalSessions)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-
                     Spacer()
                 }
             }
 
-            Section("Actions") {
-                Button("Clear All Statistics") {
-                    analyticsService.clearStatistics()
-                }
-                .help("Clear all viewing statistics and analytics data")
-
-                Button("Export Statistics") {
-                    exportStatistics()
-                }
-                .help("Export statistics to JSON file")
+            Section("Akcje") {
+                Button("Wyczyść statystyki") { analyticsService.clearStatistics() }
+                    .help("Usuń wszystkie dane statystyk oglądania")
+                Button("Eksportuj statystyki") { exportStatistics() }
+                    .help("Eksportuj statystyki do pliku JSON")
             }
         }
         .formStyle(.grouped)
@@ -342,18 +474,13 @@ struct SettingsView: View {
     private func formatDuration(_ duration: TimeInterval) -> String {
         let hours = Int(duration) / 3600
         let minutes = (Int(duration) % 3600) / 60
-        if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        } else {
-            return "\(minutes)m"
-        }
+        return hours > 0 ? "\(hours)h \(minutes)min" : "\(minutes)min"
     }
 
     private func exportStatistics() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
         panel.nameFieldStringValue = "aether-statistics.json"
-
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
             if let data = analyticsService.exportStatistics() {
@@ -371,34 +498,47 @@ struct SettingsView: View {
 
     private var advancedTab: some View {
         Form {
-            Section("Crash Reporting") {
+            Section("Historia oglądania") {
+                Button("Zresetuj historię oglądania", role: .destructive) {
+                    showResetHistoryConfirm = true
+                }
+                .help("Usuwa całą historię oglądania ze SwiftData.")
+                .confirmationDialog(
+                    "Zresetować historię?",
+                    isPresented: $showResetHistoryConfirm,
+                    titleVisibility: .visible
+                ) {
+                    Button("Resetuj historię", role: .destructive) { resetWatchHistory() }
+                    Button("Anuluj", role: .cancel) {}
+                } message: {
+                    Text("Tej operacji nie można cofnąć.")
+                }
+            }
+
+            Section("Cache") {
+                Button("Wyczyść wszystkie cache") { clearAllCaches() }
+                    .help("Czyści cache EPG, logo i pliki tymczasowe.")
+            }
+
+            Section("Raportowanie błędów") {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Crash Reports")
+                        Text("Raporty awaryjne")
                             .font(.body)
-                        Text("\(crashReportingService.crashReports.count) reports")
+                        Text("\(crashReportingService.crashReports.count) raportów")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-
                     Spacer()
-
-                    Button("View Reports") {
-                        showCrashReports = true
-                    }
-                    .buttonStyle(.bordered)
+                    Button("Pokaż raporty") { showCrashReports = true }
+                        .buttonStyle(.bordered)
                 }
-
-                Button("Report a Bug") {
-                    reportBug()
-                }
-                .help("Open GitHub issues page to report a bug")
             }
 
-            Section("Memory Management") {
+            Section("Pamięć") {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Memory Status")
+                        Text("Status pamięci")
                             .font(.body)
                         HStack(spacing: 6) {
                             Circle()
@@ -409,24 +549,15 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-
                     Spacer()
-
-                    Button("View Details") {
-                        showMemoryMonitor = true
-                    }
-                    .buttonStyle(.bordered)
+                    Button("Szczegóły") { showMemoryMonitor = true }
+                        .buttonStyle(.bordered)
                 }
             }
 
             Section("Debug") {
-                Toggle("Enable Debug Logging", isOn: .constant(false))
-                    .help("Enable verbose logging for troubleshooting")
-
-                Button("Clear All Caches") {
-                    clearAllCaches()
-                }
-                .help("Clear EPG cache, logo cache, and temporary files")
+                Toggle("Włącz logowanie debug", isOn: .constant(false))
+                    .help("Włącz szczegółowe logi do diagnostyki.")
             }
         }
         .formStyle(.grouped)
@@ -440,19 +571,17 @@ struct SettingsView: View {
 
     private var memoryPressureColor: Color {
         switch memoryMonitor.memoryPressure {
-        case .normal:
-            return .green
-        case .warning:
-            return .orange
-        case .critical:
-            return .red
+        case .normal:   return .green
+        case .warning:  return .orange
+        case .critical: return .red
         }
     }
 
-    private func reportBug() {
-        if let url = URL(string: "https://github.com/desireeformore-afk/aether/issues") {
-            NSWorkspace.shared.open(url)
-        }
+    private func resetWatchHistory() {
+        let descriptor = FetchDescriptor<WatchHistoryRecord>()
+        guard let records = try? modelContext.fetch(descriptor) else { return }
+        for record in records { modelContext.delete(record) }
+        try? modelContext.save()
     }
 
     private func clearAllCaches() {
@@ -461,6 +590,72 @@ struct SettingsView: View {
             URLCache.shared.removeAllCachedResponses()
             refreshCacheSize()
         }
+    }
+
+    // MARK: - About Tab
+
+    private var aboutTab: some View {
+        Form {
+            Section("Informacje o aplikacji") {
+                LabeledContent("Wersja", value: appVersion)
+                LabeledContent("Build", value: buildNumber)
+                LabeledContent("Platforma", value: "macOS 14+")
+            }
+            Section("Linki") {
+                Button("GitHub — zgłoś problem") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/desireeformore-afk/aether/issues")!)
+                }
+                Button("Strona projektu") {
+                    NSWorkspace.shared.open(URL(string: "https://github.com/desireeformore-afk/aether")!)
+                }
+            }
+            Section {
+                Text("Copyright © 2025 Aether. All rights reserved.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
+
+    private var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+
+    // MARK: - Helpers
+
+    private var logosCacheDescription: String {
+        let mb = Double(URLCache.shared.currentDiskUsage) / 1_048_576
+        return String(format: "%.1f MB", mb)
+    }
+
+    private func refreshCacheSize() {
+        cacheSize = Self.epgCacheSizeString()
+    }
+
+    private static func epgCacheSizeString() -> String {
+        let fm = FileManager.default
+        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return "Nieznany"
+        }
+        let dir = appSupport
+            .appendingPathComponent("Aether")
+            .appendingPathComponent("EPGCache")
+        guard fm.fileExists(atPath: dir.path) else { return "Pusty" }
+
+        var bytes: Int64 = 0
+        if let files = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) {
+            for fileURL in files {
+                let size = (try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+                bytes += Int64(size)
+            }
+        }
+        guard bytes > 0 else { return "Pusty" }
+        return String(format: "%.1f MB", Double(bytes) / 1_048_576)
     }
 
     // MARK: - Playlist Import/Export
@@ -485,7 +680,7 @@ struct SettingsView: View {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.init(filenameExtension: "m3u")!]
         panel.nameFieldStringValue = "playlist.m3u"
-        panel.message = "Export playlist to M3U file"
+        panel.message = "Eksportuj playlistę do pliku M3U"
 
         let snapshotPlaylists = playlists
         panel.begin { response in
@@ -498,9 +693,9 @@ struct SettingsView: View {
                         allChannels.append(contentsOf: channels)
                     }
                     try await PlaylistExporter.export(to: url, channels: allChannels)
-                    showExportMessage("✓ Playlist exported successfully")
+                    showExportMessage("✓ Playlista wyeksportowana pomyślnie")
                 } catch {
-                    showExportMessage("Error: \(error.localizedDescription)")
+                    showExportMessage("Błąd: \(error.localizedDescription)")
                 }
             }
         }
@@ -509,7 +704,7 @@ struct SettingsView: View {
     private func importPlaylist() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.init(filenameExtension: "m3u")!]
-        panel.message = "Select an M3U file to import"
+        panel.message = "Wybierz plik M3U do importu"
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
 
@@ -519,9 +714,9 @@ struct SettingsView: View {
             Task { @MainActor in
                 do {
                     let count = try await PlaylistImporter.import(from: url, name: name, modelContext: modelContext)
-                    showImportMessage("✓ Imported \(count) channels successfully")
+                    showImportMessage("✓ Zaimportowano \(count) kanałów pomyślnie")
                 } catch {
-                    showImportMessage("Error: \(error.localizedDescription)")
+                    showImportMessage("Błąd: \(error.localizedDescription)")
                 }
             }
         }
@@ -532,17 +727,17 @@ struct SettingsView: View {
 
 /// Available stream quality presets (stored in UserDefaults as rawValue).
 enum StreamQuality: String, CaseIterable, Sendable {
-    case auto = "auto"
-    case high = "high"
+    case auto   = "auto"
+    case high   = "high"
     case medium = "medium"
-    case low = "low"
+    case low    = "low"
 
     var displayName: String {
         switch self {
-        case .auto:   return "Auto (Best Available)"
-        case .high:   return "High"
-        case .medium: return "Medium"
-        case .low:    return "Low (Data Saver)"
+        case .auto:   return "Auto (najlepsza dostępna)"
+        case .high:   return "Wysoka"
+        case .medium: return "Średnia"
+        case .low:    return "Niska (oszczędność danych)"
         }
     }
 }

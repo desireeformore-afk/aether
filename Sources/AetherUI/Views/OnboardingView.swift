@@ -16,7 +16,7 @@ public struct OnboardingView: View {
         VStack(spacing: 0) {
             TabView(selection: $step) {
                 welcomePage.tag(0)
-                addPlaylistPage.tag(1)
+                addServerPage.tag(1)
                 readyPage.tag(2)
             }
             #if os(iOS) || os(tvOS)
@@ -24,23 +24,30 @@ public struct OnboardingView: View {
             #endif
 
             HStack {
+                // Skip — always visible, dismisses onboarding immediately
+                Button("Pomiń") { isPresented = false }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
                 if step > 0 {
-                    Button("Back") { step -= 1 }
+                    Button("Wstecz") { step -= 1 }
                         .buttonStyle(.borderless)
                 }
-                Spacer()
+
                 if step < 2 {
-                    Button("Next") { step += 1 }
+                    Button("Dalej") { step += 1 }
                         .buttonStyle(.borderedProminent)
                 } else {
-                    Button("Get Started") { isPresented = false }
+                    Button("Zacznij oglądać") { isPresented = false }
                         .buttonStyle(.borderedProminent)
                 }
             }
             .padding()
         }
         #if os(macOS)
-        .frame(width: 480, height: 380)
+        .frame(width: 480, height: 400)
         #endif
     }
 
@@ -51,9 +58,9 @@ public struct OnboardingView: View {
             Image(systemName: "play.tv.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(Color.aetherAccent)
-            Text("Welcome to Aether")
+            Text("Witaj w Aether")
                 .font(.largeTitle).bold()
-            Text("Your personal IPTV player — channels, VOD, and series in one place.")
+            Text("Premium IPTV dla macOS — kanały, filmy i seriale w jednym miejscu.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -62,14 +69,14 @@ public struct OnboardingView: View {
         .padding()
     }
 
-    private var addPlaylistPage: some View {
+    private var addServerPage: some View {
         VStack(spacing: 16) {
-            Image(systemName: "plus.rectangle.on.folder")
+            Image(systemName: "server.rack")
                 .font(.system(size: 64))
                 .foregroundStyle(Color.aetherAccent)
-            Text("Add Your Playlist")
+            Text("Dodaj serwer")
                 .font(.largeTitle).bold()
-            Text("Paste an M3U URL or enter your Xtream Codes credentials.\nYou can add more playlists anytime from the sidebar.")
+            Text("Wklej link M3U lub podaj dane dostępowe Xtream Codes.\nSerwer możesz też dodać później w Ustawienia → Konto.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -83,9 +90,9 @@ public struct OnboardingView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.green)
-            Text("You're All Set!")
+            Text("Gotowe!")
                 .font(.largeTitle).bold()
-            Text("Tap the + button in the sidebar to add your first playlist.")
+            Text("Kliknij przycisk + na pasku bocznym, aby dodać swoją pierwszą playlistę.")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)

@@ -30,6 +30,7 @@ struct ContentView: View {
 
     @AppStorage("preferredColorScheme") private var preferredScheme: String = "auto"
     @State private var showLanguagePicker = false
+    @State private var pendingSearchQuery: String?
 
     private var resolvedColorScheme: ColorScheme? {
         switch preferredScheme {
@@ -97,6 +98,7 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(resolvedColorScheme)
+        .onOpenURL { url in handleDeepLink(url) }
         .onChange(of: playerCore.state) { _, newState in
             switch newState {
             case .loading:
@@ -263,8 +265,10 @@ struct ContentView: View {
                         service: homeViewModel.sharedService,
                         credentials: creds,
                         player: playerCore,
-                        homeViewModel: homeViewModel
+                        homeViewModel: homeViewModel,
+                        initialQuery: pendingSearchQuery
                     )
+                    .onAppear { pendingSearchQuery = nil }
                 } else {
                     noPlaylistPrompt
                 }
@@ -322,6 +326,29 @@ struct ContentView: View {
             if let channel = playerCore.restoreLastChannel() {
                 playerCore.play(channel)
             }
+        }
+    }
+
+    // MARK: - Deep Link Handling
+
+    private func handleDeepLink(_ url: URL) {
+        guard url.scheme == "aether",
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return }
+
+        switch url.host {
+        case "play":
+            if let idString = components.queryItems?.first(where: { $0.name == "id" })?.value,
+               let uuid = UUID(uuidString: idString),
+               let channel = playerCore.channelList.first(where: { $0.id == uuid }) {
+                playerCore.play(channel)
+            }
+        case "search":
+            if let q = components.queryItems?.first(where: { $0.name == "q" })?.value, !q.isEmpty {
+                pendingSearchQuery = q
+                withAnimation(.easeInOut(duration: 0.15)) { sidebarSelection = .search }
+            }
+        default:
+            break
         }
     }
 

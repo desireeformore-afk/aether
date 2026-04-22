@@ -6,6 +6,7 @@ struct GlobalContentSearchView: View {
     let credentials: XstreamCredentials
     @Bindable var player: PlayerCore
     @ObservedObject var homeViewModel: HomeViewModel
+    var initialQuery: String? = nil
 
     @State private var query = ""
     @State private var vodResults: [XstreamVOD] = []
@@ -105,6 +106,12 @@ struct GlobalContentSearchView: View {
             }
         }
         .background(Color.black)
+        .onAppear {
+            if let q = initialQuery, !q.isEmpty { query = q }
+        }
+        .onChange(of: initialQuery) { _, newVal in
+            if let q = newVal, !q.isEmpty { query = q }
+        }
         .onChange(of: query) { _, newVal in
             debounceTask?.cancel()
             if newVal.isEmpty {

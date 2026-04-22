@@ -29,5 +29,16 @@
     <string>14.0</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2025 Aether. All rights reserved.</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.aether.iptv</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>aether</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>
