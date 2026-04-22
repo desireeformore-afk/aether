@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AetherCore
+import AetherUI
 
 // MARK: - WatchHistoryShelf
 

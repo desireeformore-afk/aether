@@ -93,7 +93,7 @@ struct StreamStats {
         guard let item = player.currentItem else { return "—" }
         let videoTrack = item.tracks.first { $0.assetTrack?.mediaType == .video }
         guard let assetTrack = videoTrack?.assetTrack,
-              let desc = assetTrack.formatDescriptions.first else { return "—" }
+              let desc = assetTrack.formatDescriptions.first as? CMFormatDescription else { return "—" }
         let subType = CMFormatDescriptionGetMediaSubType(desc)
         let bytes: [UInt8] = [
             UInt8((subType >> 24) & 0xFF),
