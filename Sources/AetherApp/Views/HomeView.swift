@@ -21,11 +21,18 @@ struct HomeView: View {
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        WatchHistoryShelf(player: player)
-
                         if !heroBannerItems.isEmpty {
                             HeroBanner(items: heroBannerItems)
                                 .padding(.bottom, -20)
+                        }
+
+                        WatchHistoryShelf(player: player)
+
+                        if !recommendedItems.isEmpty {
+                            CategoryShelf(
+                                title: "Polecane dla Ciebie",
+                                items: shelfItemsWithTap(recommendedItems, credentials: credentials)
+                            )
                         }
 
                         ForEach(Array(viewModel.shelves.enumerated()), id: \.offset) { _, shelf in
@@ -82,6 +89,7 @@ struct HomeView: View {
             Text(viewModel.error?.localizedDescription ?? "Nieznany błąd")
         }
         .onChange(of: viewModel.shelves.count) { _, _ in updateHeroBanner() }
+        .onChange(of: viewModel.liveItems.count) { _, _ in updateHeroBanner() }
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
         }
@@ -90,10 +98,29 @@ struct HomeView: View {
         }
     }
 
+    // First item from each shelf (up to 10) — diverse cross-genre set
+    private var recommendedItems: [ShelfItem] {
+        var items: [ShelfItem] = []
+        for shelf in viewModel.shelves where !shelf.items.isEmpty {
+            items.append(shelf.items[0])
+            if items.count >= 10 { break }
+        }
+        if items.isEmpty {
+            return Array(viewModel.liveItems.prefix(10))
+        }
+        return items
+    }
+
     private func updateHeroBanner() {
-        guard let first = viewModel.shelves.first else { return }
-        let tapped = shelfItemsWithTap(first.items, credentials: credentials)
-        heroBannerItems = tapped.prefix(5).map { item in
+        let source: [ShelfItem]
+        if let first = viewModel.shelves.first, !first.items.isEmpty {
+            source = shelfItemsWithTap(first.items, credentials: credentials)
+        } else if !viewModel.liveItems.isEmpty {
+            source = shelfItemsWithTap(viewModel.liveItems, credentials: credentials)
+        } else {
+            return
+        }
+        heroBannerItems = source.prefix(5).map { item in
             HeroBannerItem(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
         }
     }

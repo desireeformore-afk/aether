@@ -49,7 +49,7 @@ private struct SidebarRowView: View {
                     .frame(width: 3)
                     .animation(.easeInOut(duration: 0.15), value: isSelected)
 
-                // Icon container
+                // Icon
                 ZStack {
                     Image(systemName: item.icon)
                         .font(.system(size: 18, weight: .medium))
@@ -80,7 +80,7 @@ private struct SidebarRowView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .padding(.leading, 3) // offset so gradient starts after accent bar
+                        .padding(.leading, 3)
                         .animation(.easeInOut(duration: 0.15), value: isSelected)
                 } else if isHovered {
                     RoundedRectangle(cornerRadius: 10)
@@ -143,12 +143,41 @@ struct SidebarView: View {
     private let sidebarBg = Color(red: 0.05, green: 0.05, blue: 0.07)
     private let accentPurple = Color(red: 0.55, green: 0.35, blue: 1.0)
 
-    private let mainItems: [SidebarItem] = [.home, .vod, .series, .live, .search, .favorites, .history]
+    private let mainItems: [SidebarItem] = [.home, .vod, .series, .live]
+    private let quickItems: [SidebarItem] = [.favorites, .history]
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             sidebarHeader
+
+            // Quick search button
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    selection = .search
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.55))
+                    Text("🔍 Szukaj")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.55))
+                    Spacer()
+                    Text("⌘F")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.22))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.07))
+                )
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+            }
+            .buttonStyle(.plain)
 
             // Main nav items
             ScrollView(.vertical, showsIndicators: false) {
@@ -161,12 +190,30 @@ struct SidebarView: View {
                         }
                     }
 
+                    // Search as nav item (hidden visually since we have button above, but keeps keyboard nav)
+                    SidebarRowView(item: .search, isSelected: selection == .search) {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            selection = .search
+                        }
+                    }
+
                     SidebarDivider()
                         .padding(.vertical, 8)
 
                     SidebarSectionHeader(title: "Biblioteka")
 
-                    // Settings at bottom of library section
+                    // Favorites and History as permanent top-level entries
+                    ForEach(quickItems, id: \.self) { item in
+                        SidebarRowView(item: item, isSelected: selection == item) {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                selection = item
+                            }
+                        }
+                    }
+
+                    SidebarDivider()
+                        .padding(.vertical, 8)
+
                     SidebarRowView(item: .settings, isSelected: selection == .settings) {
                         withAnimation(.easeInOut(duration: 0.15)) {
                             selection = .settings
@@ -204,6 +251,6 @@ struct SidebarView: View {
         }
         .padding(.horizontal, 15)
         .padding(.top, 20)
-        .padding(.bottom, 16)
+        .padding(.bottom, 12)
     }
 }
