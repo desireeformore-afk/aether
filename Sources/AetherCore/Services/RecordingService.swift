@@ -16,6 +16,7 @@ public final class RecordingService {
     private var writerInputs: [UUID: (video: AVAssetWriterInput, audio: AVAssetWriterInput)] = [:]
     private let fileManager = FileManager.default
     private let userDefaults: UserDefaults
+    private var scheduleCheckerTask: Task<Void, Never>?
 
     private let recordingsKey = "aether.recordings.completed"
     private let schedulesKey = "aether.recordings.schedules"
@@ -30,7 +31,8 @@ public final class RecordingService {
             self.settings = decoded
         } else {
             // Default recordings directory
-            let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first
+                ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Documents")
             let recordingsURL = documentsURL.appendingPathComponent("Aether/Recordings")
             self.settings = RecordingSettings(recordingsDirectory: recordingsURL)
         }
@@ -50,10 +52,14 @@ public final class RecordingService {
         // Create recordings directory
         try? fileManager.createDirectory(at: settings.recordingsDirectory, withIntermediateDirectories: true)
 
-        // Start schedule checker
-        Task {
+        // Start schedule checker — stored so it can be cancelled on deinit
+        scheduleCheckerTask = Task {
             await checkScheduledRecordings()
         }
+    }
+
+    deinit {
+        scheduleCheckerTask?.cancel()
     }
 
     // MARK: - Recording Control
@@ -98,9 +104,10 @@ public final class RecordingService {
             writerInputs.removeValue(forKey: recordingId)
         }
 
-        recording.endTime = Date()
+        let endTime = Date()
+        recording.endTime = endTime
         recording.isComplete = true
-        recording.duration = recording.endTime!.timeIntervalSince(recording.startTime)
+        recording.duration = endTime.timeIntervalSince(recording.startTime)
 
         // Get file size
         if let attrs = try? fileManager.attributesOfItem(atPath: recording.fileURL.path),
@@ -161,22 +168,20 @@ public final class RecordingService {
         try saveSchedules()
     }
 
-    /// Check for scheduled recordings that should start.
+    /// Check for scheduled recordings that should start. Loops until task is cancelled.
     private func checkScheduledRecordings() async {
-        while true {
+        while !Task.isCancelled {
             let now = Date()
-
             for schedule in scheduledRecordings where schedule.isEnabled {
-                let shouldStart = abs(schedule.startTime.timeIntervalSince(now)) < 60
-
-                if shouldStart {
-                    // Start recording (would need channel lookup)
-                    // This is a placeholder - actual implementation would need channel access
+                if abs(schedule.startTime.timeIntervalSince(now)) < 60 {
+                    // Placeholder — actual implementation requires channel access
                 }
             }
-
-            // Check every minute
-            try? await Task.sleep(for: .seconds(60))
+            do {
+                try await Task.sleep(for: .seconds(60))
+            } catch {
+                break // cancelled
+            }
         }
     }
 

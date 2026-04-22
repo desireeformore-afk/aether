@@ -11,7 +11,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.activate(ignoringOtherApps: true)
         // Force SwiftUI windows to appear (skip status bar windows)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
             NSApp.windows
                 .filter { $0.canBecomeKey }
                 .forEach { $0.makeKeyAndOrderFront(nil) }
@@ -199,9 +200,12 @@ struct AetherApp: App {
 extension AetherApp {
     /// Explicit store path — stable regardless of bundle ID (SPM dev-build workaround).
     static let sharedModelContainer: ModelContainer = {
-        let appSupport = FileManager.default.urls(
+        guard let base = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask
-        ).first!.appendingPathComponent("Aether")
+        ).first else {
+            preconditionFailure("[Aether] No ApplicationSupport directory — system is unrecoverable")
+        }
+        let appSupport = base.appendingPathComponent("Aether")
         try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
         let storeURL = appSupport.appendingPathComponent("aether.store")
 
@@ -230,10 +234,14 @@ extension AetherApp {
             } catch {
                 print("[Aether] SwiftData store failed entirely: \(error) — using in-memory fallback")
                 let fallback = ModelConfiguration(isStoredInMemoryOnly: true)
-                return try! ModelContainer(
-                    for: PlaylistRecord.self, FavoriteRecord.self, WatchHistoryRecord.self,
-                    configurations: fallback
-                )
+                do {
+                    return try ModelContainer(
+                        for: PlaylistRecord.self, FavoriteRecord.self, WatchHistoryRecord.self,
+                        configurations: fallback
+                    )
+                } catch let fallbackError {
+                    preconditionFailure("[Aether] In-memory ModelContainer failed — unrecoverable: \(fallbackError)")
+                }
             }
         }
     }()

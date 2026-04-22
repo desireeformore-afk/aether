@@ -17,7 +17,7 @@ public actor SubtitleService {
 
     public init() {
         guard let url = URL(string: "https://api.opensubtitles.com/api/v1") else {
-            fatalError("Invalid OpenSubtitles API base URL")
+            preconditionFailure("Invalid OpenSubtitles API base URL")
         }
         self.baseURL = url
         let config = URLSessionConfiguration.default

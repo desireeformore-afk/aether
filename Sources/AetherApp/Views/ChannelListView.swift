@@ -205,11 +205,10 @@ struct ChannelListView: View {
             for ch in result {
                 if dict[ch.groupTitle] == nil {
                     order.append(ch.groupTitle)
-                    dict[ch.groupTitle] = []
                 }
-                dict[ch.groupTitle]!.append(ch)
+                dict[ch.groupTitle, default: []].append(ch)
             }
-            let grouped = order.map { (group: $0, channels: dict[$0]!) }
+            let grouped = order.map { (group: $0, channels: dict[$0] ?? []) }
 
             await MainActor.run {
                 cachedAllGroups = allG
