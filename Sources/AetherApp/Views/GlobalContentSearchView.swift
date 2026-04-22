@@ -15,6 +15,7 @@ struct GlobalContentSearchView: View {
     @State private var debounceTask: Task<Void, Never>?
     @State private var selectedVOD: XstreamVOD?
     @State private var selectedSeries: XstreamSeries?
+    @FocusState private var isSearchFocused: Bool
 
     private var isLocalSearchAvailable: Bool {
         !homeViewModel.allVODs.isEmpty || !homeViewModel.allSeries.isEmpty
@@ -29,6 +30,7 @@ struct GlobalContentSearchView: View {
                 TextField("Szukaj filmów i seriali...", text: $query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 17))
+                    .focused($isSearchFocused)
                 if !query.isEmpty {
                     Button(action: { query = "" }) {
                         Image(systemName: "xmark.circle.fill")
@@ -68,9 +70,9 @@ struct GlobalContentSearchView: View {
                     Image(systemName: "rectangle.slash")
                         .font(.system(size: 48))
                         .foregroundStyle(.secondary)
-                    Text("No results for \"\(query)\"")
+                    Text("Brak wyników dla „\(query)"")
                         .font(.title3.bold())
-                    Button("Clear Search") { query = "" }
+                    Button("Wyczyść") { query = "" }
                         .buttonStyle(.bordered)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -83,10 +85,11 @@ struct GlobalContentSearchView: View {
                                     posterURL: vod.streamIcon.flatMap(URL.init),
                                     title: vod.name,
                                     subtitle: cleanCategoryName(vod.categoryName),
-                                    rating: vod.rating
+                                    rating: vod.rating,
+                                    year: nil
                                 )
                                 .contentShape(Rectangle())
-                                .onTapGesture { player.play(vod.toChannel(credentials: credentials)) }
+                                .onTapGesture { selectedVOD = vod }
                             }
                         }
                     }
@@ -98,7 +101,8 @@ struct GlobalContentSearchView: View {
                                     posterURL: series.cover.flatMap(URL.init),
                                     title: series.name,
                                     subtitle: series.genre,
-                                    rating: series.rating
+                                    rating: series.rating,
+                                    year: series.releaseDate
                                 )
                                 .contentShape(Rectangle())
                                 .onTapGesture { selectedSeries = series }
@@ -133,6 +137,12 @@ struct GlobalContentSearchView: View {
                 isSearching = false
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .init("AetherOpenSearch"))) { _ in
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(150))
+                isSearchFocused = true
+            }
+        }
         .sheet(item: $selectedVOD) { vod in
             VODDetailView(vod: vod, credentials: credentials, player: player)
         }
@@ -151,11 +161,11 @@ struct GlobalContentSearchView: View {
         // Fast local search if cached data is available
         if isLocalSearchAvailable {
             vodResults = homeViewModel.allVODs
-                .filter { fuzzyScore(query, in: $0.name) > 0 }
-                .sorted { fuzzyScore(query, in: $0.name) > fuzzyScore(query, in: $1.name) }
+                .filter { vodScore(query, $0) > 0 }
+                .sorted { vodScore(query, $0) > vodScore(query, $1) }
             seriesResults = homeViewModel.allSeries
-                .filter { fuzzyScore(query, in: $0.name) > 0 }
-                .sorted { fuzzyScore(query, in: $0.name) > fuzzyScore(query, in: $1.name) }
+                .filter { seriesScore(query, $0) > 0 }
+                .sorted { seriesScore(query, $0) > seriesScore(query, $1) }
             return
         }
 
@@ -166,9 +176,7 @@ struct GlobalContentSearchView: View {
     }
 
     private func strippedTitle(_ name: String) -> String {
-        // Strip IPTV quality/provider prefixes like "4K-AMZ - ", "A+ - ", "HD| "
         var s = name
-        // Repeat to handle double-prefixed titles
         for _ in 0..<3 {
             if let range = s.range(of: #"^[A-Z0-9\+\-\.]{1,10}[\s]*[\-\|][\s]+"#,
                                    options: [.regularExpression, .caseInsensitive]) {
@@ -178,22 +186,45 @@ struct GlobalContentSearchView: View {
         return s
     }
 
+    // MARK: - Scoring
+
     private func fuzzyScore(_ query: String, in text: String) -> Int {
         let q = query.lowercased()
         let t = text.lowercased()
         let ts = strippedTitle(t)
+
+        if ts == q { return 200 }
+        if t == q { return 190 }
+        if ts.hasPrefix(q) || t.hasPrefix(q) { return 150 }
+        let words = ts.split(separator: " ")
+        if words.contains(where: { $0.hasPrefix(q) }) { return 120 }
         if t.contains(q) { return 100 }
-        if ts.contains(q) { return 95 }
-        // Fuzzy character-by-character match on stripped title
+        if ts.contains(q) { return 90 }
+
+        // Fuzzy subsequence match on stripped title
         var qi = q.startIndex
-        var score = 0
         for ch in ts {
             if qi < q.endIndex && ch == q[qi] {
-                score += 1
                 qi = q.index(after: qi)
             }
         }
-        return qi == q.endIndex ? score : 0
+        if qi == q.endIndex {
+            let score = Int(Double(q.count) / Double(max(ts.count, 1)) * 80)
+            return max(1, min(80, score))
+        }
+        return 0
+    }
+
+    private func vodScore(_ query: String, _ vod: XstreamVOD) -> Int {
+        let nameScore = fuzzyScore(query, in: vod.name)
+        let catScore = vod.categoryName.map { fuzzyScore(query, in: $0) / 2 } ?? 0
+        return max(nameScore, catScore)
+    }
+
+    private func seriesScore(_ query: String, _ series: XstreamSeries) -> Int {
+        let nameScore = fuzzyScore(query, in: series.name)
+        let genreScore = series.genre.map { fuzzyScore(query, in: $0) / 2 } ?? 0
+        return max(nameScore, genreScore)
     }
 
     private func cleanCategoryName(_ name: String?) -> String? {
@@ -213,6 +244,7 @@ struct SearchResultRow: View {
     let title: String
     let subtitle: String?
     let rating: String?
+    let year: String?
 
     var body: some View {
         HStack(spacing: 12) {
@@ -242,6 +274,12 @@ struct SearchResultRow: View {
                     Label(r, systemImage: "star.fill")
                         .font(.system(size: 11))
                         .foregroundStyle(.yellow)
+                }
+
+                if let y = year, !y.isEmpty {
+                    Text(y)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
                 }
             }
 

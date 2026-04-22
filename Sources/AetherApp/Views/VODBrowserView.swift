@@ -1,5 +1,16 @@
 import SwiftUI
+import SwiftData
 import AetherCore
+
+// MARK: - VODSortOrder
+
+enum VODSortOrder: String, CaseIterable {
+    case `default` = "Domyślne"
+    case titleAZ = "Tytuł A-Z"
+    case titleZA = "Tytuł Z-A"
+    case ratingHigh = "Ocena ↓"
+    case ratingLow = "Ocena ↑"
+}
 
 // MARK: - VODBrowserView
 
@@ -15,23 +26,31 @@ struct VODBrowserView: View {
     @State private var selectedServiceItems: [ShelfItem] = []
     @State private var showServiceDetail = false
     @State private var selectedGenre: String? = nil
+    @State private var sortOrder: VODSortOrder = .default
 
-    // Unique category names from all VODs
+    @Query(sort: \WatchHistoryRecord.watchedAt, order: .reverse)
+    private var watchHistory: [WatchHistoryRecord]
+
+    // MARK: - Computed
+
     private var availableGenres: [String] {
         var seen = Set<String>()
         var result: [String] = []
+        let garbage = ["netflix", "apple", "amazon", "disney", "hbo", "prime", "peacock", "paramount", "4k", "premium", "iptv"]
         for vod in homeViewModel.allVODs {
-            if let name = vod.categoryName, !name.isEmpty, seen.insert(name).inserted {
-                result.append(name)
-            }
+            guard let name = vod.categoryName, !name.isEmpty, name.count <= 40 else { continue }
+            let lower = name.lowercased()
+            guard !garbage.contains(where: { lower.contains($0) }) else { continue }
+            let asciiCount = name.unicodeScalars.filter { $0.value < 0x0250 }.count
+            guard asciiCount > name.count / 2 else { continue }
+            if seen.insert(name).inserted { result.append(name) }
         }
-        return result
+        return result.sorted()
     }
 
-    // Items for the currently selected genre
     private var filteredVODItems: [ShelfItem] {
         guard let genre = selectedGenre else { return [] }
-        return homeViewModel.allVODs
+        var items = homeViewModel.allVODs
             .filter { $0.categoryName == genre }
             .map { vod in
                 ShelfItem(
@@ -42,6 +61,17 @@ struct VODBrowserView: View {
                     onTap: { selectedVOD = vod }
                 )
             }
+
+        switch sortOrder {
+        case .default: break
+        case .titleAZ: items.sort { $0.title.localizedCompare($1.title) == .orderedAscending }
+        case .titleZA: items.sort { $0.title.localizedCompare($1.title) == .orderedDescending }
+        case .ratingHigh:
+            items.sort { (Double($0.vod?.rating ?? "") ?? 0) > (Double($1.vod?.rating ?? "") ?? 0) }
+        case .ratingLow:
+            items.sort { (Double($0.vod?.rating ?? "") ?? 0) < (Double($1.vod?.rating ?? "") ?? 0) }
+        }
+        return items
     }
 
     var body: some View {
@@ -55,6 +85,12 @@ struct VODBrowserView: View {
                     genreFilterBar
 
                     if selectedGenre != nil {
+                        Text("\(filteredVODItems.count) tytułów")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 4)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         filteredGridView
                     } else {
                         fullBrowseView
@@ -86,19 +122,30 @@ struct VODBrowserView: View {
     // MARK: - Genre filter bar
 
     private var genreFilterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                GenreFilterPill(title: "Wszystkie", isSelected: selectedGenre == nil) {
-                    withAnimation(.easeInOut(duration: 0.2)) { selectedGenre = nil }
-                }
-                ForEach(availableGenres, id: \.self) { genre in
-                    GenreFilterPill(title: genre, isSelected: selectedGenre == genre) {
-                        withAnimation(.easeInOut(duration: 0.2)) { selectedGenre = genre }
+        HStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    GenreFilterPill(title: "Wszystkie", isSelected: selectedGenre == nil) {
+                        withAnimation(.easeInOut(duration: 0.2)) { selectedGenre = nil }
+                    }
+                    ForEach(availableGenres, id: \.self) { genre in
+                        GenreFilterPill(title: genre, isSelected: selectedGenre == genre) {
+                            withAnimation(.easeInOut(duration: 0.2)) { selectedGenre = genre }
+                        }
                     }
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 12)
+
+            Picker("Sortuj", selection: $sortOrder) {
+                ForEach(VODSortOrder.allCases, id: \.self) { order in
+                    Text(order.rawValue).tag(order)
+                }
+            }
+            .pickerStyle(.menu)
+            .foregroundStyle(.secondary)
+            .padding(.trailing, 12)
         }
         .background(Color(.sRGB, red: 0.05, green: 0.05, blue: 0.05, opacity: 1))
     }
@@ -112,7 +159,7 @@ struct VODBrowserView: View {
                 spacing: 14
             ) {
                 ForEach(filteredVODItems) { item in
-                    PosterCard(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
+                    VODGridCell(item: item, watchHistory: watchHistory)
                 }
             }
             .padding(.horizontal, 20)
@@ -229,7 +276,6 @@ struct VODBrowserView: View {
 
     private var vodLoadingSkeleton: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Filter bar skeleton
             HStack(spacing: 8) {
                 ForEach(0..<5, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: 20)
@@ -253,6 +299,36 @@ struct VODBrowserView: View {
                 }
             }
             .padding(.horizontal, 20)
+        }
+    }
+}
+
+// MARK: - VODGridCell
+
+private struct VODGridCell: View {
+    let item: ShelfItem
+    let watchHistory: [WatchHistoryRecord]
+
+    private var progressRecord: WatchHistoryRecord? {
+        guard let vodID = item.vod?.id else { return nil }
+        return watchHistory.first { $0.streamURLString.contains(String(vodID)) }
+    }
+
+    var body: some View {
+        let record = progressRecord
+        if let record, record.progressFraction > 0.02, record.progressFraction < 0.97 {
+            ZStack(alignment: .bottom) {
+                PosterCard(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
+                GeometryReader { geo in
+                    Rectangle()
+                        .fill(Color.accentColor)
+                        .frame(width: geo.size.width * record.progressFraction, height: 3)
+                }
+                .frame(height: 3)
+                .padding(.horizontal, 4)
+            }
+        } else {
+            PosterCard(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
         }
     }
 }
@@ -288,7 +364,6 @@ struct VODCard: View {
             .frame(width: cardWidth, height: cardHeight)
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            // Rating badge top-right
             if let rating = vod.rating, !rating.isEmpty, let ratingValue = Double(rating), ratingValue > 0 {
                 VStack {
                     HStack {
@@ -311,7 +386,6 @@ struct VODCard: View {
                 .frame(width: cardWidth, height: cardHeight)
             }
 
-            // Title overlay at bottom
             VStack(alignment: .leading, spacing: 4) {
                 Spacer()
                 Text(vod.name)

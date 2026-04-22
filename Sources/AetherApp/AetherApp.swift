@@ -152,6 +152,14 @@ struct AetherApp: App {
                 .keyboardShortcut(.leftArrow, modifiers: .command)
             }
 
+            CommandGroup(after: .textEditing) {
+                Button("Szukaj...") {
+                    NotificationCenter.default.post(name: .aetherNavigateSearch, object: nil)
+                    NotificationCenter.default.post(name: .init("AetherOpenSearch"), object: nil)
+                }
+                .keyboardShortcut("f", modifiers: .command)
+            }
+
             CommandMenu("Nawigacja") {
                 Button("Ulubione") {
                     NotificationCenter.default.post(name: .aetherNavigateFavorites, object: nil)
