@@ -195,6 +195,15 @@ struct ContentView: View {
                             .font(.system(size: 13))
                             .foregroundStyle(.white)
                         Spacer()
+                        if let channel = playerCore.currentChannel {
+                            Button("Retry") {
+                                playerCore.clearStreamErrorBanner()
+                                playerCore.play(channel)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .tint(.white)
+                        }
                         Button("✕") { playerCore.clearStreamErrorBanner() }
                             .buttonStyle(.plain)
                             .foregroundStyle(.white.opacity(0.6))
