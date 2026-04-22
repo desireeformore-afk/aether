@@ -191,6 +191,7 @@ struct ContentView: View {
                 detailContent
             }
             .navigationSplitViewStyle(.balanced)
+            .toolbarBackground(Color(red: 0.05, green: 0.05, blue: 0.07), for: .windowToolbar)
 
             // Network status banner
             VStack {

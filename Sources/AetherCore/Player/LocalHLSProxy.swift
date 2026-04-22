@@ -241,7 +241,16 @@ public final class LocalHLSProxy: @unchecked Sendable {
         let isVOD = ["mkv", "mp4", "avi", "mov", "wmv"].contains(ext)
 
         // For VOD, probe the video codec to select correct bitstream filter
-        let videoCodec = isVOD ? Self.probeVideoCodec(url: sourceURL) : "unknown"
+        let videoCodec: String
+        if isVOD {
+            // probeVideoCodec() calls waitUntilExit() — run it off the MainActor
+            // so the UI stays responsive while ffprobe probes the stream.
+            videoCodec = await Task.detached(priority: .userInitiated) {
+                Self.probeVideoCodec(url: sourceURL)
+            }.value
+        } else {
+            videoCodec = "unknown"
+        }
 
         let process = Process()
         process.executableURL = ffmpeg
