@@ -55,6 +55,30 @@ struct PlayerView: View {
                                     .transition(.move(edge: .bottom).combined(with: .opacity))
                             }
                         }
+                        .overlay(alignment: .topLeading) {
+                            Group {
+                                if let channel = player.currentChannel {
+                                    channelInfoBadge(channel: channel)
+                                }
+                            }
+                            .opacity(showControls ? 1 : 0)
+                            .animation(.easeInOut(duration: 0.3), value: showControls)
+                            .padding([.top, .leading], 16)
+                        }
+                        .overlay(alignment: .topTrailing) {
+                            Button { player.startPiP() } label: {
+                                Image(systemName: "pip.enter")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .padding(8)
+                                    .background(.black.opacity(0.5), in: Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .opacity(showControls ? 1 : 0)
+                            .animation(.easeInOut(duration: 0.3), value: showControls)
+                            .padding([.top, .trailing], 12)
+                            .disabled(player.currentChannel == nil)
+                        }
                         .onHover { hovering in
                             if hovering {
                                 showEPGOverlayWithAutoHide()
@@ -72,6 +96,10 @@ struct PlayerView: View {
                                 }
                                 Divider()
                             }
+                            Button(showStats ? "Hide Stream Stats" : "Show Stream Stats") {
+                                showStats.toggle()
+                            }
+                            Divider()
                             Menu("Quality") {
                                 ForEach(player.qualityPresets) { preset in
                                     Button {
@@ -172,6 +200,12 @@ struct PlayerView: View {
                 .animation(.easeInOut(duration: 0.3), value: player.streamErrorBanner)
             }
 
+            // Hidden Cmd+I shortcut: toggle stream stats HUD
+            Button("") { showStats.toggle() }
+                .keyboardShortcut("i", modifiers: .command)
+                .opacity(0)
+                .frame(width: 0, height: 0)
+
             // PIN Lock Overlay
             if showPINLock, blockedChannel != nil, let reason = blockReason {
                 PINLockView(
@@ -254,9 +288,7 @@ struct PlayerView: View {
                     .frame(width: 52, height: 52)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
+                PulsingCircle()
                 if player.retryCount > 0 {
                     Text("Buffering… (\(player.retryCount)/\(player.maxRetries))")
                         .font(.system(size: 12, weight: .medium))
@@ -266,29 +298,57 @@ struct PlayerView: View {
             .padding(16)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
         case .error(let msg):
-            VStack(spacing: 8) {
-                Image(systemName: "exclamationmark.circle")
-                    .font(.system(size: 28))
-                    .foregroundStyle(.white.opacity(0.7))
+            VStack(spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .symbolRenderingMode(.hierarchical)
                 Text(msg)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.white.opacity(0.9))
                     .multilineTextAlignment(.center)
-                Button("Ponów") {
+                    .frame(maxWidth: 220)
+                Button {
                     if let channel = player.currentChannel {
                         Task { @MainActor in
                             player.play(channel)
                         }
                     }
+                } label: {
+                    Label("Retry", systemImage: "arrow.clockwise")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 8)
+                        .background(Color.accentColor, in: Capsule())
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
+                .buttonStyle(.plain)
             }
-            .padding(20)
-            .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 12))
+            .padding(24)
+            .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.12), lineWidth: 1))
         default:
             EmptyView()
         }
+    }
+
+    @ViewBuilder
+    private func channelInfoBadge(channel: Channel) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(channel.name)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+            if let title = nowPlaying?.title {
+                Text(title)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .lineLimit(1)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 8))
     }
 
     private func loadEPG(for channel: Channel?) async {
@@ -592,7 +652,7 @@ struct VideoPlayerLayer: NSViewRepresentable {
 
     static func dismantleNSView(_ nsView: AVPlayerView, coordinator: Coordinator) {}
 
-    // MARK: - Coordinator
+    // MARK: - Coordinator (AVKit)
 
     final class Coordinator: NSObject, AVPlayerViewPictureInPictureDelegate {
         weak var playerCore: PlayerCore?
@@ -629,5 +689,29 @@ struct VideoPlayerLayer: NSViewRepresentable {
         nonisolated func playerViewDidStopPicture(inPicture playerView: AVPlayerView) {
             Task { @MainActor [weak self] in self?.playerCore?.setPiPActive(false) }
         }
+    }
+}
+
+// MARK: - PulsingCircle
+
+struct PulsingCircle: View {
+    @State private var pulsing = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(.white.opacity(0.18))
+                .frame(width: 52, height: 52)
+                .scaleEffect(pulsing ? 1.7 : 1.0)
+                .opacity(pulsing ? 0 : 1)
+                .animation(
+                    .easeOut(duration: 0.9).repeatForever(autoreverses: false),
+                    value: pulsing
+                )
+            Circle()
+                .fill(.white.opacity(0.65))
+                .frame(width: 28, height: 28)
+        }
+        .onAppear { pulsing = true }
     }
 }

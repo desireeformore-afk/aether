@@ -6,103 +6,128 @@ public struct MiniPlayerView: View {
     @Bindable var player: PlayerCore
     @Environment(EPGStore.self) private var epgStore
     @Binding var isPresented: Bool
+    var onExpand: (() -> Void)?
 
     @State private var nowPlaying: EPGEntry?
     @State private var isHovering = false
 
-    public init(player: PlayerCore, isPresented: Binding<Bool>) {
+    public init(player: PlayerCore, isPresented: Binding<Bool>, onExpand: (() -> Void)? = nil) {
         self.player = player
         self._isPresented = isPresented
+        self.onExpand = onExpand
     }
 
     public var body: some View {
         ZStack {
-            // Video layer
+            // Video layer — tap to expand back to main window
             VideoPlayerLayer(avPlayer: player.player, playerCore: player)
                 .aspectRatio(16 / 9, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            // Overlay controls (show on hover)
-            if isHovering || player.state != .playing {
-                VStack {
-                    // Top bar
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(player.currentChannel?.name ?? "No channel")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .lineLimit(1)
-
-                            if let entry = nowPlaying {
-                                Text(entry.title)
-                                    .font(.system(size: 9))
-                                    .foregroundStyle(.white.opacity(0.8))
-                                    .lineLimit(1)
+            // Overlay controls (show on hover or when not playing)
+            VStack(spacing: 0) {
+                // Top bar: logo + channel/EPG info + expand + close
+                HStack(spacing: 8) {
+                    if let logoURL = player.currentChannel?.logoURL {
+                        AsyncImage(url: logoURL) { phase in
+                            if let img = phase.image {
+                                img.resizable().scaledToFit()
+                            } else {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(.white.opacity(0.15))
                             }
                         }
-
-                        Spacer()
-
-                        // Close button
-                        Button(action: {
-                            isPresented = false
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 16))
-                                .foregroundStyle(.white.opacity(0.8))
-                        }
-                        .buttonStyle(.plain)
+                        .frame(width: 28, height: 28)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
-                    .padding(8)
-                    .background(.ultraThinMaterial.opacity(0.8))
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(player.currentChannel?.name ?? "No channel")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                        if let entry = nowPlaying {
+                            Text(entry.title)
+                                .font(.system(size: 9))
+                                .foregroundStyle(.white.opacity(0.75))
+                                .lineLimit(1)
+                        }
+                    }
 
                     Spacer()
 
-                    // Bottom controls
-                    HStack(spacing: 12) {
-                        Button(action: { player.playPrevious() }) {
-                            Image(systemName: "backward.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.white)
-                        }
-                        .buttonStyle(.plain)
-
-                        Button(action: { player.togglePlayPause() }) {
-                            Image(systemName: player.state == .playing ? "pause.fill" : "play.fill")
-                                .font(.system(size: 16))
-                                .foregroundStyle(.white)
-                        }
-                        .buttonStyle(.plain)
-
-                        Button(action: { player.playNext() }) {
-                            Image(systemName: "forward.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.white)
-                        }
-                        .buttonStyle(.plain)
-
-                        Divider()
-                            .frame(height: 16)
-                            .background(.white.opacity(0.5))
-
-                        Button(action: { player.toggleMute() }) {
-                            Image(systemName: player.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.white)
-                        }
-                        .buttonStyle(.plain)
+                    // Expand back to main window
+                    Button {
+                        onExpand?()
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white.opacity(0.8))
                     }
-                    .padding(8)
-                    .background(.ultraThinMaterial.opacity(0.8))
+                    .buttonStyle(.plain)
+                    .help("Expand to main window")
+
+                    // Close button
+                    Button {
+                        isPresented = false
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .transition(.opacity)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(.ultraThinMaterial)
+
+                Spacer()
+
+                // Bottom controls
+                HStack(spacing: 14) {
+                    Button { player.playPrevious() } label: {
+                        Image(systemName: "backward.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button { player.togglePlayPause() } label: {
+                        Image(systemName: player.state == .playing ? "pause.fill" : "play.fill")
+                            .font(.system(size: 17))
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button { player.playNext() } label: {
+                        Image(systemName: "forward.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+
+                    Divider()
+                        .frame(height: 14)
+                        .overlay(.white.opacity(0.4))
+
+                    Button { player.toggleMute() } label: {
+                        Image(systemName: player.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.ultraThinMaterial)
             }
+            .opacity(isHovering || player.state != .playing ? 1 : 0)
+            .animation(.easeInOut(duration: 0.2), value: isHovering)
+            .animation(.easeInOut(duration: 0.2), value: player.state == .playing)
         }
-        .frame(width: 300, height: 169) // 16:9 aspect ratio
+        .frame(minWidth: 280, minHeight: 80)
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovering = hovering
-            }
+            isHovering = hovering
         }
         #if os(macOS)
         .onScrollWheel { event in
@@ -111,9 +136,7 @@ public struct MiniPlayerView: View {
         }
         #endif
         .onChange(of: player.currentChannel) { _, newChannel in
-            Task {
-                await loadEPG(for: newChannel)
-            }
+            Task { await loadEPG(for: newChannel) }
         }
         .task {
             await loadEPG(for: player.currentChannel)
@@ -150,10 +173,14 @@ public final class MiniPlayerWindowController {
             return
         }
 
-        let contentView = MiniPlayerView(player: player, isPresented: Binding(
-            get: { self.isShowing },
-            set: { self.isShowing = $0 }
-        ))
+        let contentView = MiniPlayerView(
+            player: player,
+            isPresented: Binding(get: { self.isShowing }, set: { self.isShowing = $0 }),
+            onExpand: { [weak self] in
+                self?.hide()
+                NSApp.mainWindow?.makeKeyAndOrderFront(nil)
+            }
+        )
         .environment(epgStore)
 
         let hostingController = NSHostingController(rootView: contentView)
@@ -168,9 +195,9 @@ public final class MiniPlayerWindowController {
         window.titleVisibility = .hidden
 
         // Set initial size
-        window.setContentSize(NSSize(width: 300, height: 169))
-        window.minSize = NSSize(width: 200, height: 113)
-        window.maxSize = NSSize(width: 600, height: 338)
+        window.setContentSize(NSSize(width: 320, height: 180))
+        window.minSize = NSSize(width: 280, height: 80)
+        window.maxSize = NSSize(width: 640, height: 360)
 
         // Center on screen
         window.center()

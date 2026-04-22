@@ -132,6 +132,32 @@ public struct PlayerControlsView: View {
             player.stop()
             return .handled
         }
+        .onKeyPress(.leftArrow) {
+            if player.isLiveStream { player.playPrevious() } else { player.seek(by: -10) }
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            if player.isLiveStream { player.playNext() } else { player.seek(by: 10) }
+            return .handled
+        }
+        .onKeyPress(.upArrow) {
+            player.adjustVolume(delta: 0.1)
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            player.adjustVolume(delta: -0.1)
+            return .handled
+        }
+        .onKeyPress(KeyEquivalent("m")) {
+            player.toggleMute()
+            return .handled
+        }
+        .onKeyPress(KeyEquivalent("f")) {
+            #if os(macOS)
+            NSApp.mainWindow?.toggleFullScreen(nil)
+            #endif
+            return .handled
+        }
     }
 }
 
