@@ -11,6 +11,7 @@ public struct EPGTimelineView: View {
     /// All entries for this channel (can span multiple days; view filters by selectedDay).
     let allEntries: [EPGEntry]
     let channelID: String
+    let channelName: String
 
     public static let pointsPerHour: CGFloat = 120
     private static let blockHeight: CGFloat = 56
@@ -19,10 +20,13 @@ public struct EPGTimelineView: View {
     @State private var selectedEntry: EPGEntry?
     @State private var showPopover = false
     @State private var selectedDay: DayOffset = .today
+    /// Entry UUIDs that have a pending reminder notification.
+    @State private var reminders: Set<UUID> = []
 
-    public init(entries: [EPGEntry], channelID: String) {
+    public init(entries: [EPGEntry], channelID: String, channelName: String = "") {
         self.allEntries = entries
         self.channelID = channelID
+        self.channelName = channelName
     }
 
     // MARK: - Day filtering
@@ -86,6 +90,11 @@ public struct EPGTimelineView: View {
         }
         .background(Color.aetherSurface.opacity(0.6))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        .task(id: channelID) {
+            let ids = allEntries.map { $0.id.uuidString }
+            let scheduled = await NotificationManager.shared.scheduledEntryIDs(from: ids)
+            reminders = Set(allEntries.compactMap { scheduled.contains($0.id.uuidString) ? $0.id : nil })
+        }
     }
 
     // MARK: - Day selector
@@ -291,6 +300,20 @@ public struct EPGTimelineView: View {
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
+
+            // Bell indicator when reminder is set
+            if reminders.contains(entry.id) {
+                VStack {
+                    HStack {
+                        Spacer()
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 7, weight: .semibold))
+                            .foregroundStyle(.yellow)
+                            .padding(4)
+                    }
+                    Spacer()
+                }
+            }
         }
         .frame(width: width, height: Self.blockHeight)
         #if os(tvOS)
@@ -302,7 +325,7 @@ public struct EPGTimelineView: View {
         }
         .popover(isPresented: $showPopover) {
             if let e = selectedEntry {
-                EPGProgrammePopover(entry: e)
+                EPGProgrammePopover(entry: e, channelName: channelName, reminders: $reminders)
             }
         }
         #endif
@@ -338,6 +361,11 @@ private struct DayChip: View {
 
 private struct EPGProgrammePopover: View {
     let entry: EPGEntry
+    let channelName: String
+    @Binding var reminders: Set<UUID>
+
+    private var isReminderSet: Bool { reminders.contains(entry.id) }
+    private var canRemind: Bool { entry.start.addingTimeInterval(-5 * 60) > Date() }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -364,6 +392,34 @@ private struct EPGProgrammePopover: View {
                 Label(cat, systemImage: "tag")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
+            }
+
+            if canRemind || isReminderSet {
+                Divider()
+
+                Button {
+                    let entryID = entry.id
+                    let entryIDString = entryID.uuidString
+                    let currentlySet = isReminderSet
+                    Task {
+                        if currentlySet {
+                            await NotificationManager.shared.cancelReminder(for: entryIDString)
+                            reminders.remove(entryID)
+                        } else {
+                            try? await NotificationManager.shared.scheduleReminder(
+                                for: entry, channelName: channelName
+                            )
+                            reminders.insert(entryID)
+                        }
+                    }
+                } label: {
+                    Label(
+                        isReminderSet ? "Remove Reminder" : "Remind Me (5 min before)",
+                        systemImage: isReminderSet ? "bell.slash" : "bell.badge"
+                    )
+                    .foregroundStyle(isReminderSet ? .secondary : .accentColor)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding()

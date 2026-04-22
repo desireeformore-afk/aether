@@ -1,6 +1,7 @@
 @preconcurrency import AVFoundation
 @preconcurrency import Combine
 import Foundation
+import MediaPlayer
 
 /// Playback state of ``PlayerCore``.
 public enum PlayerState: Sendable, Equatable {
@@ -179,6 +180,7 @@ public final class PlayerCore {
         // Register HTTP bypass protocol to allow arbitrary HTTP streams (bypasses ATS)
         URLProtocol.registerClass(HTTPBypassProtocol.self)
         setupMemoryPressureObserver()
+        setupRemoteCommands()
     }
 
     deinit {
@@ -396,6 +398,7 @@ public final class PlayerCore {
         guard case .paused = state else { return }
         player.play()
         state = .playing
+        updateNowPlayingInfo()
     }
 
     /// Pauses playback.
@@ -403,6 +406,7 @@ public final class PlayerCore {
         guard case .playing = state else { return }
         player.pause()
         state = .paused
+        updateNowPlayingInfo()
     }
 
     /// Toggles play/pause.
@@ -435,6 +439,7 @@ public final class PlayerCore {
         warmupPlayer = nil
         warmupChannel = nil
         state = .idle
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
     /// Toggles mute.
@@ -819,6 +824,90 @@ public final class PlayerCore {
         watchStartTime = nil
     }
 
+    // MARK: - Now Playing / Remote Commands
+
+    private func setupRemoteCommands() {
+        let center = MPRemoteCommandCenter.shared()
+
+        center.playCommand.addTarget { [weak self] _ in
+            guard let self else { return .noSuchContent }
+            Task { @MainActor [weak self] in self?.resume() }
+            return .success
+        }
+        center.pauseCommand.addTarget { [weak self] _ in
+            guard let self else { return .noSuchContent }
+            Task { @MainActor [weak self] in self?.pause() }
+            return .success
+        }
+        center.togglePlayPauseCommand.addTarget { [weak self] _ in
+            guard let self else { return .noSuchContent }
+            Task { @MainActor [weak self] in self?.togglePlayPause() }
+            return .success
+        }
+        center.stopCommand.addTarget { [weak self] _ in
+            guard let self else { return .noSuchContent }
+            Task { @MainActor [weak self] in self?.stop() }
+            return .success
+        }
+        center.nextTrackCommand.addTarget { [weak self] _ in
+            guard let self else { return .noSuchContent }
+            Task { @MainActor [weak self] in self?.playNext() }
+            return .success
+        }
+        center.previousTrackCommand.addTarget { [weak self] _ in
+            guard let self else { return .noSuchContent }
+            Task { @MainActor [weak self] in self?.playPrevious() }
+            return .success
+        }
+        // Disable seek/scrub commands — live streams don't support them
+        center.seekForwardCommand.isEnabled = false
+        center.seekBackwardCommand.isEnabled = false
+        center.skipForwardCommand.isEnabled = false
+        center.skipBackwardCommand.isEnabled = false
+        center.changePlaybackPositionCommand.isEnabled = false
+    }
+
+    private func updateNowPlayingInfo() {
+        guard let channel = currentChannel else {
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            return
+        }
+        var info: [String: Any] = [
+            MPMediaItemPropertyTitle: channel.name,
+            MPNowPlayingInfoPropertyPlaybackRate: state == .playing ? 1.0 : 0.0,
+            MPNowPlayingInfoPropertyIsLiveStream: isLiveStream,
+        ]
+        if !isLiveStream {
+            let elapsed = player.currentTime().seconds
+            if elapsed.isFinite, elapsed >= 0 {
+                info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
+            }
+            let duration = player.currentItem?.duration.seconds ?? 0
+            if duration.isFinite, duration > 0 {
+                info[MPMediaItemPropertyPlaybackDuration] = duration
+            }
+        }
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+
+        if let logoURL = channel.logoURL {
+            Task { [weak self] in await self?.loadArtwork(from: logoURL) }
+        }
+    }
+
+    private func loadArtwork(from url: URL) async {
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return }
+        #if os(macOS)
+        guard let image = NSImage(data: data) else { return }
+        let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+        #else
+        guard let image = UIImage(data: data) else { return }
+        let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+        #endif
+        var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+        info[MPMediaItemPropertyArtwork] = artwork
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+    }
+
     private func observePlayerItem(_ item: AVPlayerItem) {
         // Cancel previous observer to prevent memory leaks
         statusObserver?.cancel()
@@ -843,6 +932,7 @@ public final class PlayerCore {
                     } else if dur.isNumeric && dur.seconds > 0 {
                         self.isLiveStream = false
                     }
+                    self.updateNowPlayingInfo()
                     // Reset buffer to normal after successful recovery
                     BufferingConfig.resetToNormal(for: item)
                     // Start progress tracking for Continue Watching

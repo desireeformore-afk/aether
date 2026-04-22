@@ -87,7 +87,7 @@ struct PlayerView: View {
 
                     // EPG Timeline — collapsible
                     if showTimeline && !allEPGEntries.isEmpty {
-                        EPGTimelineView(entries: allEPGEntries, channelID: player.currentChannel?.epgId ?? player.currentChannel?.name ?? "")
+                        EPGTimelineView(entries: allEPGEntries, channelID: player.currentChannel?.epgId ?? player.currentChannel?.name ?? "", channelName: player.currentChannel?.name ?? "")
                             .padding(.horizontal, 4)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
