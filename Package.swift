@@ -45,7 +45,7 @@ let package = Package(
                     "-Xlinker", "-sectcreate",
                     "-Xlinker", "__TEXT",
                     "-Xlinker", "__info_plist",
-                    "-Xlinker", "\(String(URL(fileURLWithPath: #file).deletingLastPathComponent().appendingPathComponent("Sources/AetherApp/Info.plist").path))"
+                    "-Xlinker", "\(String(#file.dropLast("Package.swift".count)))Sources/AetherApp/Info.plist"
                 ], .when(platforms: [.macOS]))
             ]
         ),

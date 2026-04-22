@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(AVFoundation)
 @preconcurrency import AVFoundation
+#endif
 
 /// Audio track information.
 public struct AudioTrack: Identifiable, Sendable, Hashable {
@@ -23,6 +25,7 @@ public struct AudioTrack: Identifiable, Sendable, Hashable {
         self.isDefault = isDefault
     }
 
+    #if canImport(AVFoundation)
     /// Create from AVMediaSelectionOption.
     public static func from(_ option: AVMediaSelectionOption) -> AudioTrack {
         let langCode = option.extendedLanguageTag ?? option.locale?.language.languageCode?.identifier
@@ -36,6 +39,7 @@ public struct AudioTrack: Identifiable, Sendable, Hashable {
             isDefault: option.isPlayable
         )
     }
+    #endif
 }
 
 /// Subtitle track information.
@@ -66,6 +70,7 @@ public struct SubtitleTrackInfo: Identifiable, Sendable, Hashable {
         self.isSDH = isSDH
     }
 
+    #if canImport(AVFoundation)
     /// Create from AVMediaSelectionOption.
     public static func from(_ option: AVMediaSelectionOption) -> SubtitleTrackInfo {
         let langCode = option.extendedLanguageTag ?? option.locale?.language.languageCode?.identifier
@@ -81,6 +86,7 @@ public struct SubtitleTrackInfo: Identifiable, Sendable, Hashable {
             isSDH: option.hasMediaCharacteristic(.describesVideoForAccessibility)
         )
     }
+    #endif
 }
 
 /// Track preferences per channel.

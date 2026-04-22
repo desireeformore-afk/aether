@@ -64,11 +64,16 @@ struct GlobalContentSearchView: View {
                     description: Text("Wróć na stronę główną, żeby załadować bibliotekę")
                 )
             } else if vodResults.isEmpty && seriesResults.isEmpty {
-                ContentUnavailableView(
-                    "Brak wyników",
-                    systemImage: "rectangle.slash",
-                    description: Text("Nie znaleziono '\(query)'")
-                )
+                VStack(spacing: 16) {
+                    Image(systemName: "rectangle.slash")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.secondary)
+                    Text("No results for \"\(query)\"")
+                        .font(.title3.bold())
+                    Button("Clear Search") { query = "" }
+                        .buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
                     if !vodResults.isEmpty {
