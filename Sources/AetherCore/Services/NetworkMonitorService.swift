@@ -14,6 +14,8 @@ public enum NetworkStatus: Sendable {
 public final class NetworkMonitorService {
     public private(set) var status: NetworkStatus = .unknown
     public private(set) var isOnline: Bool = true
+    /// Human-readable interface type: "WiFi", "Ethernet", "Cellular", or "None".
+    public private(set) var connectionType: String = "None"
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "com.aether.networkmonitor")
@@ -42,14 +44,22 @@ public final class NetworkMonitorService {
 
                 if self.isOnline {
                     self.status = .connected
+                    if path.usesInterfaceType(.wifi) {
+                        self.connectionType = "WiFi"
+                    } else if path.usesInterfaceType(.wiredEthernet) {
+                        self.connectionType = "Ethernet"
+                    } else if path.usesInterfaceType(.cellular) {
+                        self.connectionType = "Cellular"
+                    } else {
+                        self.connectionType = "Other"
+                    }
                     if !wasOnline {
-                        // Network restored
                         self.onNetworkRestored?()
                     }
                 } else {
                     self.status = .disconnected
+                    self.connectionType = "None"
                     if wasOnline {
-                        // Network lost
                         self.onNetworkLost?()
                     }
                 }

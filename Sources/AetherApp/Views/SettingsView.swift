@@ -31,11 +31,7 @@ struct SettingsView: View {
     @State private var importMessage: String?
 
     // Account tab
-    @State private var xtreamURL = ""
-    @State private var xtreamUser = ""
-    @State private var xtreamPass = ""
-    @State private var accountStatus: String?
-    @State private var isConnecting = false
+    @State private var showAddPlaylistSheet = false
 
     // Advanced tab
     @State private var showResetHistoryConfirm = false
@@ -187,83 +183,52 @@ struct SettingsView: View {
 
     private var accountTab: some View {
         Form {
-            Section("Serwer Xtream Codes") {
-                TextField("URL serwera (np. http://example.com:8080)", text: $xtreamURL)
-                    .help("Adres URL panelu Xtream Codes — bez ukośnika na końcu.")
-                TextField("Nazwa użytkownika", text: $xtreamUser)
-                SecureField("Hasło", text: $xtreamPass)
-
-                Button {
-                    connectXtream()
-                } label: {
-                    HStack(spacing: 6) {
-                        if isConnecting {
-                            ProgressView()
-                                .scaleEffect(0.7)
-                                .frame(width: 14, height: 14)
-                        }
-                        Text("Połącz i odśwież listę")
-                    }
+            Section {
+                ForEach(playlists) { playlist in
+                    AccountPlaylistRow(playlist: playlist)
                 }
-                .disabled(xtreamURL.isEmpty || xtreamUser.isEmpty || isConnecting)
-                .buttonStyle(.borderedProminent)
+                .onDelete { offsets in
+                    for i in offsets {
+                        modelContext.delete(playlists[i])
+                    }
+                    try? modelContext.save()
+                }
+            } header: {
+                HStack {
+                    Text("Konta / Playlisty (\(playlists.count))")
+                    Spacer()
+                    Button {
+                        showAddPlaylistSheet = true
+                    } label: {
+                        Label("Dodaj", systemImage: "plus")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            } footer: {
+                Text("Przesuń w lewo, aby usunąć. Kliknij "+" aby dodać nowe konto M3U lub Xtream Codes.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            if let status = accountStatus {
+            if playlists.isEmpty {
                 Section {
-                    Text(status)
-                        .foregroundStyle(status.hasPrefix("✓") ? Color.green : Color.red)
-                        .font(.callout)
+                    ContentUnavailableView(
+                        "Brak kont",
+                        systemImage: "person.crop.circle.badge.plus",
+                        description: Text("Dodaj playlistę M3U lub konto Xtream Codes")
+                    )
+                    .frame(height: 120)
                 }
             }
         }
         .formStyle(.grouped)
-        .onAppear { loadExistingXtreamCredentials() }
-    }
-
-    private func loadExistingXtreamCredentials() {
-        guard let existing = playlists.first(where: { $0.playlistType == .xtream }) else { return }
-        xtreamURL = existing.xstreamHost ?? ""
-        xtreamUser = existing.xstreamUsername ?? ""
-        xtreamPass = existing.xstreamPassword ?? ""
-    }
-
-    private func connectXtream() {
-        let urlTrimmed = xtreamURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        let userTrimmed = xtreamUser.trimmingCharacters(in: .whitespacesAndNewlines)
-        let passTrimmed = xtreamPass.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard URL(string: urlTrimmed) != nil else {
-            accountStatus = "Błąd: nieprawidłowy URL serwera"
-            return
+        .sheet(isPresented: $showAddPlaylistSheet) {
+            AddPlaylistSheet { record in
+                record.sortIndex = (playlists.last?.sortIndex ?? -1) + 1
+            }
         }
-
-        isConnecting = true
-        accountStatus = nil
-
-        if let existing = playlists.first(where: { $0.playlistType == .xtream }) {
-            existing.xstreamHost = urlTrimmed
-            existing.xstreamUsername = userTrimmed
-            existing.xstreamPassword = passTrimmed
-        } else {
-            let record = PlaylistRecord(
-                name: "Mój serwer IPTV",
-                urlString: "",
-                playlistType: .xtream,
-                xstreamHost: urlTrimmed,
-                xstreamUsername: userTrimmed,
-                xstreamPassword: passTrimmed
-            )
-            modelContext.insert(record)
-        }
-
-        do {
-            try modelContext.save()
-            accountStatus = "✓ Połączono pomyślnie. Wróć do głównego ekranu, aby odświeżyć listę kanałów."
-        } catch {
-            accountStatus = "Błąd zapisu: \(error.localizedDescription)"
-        }
-        isConnecting = false
     }
 
     // MARK: - Playlist Tab
@@ -720,6 +685,50 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - AccountPlaylistRow
+
+private struct AccountPlaylistRow: View {
+    let playlist: PlaylistRecord
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: playlist.playlistType == .xtream ? "server.rack" : "play.rectangle.on.rectangle")
+                .font(.system(size: 18))
+                .foregroundStyle(Color.aetherPrimary)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(playlist.name)
+                    .font(.body)
+                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Text(playlist.playlistType == .xtream ? "Xtream Codes" : "M3U")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let host = playlist.xstreamHost ?? (playlist.url?.host()) {
+                        Text("·")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(host)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+
+            Spacer()
+
+            if let refreshed = playlist.lastRefreshed {
+                Text(refreshed, style: .relative)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.vertical, 2)
     }
 }
 

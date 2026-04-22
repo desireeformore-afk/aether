@@ -13,6 +13,7 @@ struct ChannelListView: View {
     @Environment(EPGStore.self) private var epgStore
     @Environment(ParentalControlService.self) private var parentalService
     @Environment(AnalyticsService.self) private var analyticsService
+    @Environment(NetworkMonitorService.self) private var networkMonitor
 
     let playlist: PlaylistRecord
     @Binding var selectedChannel: Channel?
@@ -236,6 +237,11 @@ struct ChannelListView: View {
     @MainActor
     private func refresh() async {
         guard !isRefreshing else { return }
+        if !networkMonitor.isOnline {
+            if !channels.isEmpty { return }
+            errorMessage = "Brak połączenia z internetem"
+            return
+        }
         isRefreshing = true
         errorMessage = nil
         defer { isRefreshing = false }
@@ -491,10 +497,17 @@ struct ChannelListView: View {
             let filteredEmpty = !channels.isEmpty && !isRefreshing && cachedGrouped.isEmpty
             if channels.isEmpty && !isRefreshing {
                 VStack(spacing: 12) {
-                    Image(systemName: "tv").font(.system(size: 48)).foregroundStyle(.secondary)
-                    Text("No channels").font(.headline)
-                    Text("Refresh the playlist or check your URL")
-                        .font(.subheadline).foregroundStyle(.secondary)
+                    if !networkMonitor.isOnline {
+                        Image(systemName: "wifi.slash").font(.system(size: 48)).foregroundStyle(.orange)
+                        Text("Brak połączenia").font(.headline)
+                        Text("Kanały zostaną załadowane po przywróceniu połączenia")
+                            .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    } else {
+                        Image(systemName: "tv").font(.system(size: 48)).foregroundStyle(.secondary)
+                        Text("No channels").font(.headline)
+                        Text("Refresh the playlist or check your URL")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if filteredEmpty {
