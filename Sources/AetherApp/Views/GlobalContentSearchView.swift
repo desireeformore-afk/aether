@@ -134,7 +134,7 @@ struct GlobalContentSearchView: View {
             }
         }
         .sheet(item: $selectedVOD) { vod in
-            VODDetailSheet(vod: vod, credentials: credentials, player: player)
+            VODDetailView(vod: vod, credentials: credentials, player: player)
         }
         .sheet(item: $selectedSeries) { series in
             SeriesDetailView(series: series, credentials: credentials, player: player)

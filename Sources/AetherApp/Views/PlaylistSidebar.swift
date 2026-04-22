@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AetherCore
+import AetherUI
 
 /// Left sidebar: recently watched channels + list of saved playlists.
 struct PlaylistSidebar: View {

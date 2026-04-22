@@ -59,7 +59,7 @@ struct StreamingServiceDetailView: View {
         }
         .frame(minWidth: 600, minHeight: 500)
         .sheet(item: $selectedVOD) { vod in
-            VODDetailSheet(vod: vod, credentials: credentials, player: player)
+            VODDetailView(vod: vod, credentials: credentials, player: player)
         }
     }
 }

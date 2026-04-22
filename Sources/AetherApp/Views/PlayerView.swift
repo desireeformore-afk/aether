@@ -674,7 +674,7 @@ struct VideoPlayerLayer: NSViewRepresentable {
         }
 
         @objc private func handlePiPStartRequest() {
-            playerView?.startPictureInPicture()
+            playerView?.togglePictureInPicture(nil)
         }
 
         @objc func handleDoubleClick(_ gesture: NSClickGestureRecognizer) {

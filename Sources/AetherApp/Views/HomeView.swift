@@ -91,7 +91,7 @@ struct HomeView: View {
         .onChange(of: viewModel.shelves.count) { _, _ in updateHeroBanner() }
         .onChange(of: viewModel.liveItems.count) { _, _ in updateHeroBanner() }
         .sheet(item: $selectedVOD) { vod in
-            VODDetailSheet(vod: vod, credentials: credentials, player: player)
+            VODDetailView(vod: vod, credentials: credentials, player: player)
         }
         .sheet(item: $selectedSeries) { series in
             SeriesDetailView(series: series, credentials: credentials, player: player)

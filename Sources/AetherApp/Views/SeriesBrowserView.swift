@@ -68,7 +68,7 @@ struct SeriesBrowserView: View {
             SeriesDetailView(series: series, credentials: credentials, player: player)
         }
         .sheet(item: $selectedVOD) { vod in
-            VODDetailSheet(vod: vod, credentials: credentials, player: player)
+            VODDetailView(vod: vod, credentials: credentials, player: player)
         }
     }
 
