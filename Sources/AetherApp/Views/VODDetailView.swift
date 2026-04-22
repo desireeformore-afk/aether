@@ -10,6 +10,7 @@ struct VODDetailView: View {
     @Bindable var player: PlayerCore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(SubtitleStore.self) private var subtitleStore
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -108,12 +109,13 @@ struct VODDetailView: View {
             Button {
                 let ch = vod.toChannel(credentials: credentials)
                 Task { @MainActor in player.play(ch) }
+                subtitleStore.search(for: vod.name)
                 dismiss()
             } label: {
                 HStack(spacing: 9) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 15, weight: .bold))
-                    Text("Odtwórz")
+                    Text("Play")
                         .font(.system(size: 16, weight: .bold))
                 }
                 .frame(maxWidth: .infinity)
@@ -133,7 +135,7 @@ struct VODDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
-            .help(isVODFavorited ? "Usuń z ulubionych" : "Dodaj do ulubionych")
+            .help(isVODFavorited ? "Remove from Favorites" : "Add to Favorites")
         }
     }
 

@@ -14,7 +14,7 @@ struct FavoritesView: View {
     @Environment(\.modelContext) private var modelContext
 
     enum FavTab: String, CaseIterable {
-        case channels = "Kanały"
+        case channels = "Channels"
         case vod      = "Filmy"
         case series   = "Seriale"
     }
@@ -76,8 +76,8 @@ struct FavoritesView: View {
         if channels.isEmpty {
             emptyState(
                 icon: "star",
-                title: "Brak ulubionych kanałów",
-                subtitle: "Naciśnij gwiazdkę przy kanale, aby dodać go do ulubionych"
+                title: "No favorite channels",
+                subtitle: "Press the star next to a channel to add it to favorites"
             )
         } else {
             List(selection: $selectedChannel) {
@@ -100,8 +100,8 @@ struct FavoritesView: View {
         if vodFavorites.isEmpty {
             emptyState(
                 icon: "film",
-                title: "Brak ulubionych filmów",
-                subtitle: "Otwórz film i naciśnij gwiazdkę, aby dodać do ulubionych"
+                title: "No favorite movies",
+                subtitle: "Open a movie and press the star to add it to favorites"
             )
         } else {
             ScrollView {
@@ -127,8 +127,8 @@ struct FavoritesView: View {
         if seriesFavorites.isEmpty {
             emptyState(
                 icon: "tv",
-                title: "Brak ulubionych seriali",
-                subtitle: "Otwórz serial i naciśnij gwiazdkę, aby dodać do ulubionych"
+                title: "No favorite series",
+                subtitle: "Open a series and press the star to add it to favorites"
             )
         } else {
             ScrollView {

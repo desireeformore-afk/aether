@@ -27,7 +27,7 @@ struct GlobalContentSearchView: View {
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
-                TextField("Szukaj filmów i seriali...", text: $query)
+                TextField("Search movies and series...", text: $query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 17))
                     .focused($isSearchFocused)
@@ -48,7 +48,7 @@ struct GlobalContentSearchView: View {
                 ContentUnavailableView(
                     "Szukaj",
                     systemImage: "magnifyingglass",
-                    description: Text("Wpisz tytuł filmu lub serialu")
+                    description: Text("Type a movie or series title")
                 )
             } else if isSearching {
                 VStack(spacing: 12) {
@@ -61,18 +61,18 @@ struct GlobalContentSearchView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if !homeViewModel.isPhase1Loaded && service == nil {
                 ContentUnavailableView(
-                    "Ładowanie...",
+                    "Loading...",
                     systemImage: "arrow.circlepath",
-                    description: Text("Wróć na stronę główną, żeby załadować bibliotekę")
+                    description: Text("Go to Home to load the library")
                 )
             } else if vodResults.isEmpty && seriesResults.isEmpty {
                 VStack(spacing: 16) {
                     Image(systemName: "rectangle.slash")
                         .font(.system(size: 48))
                         .foregroundStyle(.secondary)
-                    Text("Brak wyników dla \"\(query)\"")
+                    Text("No results for \"\(query)\"")
                         .font(.title3.bold())
-                    Button("Wyczyść") { query = "" }
+                    Button("Clear") { query = "" }
                         .buttonStyle(.bordered)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

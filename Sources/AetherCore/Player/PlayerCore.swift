@@ -323,7 +323,7 @@ public final class PlayerCore {
             let urlKey = url.absoluteString
             if failedProxyURLs.contains(urlKey) {
                 print("[PlayerCore] Skipping known-failed proxy URL: \(url.lastPathComponent)")
-                showStreamErrorBanner("Nie można załadować strumienia")
+                showStreamErrorBanner("Unable to load stream")
                 return
             }
 
@@ -379,7 +379,7 @@ public final class PlayerCore {
                     let is458 = !is400 && (errMsg.contains("458") || errMsg.contains("Server returned 4"))
                     let isTimeout = errMsg.contains("timed out") || errMsg.contains("timeout")
                     if is400 {
-                        self.state = .error("HTTP 400 — Nieprawidłowe żądanie")
+                        self.state = .error("HTTP 400 — Bad Request")
                         return
                     } else if is458 {
                         await self.retry458WithAlternateExtension(originalURL: url, channel: channel)
@@ -390,7 +390,7 @@ public final class PlayerCore {
                     } else {
                         // Mark URL as failed to prevent retry loops
                         self.failedProxyURLs.insert(urlKey)
-                        self.showStreamErrorBanner("Nie można załadować strumienia")
+                        self.showStreamErrorBanner("Unable to load stream")
                     }
                 }
             }
@@ -553,7 +553,7 @@ public final class PlayerCore {
     /// `item` identifies the failing item — duplicate calls for the same item are ignored.
     private func scheduleRetry(for item: AVPlayerItem) {
         guard !shouldBlockRetry else {
-            showStreamErrorBanner("Nie można załadować strumienia")
+            showStreamErrorBanner("Unable to load stream")
             return
         }
         // De-duplicate: if we're already retrying because of this exact item, skip.
@@ -562,7 +562,7 @@ public final class PlayerCore {
         guard retryCount < maxRetries, let channel = currentChannel else {
             isRetrying = false
             retrySourceItem = nil
-            showStreamErrorBanner("Nie można załadować strumienia")
+            showStreamErrorBanner("Unable to load stream")
             return
         }
         isRetrying = true
@@ -622,7 +622,7 @@ public final class PlayerCore {
                     print("[PlayerCore] 🚫 Error \(nsErr?.domain ?? "?") \(httpCode) — blocking retry")
                     self.shouldBlockRetry = true
                     if httpCode == 458 {
-                        self.showStreamErrorBanner("Nie można załadować strumienia")
+                        self.showStreamErrorBanner("Unable to load stream")
                         return
                     }
                 }
@@ -675,7 +675,7 @@ public final class PlayerCore {
               let sourceURL = channel.streamURL as URL? else { return }
 
         guard retryCount < maxRetries else {
-            showStreamErrorBanner("Nie można załadować strumienia")
+            showStreamErrorBanner("Unable to load stream")
             return
         }
         retryCount += 1
@@ -710,7 +710,7 @@ public final class PlayerCore {
         } catch {
             guard currentChannel?.id == channel.id else { return }
             print("[PlayerCore] Proxy restart failed: \(error.localizedDescription)")
-            showStreamErrorBanner("Nie można załadować strumienia")
+            showStreamErrorBanner("Unable to load stream")
         }
     }
 

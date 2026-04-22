@@ -65,7 +65,7 @@ struct SubtitleSettingsView: View {
             Section("Preview") {
                 ZStack {
                     Color.black
-                    Text("Przykładowy napis")
+                    Text("Sample subtitle text")
                         .font(.system(size: fontSize, weight: .semibold))
                         .foregroundStyle(Color(hex: textColorHex) ?? .white)
                         .padding(.horizontal, 10)

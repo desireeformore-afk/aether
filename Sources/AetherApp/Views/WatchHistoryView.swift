@@ -43,7 +43,7 @@ struct WatchHistoryShelf: View {
                             .fill(Color.accentColor)
                             .frame(width: 3, height: 20)
                             .clipShape(RoundedRectangle(cornerRadius: 2))
-                        Text("Kontynuuj oglądanie")
+                        Text("Continue Watching")
                             .font(.title2).fontWeight(.bold)
                             .foregroundStyle(.white)
                     }
@@ -66,7 +66,7 @@ struct WatchHistoryShelf: View {
                         .fill(Color.accentColor)
                         .frame(width: 3, height: 20)
                         .clipShape(RoundedRectangle(cornerRadius: 2))
-                    Text("Ostatnio oglądane")
+                    Text("Recently Watched")
                         .font(.title2).fontWeight(.bold)
                         .foregroundStyle(.white)
                 }
@@ -145,7 +145,7 @@ struct ContinueWatchingCard: View {
             .buttonStyle(.plain)
             .onHover { isHovered = $0 }
             .contextMenu {
-                Button("Usuń z historii", role: .destructive) {
+                Button("Remove from History", role: .destructive) {
                     modelContext.delete(record)
                     try? modelContext.save()
                 }
@@ -159,7 +159,7 @@ struct ContinueWatchingCard: View {
 
             if record.totalDurationSeconds > 0 {
                 let remaining = record.totalDurationSeconds - record.watchedSecondsDouble
-                Text(formatTime(remaining) + " pozostało")
+                Text(formatTime(remaining) + " remaining")
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.5))
             }
@@ -221,7 +221,7 @@ struct RecentlyWatchedCard: View {
             .onHover { isHovered = $0 }
             .onTapGesture { resumePlayback() }
             .contextMenu {
-                Button("Usuń z historii", role: .destructive) {
+                Button("Remove from History", role: .destructive) {
                     modelContext.delete(record)
                     try? modelContext.save()
                 }

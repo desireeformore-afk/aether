@@ -14,6 +14,7 @@ struct SeriesDetailView: View {
     @State private var loadError: String?
     @State private var selectedSeason: String = "1"
     @State private var service: XstreamService?
+    @Environment(SubtitleStore.self) private var subtitleStore
 
     var body: some View {
         VStack(spacing: 0) {
@@ -120,7 +121,7 @@ struct SeriesDetailView: View {
                     .foregroundStyle(isSeriesFavorited ? .yellow : .secondary)
             }
             .buttonStyle(.plain)
-            .help(isSeriesFavorited ? "Usuń z ulubionych" : "Dodaj do ulubionych")
+            .help(isSeriesFavorited ? "Remove from Favorites" : "Add to Favorites")
 
             Button("Done") { dismiss() }
                 .keyboardShortcut(.cancelAction)
@@ -268,6 +269,7 @@ struct SeriesDetailView: View {
         )
         Task { @MainActor in
             player.play(channel)
+            subtitleStore.search(for: "\(series.name) \(ep.title)")
         }
     }
 }

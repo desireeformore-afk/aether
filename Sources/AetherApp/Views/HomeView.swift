@@ -52,7 +52,7 @@ struct HomeView: View {
                         }
 
                         if !viewModel.liveItems.isEmpty {
-                            CategoryShelf(title: "Na żywo", items: shelfItemsWithTap(viewModel.liveItems, credentials: credentials))
+                            CategoryShelf(title: "Live TV", items: shelfItemsWithTap(viewModel.liveItems, credentials: credentials))
                         }
 
                         Spacer(minLength: 40)
@@ -80,13 +80,13 @@ struct HomeView: View {
             viewModel.load(credentials: credentials)
             updateHeroBanner()
         }
-        .alert("Błąd ładowania", isPresented: Binding(
+        .alert("Loading Error", isPresented: Binding(
             get: { viewModel.error != nil },
             set: { if !$0 { viewModel.error = nil } }
         )) {
             Button("OK") { viewModel.error = nil }
         } message: {
-            Text(viewModel.error?.localizedDescription ?? "Nieznany błąd")
+            Text(viewModel.error?.localizedDescription ?? "Unknown error")
         }
         .onChange(of: viewModel.shelves.count) { _, _ in updateHeroBanner() }
         .onChange(of: viewModel.liveItems.count) { _, _ in updateHeroBanner() }
@@ -260,7 +260,7 @@ struct WelcomeView: View {
                         .font(.system(size: 48, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
 
-                    Text("Twój prywatny odtwarzacz IPTV")
+                    Text("Your private IPTV player")
                         .font(.title3)
                         .foregroundStyle(.white.opacity(0.6))
                 }

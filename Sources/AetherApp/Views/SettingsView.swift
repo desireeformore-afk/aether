@@ -39,7 +39,7 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             generalTab
-                .tabItem { Label("Ogólne", systemImage: "gearshape") }
+                .tabItem { Label("General", systemImage: "gearshape") }
 
             playerTab
                 .tabItem { Label("Odtwarzacz", systemImage: "play.circle") }
@@ -66,7 +66,7 @@ struct SettingsView: View {
                 .tag("subtitles")
 
             appearanceTab
-                .tabItem { Label("Wygląd", systemImage: "paintbrush") }
+                .tabItem { Label("Appearance", systemImage: "paintbrush") }
                 .tag("appearance")
 
             parentalControlsTab
@@ -123,8 +123,8 @@ struct SettingsView: View {
 
     private var generalTab: some View {
         Form {
-            Section("Język interfejsu") {
-                Picker("Język", selection: $preferredLanguage) {
+            Section("Interface Language") {
+                Picker("Language", selection: $preferredLanguage) {
                     ForEach(languages, id: \.code) { lang in
                         Text(lang.label).tag(lang.code)
                     }
@@ -136,7 +136,7 @@ struct SettingsView: View {
                 }
             }
             Section("Motyw") {
-                Picker("Schemat kolorów", selection: $preferredColorScheme) {
+                Picker("Color Scheme", selection: $preferredColorScheme) {
                     Text("Systemowy").tag(AppearanceMode.system.rawValue)
                     Text("Ciemny").tag(AppearanceMode.dark.rawValue)
                     Text("Jasny").tag(AppearanceMode.light.rawValue)
@@ -152,25 +152,25 @@ struct SettingsView: View {
 
     private var playerTab: some View {
         Form {
-            Section("Jakość strumienia") {
-                Picker("Domyślna jakość", selection: $defaultStreamQuality) {
+            Section("Stream Quality") {
+                Picker("Default Quality", selection: $defaultStreamQuality) {
                     ForEach(StreamQuality.allCases, id: \.rawValue) { q in
                         Text(q.displayName).tag(q.rawValue)
                     }
                 }
-                Toggle("Dekodowanie sprzętowe", isOn: $useHardwareDecoding)
-                    .help("Włącz dekodowanie wideo przez GPU / Apple Silicon.")
+                Toggle("Hardware Decoding", isOn: $useHardwareDecoding)
+                    .help("Enable GPU / Apple Silicon hardware video decoding.")
             }
             Section("Buforowanie") {
-                Picker("Bufor wstępny", selection: $preferredBufferDuration) {
+                Picker("Pre-Buffer", selection: $preferredBufferDuration) {
                     Text("30 sekund").tag(30)
                     Text("60 sekund").tag(60)
                     Text("120 sekund").tag(120)
                 }
-                .help("Czas wyprzedzenia bufora AVPlayer dla strumieniowania na żywo.")
+                .help("AVPlayer pre-buffer duration for live streaming.")
             }
-            Section("Preferowane ścieżki") {
-                Text("Ścieżkę audio i napisy wybierz podczas odtwarzania, klikając ikonę ścieżki na pasku narzędzi odtwarzacza.")
+            Section("Preferred Tracks") {
+                Text("Choose audio and subtitle tracks during playback by clicking the track icon in the player toolbar.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -206,7 +206,7 @@ struct SettingsView: View {
                     .controlSize(.small)
                 }
             } footer: {
-                Text("Przesuń w lewo, aby usunąć. Kliknij "+" aby dodać nowe konto M3U lub Xtream Codes.")
+                Text("Swipe left to remove. Click \"+\" to add a new M3U or Xtream Codes account.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -216,7 +216,7 @@ struct SettingsView: View {
                     ContentUnavailableView(
                         "Brak kont",
                         systemImage: "person.crop.circle.badge.plus",
-                        description: Text("Dodaj playlistę M3U lub konto Xtream Codes")
+                        description: Text("Add M3U playlist or Xtream Codes account")
                     )
                     .frame(height: 120)
                 }
@@ -235,21 +235,21 @@ struct SettingsView: View {
     private var playlistTab: some View {
         Form {
             Section("Import / Export") {
-                Button("Eksportuj playlistę do M3U…") {
+                Button("Export Playlist to M3U…") {
                     exportPlaylist()
                 }
-                .help("Eksportuj aktualną playlistę do pliku M3U.")
+                .help("Export the current playlist to an M3U file.")
 
                 Button("Importuj plik M3U…") {
                     importPlaylist()
                 }
-                .help("Importuj kanały z pliku M3U.")
+                .help("Import channels from an M3U file.")
             }
 
             if let message = exportMessage {
                 Section("Status eksportu") {
                     Text(message)
-                        .foregroundStyle(message.contains("Error") || message.contains("Błąd") ? Color.red : Color.green)
+                        .foregroundStyle(message.contains("Error") ? Color.red : Color.green)
                         .font(.aetherCaption)
                 }
             }
@@ -257,7 +257,7 @@ struct SettingsView: View {
             if let message = importMessage {
                 Section("Status importu") {
                     Text(message)
-                        .foregroundStyle(message.contains("Error") || message.contains("Błąd") ? Color.red : Color.green)
+                        .foregroundStyle(message.contains("Error") ? Color.red : Color.green)
                         .font(.aetherCaption)
                 }
             }
@@ -656,7 +656,7 @@ struct SettingsView: View {
                     try await PlaylistExporter.export(to: url, channels: allChannels)
                     showExportMessage("✓ Playlista wyeksportowana pomyślnie")
                 } catch {
-                    showExportMessage("Błąd: \(error.localizedDescription)")
+                    showExportMessage("Error: \(error.localizedDescription)")
                 }
             }
         }
@@ -677,7 +677,7 @@ struct SettingsView: View {
                     let count = try await PlaylistImporter.import(from: url, name: name, modelContext: modelContext)
                     showImportMessage("✓ Zaimportowano \(count) kanałów pomyślnie")
                 } catch {
-                    showImportMessage("Błąd: \(error.localizedDescription)")
+                    showImportMessage("Error: \(error.localizedDescription)")
                 }
             }
         }

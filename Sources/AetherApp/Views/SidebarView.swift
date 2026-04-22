@@ -4,10 +4,10 @@ import AetherCore
 // MARK: - SidebarItem
 
 enum SidebarItem: String, CaseIterable, Hashable {
-    case home      = "Główna"
+    case home      = "Home"
     case vod       = "Filmy"
     case series    = "Seriale"
-    case live      = "Na żywo"
+    case live      = "Live TV"
     case search    = "Szukaj"
     case favorites = "Ulubione"
     case history   = "Historia"

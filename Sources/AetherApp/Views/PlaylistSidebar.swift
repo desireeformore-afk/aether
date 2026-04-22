@@ -43,7 +43,7 @@ struct PlaylistSidebar: View {
         List(selection: $selectedPlaylist) {
             // Recently Watched
             if !recentChannels.isEmpty {
-                Section("Ostatnio oglądane") {
+                Section("Recently Watched") {
                     ForEach(recentChannels) { record in
                         if let channel = record.toChannel() {
                             RecentChannelRow(record: record)

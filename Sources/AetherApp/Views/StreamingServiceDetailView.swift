@@ -31,7 +31,7 @@ struct StreamingServiceDetailView: View {
 
                     Spacer()
 
-                    Text("\(items.count) tytułów")
+                    Text("\(items.count) titles")
                         .font(.system(size: 14))
                         .foregroundStyle(.white.opacity(0.5))
                 }

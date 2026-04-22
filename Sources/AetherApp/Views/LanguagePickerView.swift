@@ -33,7 +33,7 @@ struct LanguagePickerView: View {
                 .foregroundStyle(.white)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Język")
+                Text("Language")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                 Picker("", selection: $preferredLanguage) {

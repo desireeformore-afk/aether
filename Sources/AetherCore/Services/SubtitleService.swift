@@ -29,7 +29,7 @@ public actor SubtitleService {
 
     /// Search subtitles by query string (EPG title or channel name).
     /// Returns up to 10 results sorted by rating desc.
-    public func search(query: String, languages: [String] = ["pl", "en"]) async throws -> [SubtitleTrack] {
+    public func search(query: String, languages: [String] = ["en"]) async throws -> [SubtitleTrack] {
         guard !Self.apiKey.isEmpty else { throw SubtitleError.noAPIKey }
 
         guard var comps = URLComponents(url: baseURL.appendingPathComponent("subtitles"), resolvingAgainstBaseURL: false) else {

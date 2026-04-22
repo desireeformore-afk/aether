@@ -238,7 +238,7 @@ struct ChannelListView: View {
         guard !isRefreshing else { return }
         if !networkMonitor.isOnline {
             if !channels.isEmpty { return }
-            errorMessage = "Brak połączenia z internetem"
+            errorMessage = "No internet connection"
             return
         }
         isRefreshing = true
@@ -500,8 +500,8 @@ struct ChannelListView: View {
                 VStack(spacing: 12) {
                     if !networkMonitor.isOnline {
                         Image(systemName: "wifi.slash").font(.system(size: 48)).foregroundStyle(.orange)
-                        Text("Brak połączenia").font(.headline)
-                        Text("Kanały zostaną załadowane po przywróceniu połączenia")
+                        Text("No Connection").font(.headline)
+                        Text("Channels will load once the connection is restored")
                             .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     } else {
                         Image(systemName: "tv").font(.system(size: 48)).foregroundStyle(.secondary)

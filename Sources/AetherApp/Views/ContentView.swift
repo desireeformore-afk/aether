@@ -337,7 +337,7 @@ struct ContentView: View {
         ContentUnavailableView(
             "Brak playlisty",
             systemImage: "tv.slash",
-            description: Text("Dodaj playlistę w ustawieniach")
+            description: Text("Add a playlist in Settings")
         )
     }
 

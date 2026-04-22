@@ -141,12 +141,12 @@ struct AetherApp: App {
 
                 Divider()
 
-                Button("Następny kanał") {
+                Button("Next Channel") {
                     playerCore.playNext()
                 }
                 .keyboardShortcut(.rightArrow, modifiers: .command)
 
-                Button("Poprzedni kanał") {
+                Button("Previous Channel") {
                     playerCore.playPrevious()
                 }
                 .keyboardShortcut(.leftArrow, modifiers: .command)
@@ -176,14 +176,14 @@ struct AetherApp: App {
                 }
                 .keyboardShortcut("h", modifiers: [.command, .shift])
 
-                Button("EPG / Na żywo") {
+                Button("EPG / Live TV") {
                     NotificationCenter.default.post(name: .aetherNavigateLive, object: nil)
                 }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
             }
 
             CommandMenu("Konto") {
-                Button("Odśwież listę kanałów") {
+                Button("Refresh Channel List") {
                     NotificationCenter.default.post(name: .aetherRefreshPlaylist, object: nil)
                 }
                 .keyboardShortcut("r", modifiers: [.command, .shift])

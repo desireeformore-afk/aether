@@ -138,6 +138,17 @@ struct PlayerView: View {
                                     }
                                 }
                             }
+                            if !subtitleStore.tracks.isEmpty {
+                                Divider()
+                                Menu("OpenSubtitles") {
+                                    Button("None") { subtitleStore.clear() }
+                                    ForEach(subtitleStore.tracks) { track in
+                                        Button("\(track.language) — \(track.languageName)") {
+                                            subtitleStore.load(track: track)
+                                        }
+                                    }
+                                }
+                            }
                         }
                         #if os(macOS)
                         .onScrollWheel { event in

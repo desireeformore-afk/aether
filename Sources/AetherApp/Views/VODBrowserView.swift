@@ -5,9 +5,9 @@ import AetherCore
 // MARK: - VODSortOrder
 
 enum VODSortOrder: String, CaseIterable {
-    case `default` = "Domyślne"
-    case titleAZ = "Tytuł A-Z"
-    case titleZA = "Tytuł Z-A"
+    case `default` = "Default"
+    case titleAZ = "Title A-Z"
+    case titleZA = "Title Z-A"
     case ratingHigh = "Ocena ↓"
     case ratingLow = "Ocena ↑"
 }
@@ -85,7 +85,7 @@ struct VODBrowserView: View {
                     genreFilterBar
 
                     if selectedGenre != nil {
-                        Text("\(filteredVODItems.count) tytułów")
+                        Text("\(filteredVODItems.count) titles")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 24)
