@@ -181,7 +181,7 @@ struct TrackPickerView: View {
                             Spacer()
                             if option == player.selectedAudioOption {
                                 Image(systemName: "checkmark")
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                             }
                         }
                     }
@@ -202,7 +202,7 @@ struct TrackPickerView: View {
                         Spacer()
                         if player.selectedSubtitleOption == nil {
                             Image(systemName: "checkmark")
-                                .foregroundStyle(.accentColor)
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
                 }
@@ -216,7 +216,7 @@ struct TrackPickerView: View {
                             Spacer()
                             if option == player.selectedSubtitleOption {
                                 Image(systemName: "checkmark")
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(Color.accentColor)
                             }
                         }
                     }
