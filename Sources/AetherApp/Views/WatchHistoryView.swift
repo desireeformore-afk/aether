@@ -21,7 +21,18 @@ struct WatchHistoryShelf: View {
     }
 
     var body: some View {
-        if !allHistory.isEmpty {
+        if allHistory.isEmpty {
+            HStack(spacing: 10) {
+                Image(systemName: "clock")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.white.opacity(0.25))
+                Text("Nothing watched yet — start a channel to see your history here")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+        } else {
             VStack(alignment: .leading, spacing: 0) {
                 if !continueWatching.isEmpty {
                     Text("Kontynuuj oglądanie")

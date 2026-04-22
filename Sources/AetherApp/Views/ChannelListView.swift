@@ -479,13 +479,25 @@ struct ChannelListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if filteredEmpty {
                 VStack(spacing: 12) {
-                    Image(systemName: selectedCategory == .movies ? "film" : selectedCategory == .series ? "tv.and.mediabox" : "magnifyingglass")
-                        .font(.system(size: 40)).foregroundStyle(.secondary)
-                    Text(selectedCategory == .movies ? "No movie channels in live TV" : selectedCategory == .series ? "No series channels in live TV" : "No results")
-                        .font(.headline)
-                    if selectedCategory == .movies || selectedCategory == .series {
-                        Text("Use the \(selectedCategory == .movies ? "VOD" : "Series") button below to browse \(selectedCategory == .movies ? "movies" : "series")")
+                    if !searchText.isEmpty {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 40)).foregroundStyle(.secondary)
+                        Text("No results for \"\(searchText)\"")
+                            .font(.headline)
+                        Text("Try a different search term or clear the search")
                             .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        Button("Clear Search") { searchText = "" }
+                            .buttonStyle(.bordered)
+                            .padding(.top, 4)
+                    } else {
+                        Image(systemName: selectedCategory == .movies ? "film" : selectedCategory == .series ? "tv.and.mediabox" : "tv.slash")
+                            .font(.system(size: 40)).foregroundStyle(.secondary)
+                        Text(selectedCategory == .movies ? "No movie channels in Live TV" : selectedCategory == .series ? "No series channels in Live TV" : "No channels match the filter")
+                            .font(.headline)
+                        if selectedCategory == .movies || selectedCategory == .series {
+                            Text("Use the \(selectedCategory == .movies ? "VOD" : "Series") tab to browse \(selectedCategory == .movies ? "movies" : "series")")
+                                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        }
                     }
                 }
                 .padding()

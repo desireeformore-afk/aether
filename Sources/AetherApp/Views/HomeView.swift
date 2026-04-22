@@ -230,7 +230,7 @@ struct WelcomeView: View {
                     Button {
                         showAddPlaylist = true
                     } label: {
-                        Label("Dodaj playlistę Xtream", systemImage: "plus.circle.fill")
+                        Label("Add Playlist", systemImage: "plus.circle.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(width: 260)
@@ -239,10 +239,15 @@ struct WelcomeView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
+                    .keyboardShortcut("n", modifiers: .command)
 
-                    Text("Obsługuje M3U i Xtream Codes")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.4))
+                    HStack(spacing: 16) {
+                        Label("M3U URL", systemImage: "link")
+                        Label("Xtream Codes", systemImage: "server.rack")
+                        Label("Local file", systemImage: "doc")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.35))
                 }
 
                 Spacer()
