@@ -173,11 +173,11 @@ struct PlayerView: View {
             return .handled
         }
         .onKeyPress(.leftArrow) {
-            player.playPrevious()
+            if player.isLiveStream { player.playPrevious() } else { player.seek(by: -10) }
             return .handled
         }
         .onKeyPress(.rightArrow) {
-            player.playNext()
+            if player.isLiveStream { player.playNext() } else { player.seek(by: 10) }
             return .handled
         }
         #endif
@@ -188,6 +188,17 @@ struct PlayerView: View {
         switch player.state {
         case .loading:
             VStack(spacing: 10) {
+                if let logoURL = player.currentChannel?.logoURL {
+                    AsyncImage(url: logoURL) { phase in
+                        if let img = phase.image {
+                            img.resizable().scaledToFit()
+                        } else {
+                            Color.clear
+                        }
+                    }
+                    .frame(width: 52, height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
                 ProgressView()
                     .scaleEffect(1.5)
                     .tint(.white)

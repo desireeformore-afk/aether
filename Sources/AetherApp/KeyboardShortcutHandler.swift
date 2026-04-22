@@ -9,8 +9,8 @@ final class KeyboardShortcutHandler {
     private var monitor: Any?
     private weak var playerCore: PlayerCore?
 
-    /// Called when user presses F to toggle favorite on current channel.
-    var onToggleFavorite: (() -> Void)?
+    /// Called when user presses F to toggle fullscreen.
+    var onToggleFullscreen: (() -> Void)?
     /// Called when user presses / to activate search.
     var onActivateSearch: (() -> Void)?
     /// Called when user presses R to restore last channel.
@@ -41,22 +41,24 @@ final class KeyboardShortcutHandler {
         // Space → play/pause
         case 49 where noMod:
             player.togglePlayPause(); return nil
-        // ← → → prev/next channel
+        // ← → seek ±10s (VOD) or prev/next channel (live)
         case 123 where noMod:
-            player.playPrevious(); return nil
+            if player.isLiveStream { player.playPrevious() } else { player.seek(by: -10) }
+            return nil
         case 124 where noMod:
-            player.playNext(); return nil
-        // ↑ ↓ → also prev/next channel
+            if player.isLiveStream { player.playNext() } else { player.seek(by: 10) }
+            return nil
+        // ↑ ↓ → volume ±10%
         case 126 where noMod:
-            player.playPrevious(); return nil
+            player.adjustVolume(delta: 0.1); return nil
         case 125 where noMod:
-            player.playNext(); return nil
+            player.adjustVolume(delta: -0.1); return nil
         // M → mute
         case 46 where noMod:
             player.toggleMute(); return nil
-        // F → toggle favorite (no ⌘, that's search)
+        // F → toggle fullscreen
         case 3 where noMod:
-            onToggleFavorite?(); return nil
+            onToggleFullscreen?(); return nil
         // / → activate search
         case 44 where noMod:
             onActivateSearch?(); return nil

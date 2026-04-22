@@ -1,6 +1,9 @@
 import SwiftUI
 import SwiftData
 import AetherCore
+#if os(macOS)
+import AppKit
+#endif
 
 // MARK: - ContentView
 
@@ -310,9 +313,8 @@ struct ContentView: View {
             sidebarSelection = .search
             searchActivationToken += 1
         }
-        keyboardHandler.onToggleFavorite = {
-            guard let channel = playerCore.currentChannel else { return }
-            toggleFavorite(channel: channel)
+        keyboardHandler.onToggleFullscreen = {
+            NSApp.keyWindow?.toggleFullScreen(nil)
         }
         keyboardHandler.onRestoreLastChannel = {
             if let channel = playerCore.restoreLastChannel() {
