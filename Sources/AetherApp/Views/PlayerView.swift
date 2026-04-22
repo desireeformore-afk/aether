@@ -674,7 +674,10 @@ struct VideoPlayerLayer: NSViewRepresentable {
         }
 
         @objc private func handlePiPStartRequest() {
-            playerView?.togglePictureInPicture(nil)
+            // AVPlayerView manages PiP via its built-in overlay controls.
+            // Programmatic PiP activation requires AVPictureInPictureController;
+            // AVPlayerView does not expose a public startPictureInPicture() method.
+            // The user can activate PiP via the floating controls overlay.
         }
 
         @objc func handleDoubleClick(_ gesture: NSClickGestureRecognizer) {
