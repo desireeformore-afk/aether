@@ -2,6 +2,11 @@
 @preconcurrency import Combine
 import Foundation
 import MediaPlayer
+#if canImport(AppKit)
+import AppKit
+#elseif canImport(UIKit)
+import UIKit
+#endif
 
 /// Playback state of ``PlayerCore``.
 public enum PlayerState: Sendable, Equatable {
