@@ -398,6 +398,9 @@ public final class PlayerCore {
         }
 
         // Direct playback for MP4 and other AVPlayer-compatible formats
+        if ext.isEmpty && channel.contentType == .movie {
+            print("[PlayerCore] VOD stream: trying direct play first, will proxy on error")
+        }
         let item: AVPlayerItem
         if let warm = preloadedItem {
             // Use already-buffered item — fast path (< 500ms switch)

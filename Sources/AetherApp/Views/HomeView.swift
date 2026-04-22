@@ -134,7 +134,7 @@ struct HomeView: View {
                     imageURL: item.imageURL,
                     vod: vod,
                     series: nil,
-                    onTap: { player.play(vod.toChannel(credentials: credentials)) }
+                    onTap: { selectedVOD = vod }
                 )
             } else if let series = item.series {
                 return ShelfItem(

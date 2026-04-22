@@ -179,5 +179,6 @@ struct VODDetailView: View {
         }
         .buttonStyle(.plain)
         .padding(14)
+        .keyboardShortcut(.escape, modifiers: [])
     }
 }
