@@ -38,9 +38,10 @@ struct PosterCard: View {
                 CachedImageView(url: imageURL.flatMap(URL.init(string:))) {
                     CardShimmerView()
                 } content: { image in
-                    image.resizable().scaledToFill()
+                    image.resizable().aspectRatio(2/3, contentMode: .fill)
                 }
                 .frame(width: cardWidth, height: cardHeight)
+                .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 if isHovered {
@@ -141,15 +142,10 @@ struct HeroBanner: View {
             }
             .frame(height: bannerHeight)
 
-            // Bottom gradient — fades to solid black
+            // Bottom gradient — subtle fade for text readability only
             LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0),
-                    .init(color: Color.black.opacity(0.15), location: 0.38),
-                    .init(color: Color.black.opacity(0.72), location: 0.68),
-                    .init(color: Color.black, location: 1.0)
-                ],
-                startPoint: .top,
+                gradient: Gradient(colors: [Color.clear, Color.black.opacity(0.7)]),
+                startPoint: .center,
                 endPoint: .bottom
             )
             .frame(height: bannerHeight)
@@ -216,9 +212,15 @@ struct CategoryShelf: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(title)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.white)
+                HStack(spacing: 8) {
+                    Rectangle()
+                        .fill(Color.accentColor)
+                        .frame(width: 3, height: 20)
+                        .clipShape(RoundedRectangle(cornerRadius: 2))
+                    Text(title)
+                        .font(.title2).fontWeight(.bold)
+                        .foregroundStyle(.white)
+                }
 
                 Spacer()
 
@@ -232,7 +234,7 @@ struct CategoryShelf: View {
                     .padding(.trailing, 24)
                 }
             }
-            .padding(.leading, 24)
+            .padding(.leading, 16)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 14) {

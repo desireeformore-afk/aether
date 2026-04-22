@@ -98,15 +98,19 @@ struct HomeView: View {
         }
     }
 
-    // First item from each shelf (up to 10) — diverse cross-genre set
+    // First item from each shelf (up to 10) — diverse cross-genre set, deduped by id
     private var recommendedItems: [ShelfItem] {
+        var seen = Set<String>()
         var items: [ShelfItem] = []
         for shelf in viewModel.shelves where !shelf.items.isEmpty {
-            items.append(shelf.items[0])
+            if seen.insert(shelf.items[0].id).inserted {
+                items.append(shelf.items[0])
+            }
             if items.count >= 10 { break }
         }
         if items.isEmpty {
-            return Array(viewModel.liveItems.prefix(10))
+            var seenLive = Set<String>()
+            return viewModel.liveItems.filter { seenLive.insert($0.id).inserted }.prefix(10).map { $0 }
         }
         return items
     }

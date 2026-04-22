@@ -356,7 +356,7 @@ final class HomeViewModel: ObservableObject {
         guard let streams = try? await svc.vodStreams(categoryID: cat.id), !streams.isEmpty else { return nil }
         let cleanName = cleanCategoryName(cat.name)
         let items = streams.prefix(20).map { vod in
-            ShelfItem(id: "\(vod.id)", title: vod.name, imageURL: vod.streamIcon, vod: vod, onTap: {})
+            ShelfItem(id: "\(vod.id)", title: cleanTitle(vod.name), imageURL: vod.streamIcon, vod: vod, onTap: {})
         }
         return (cleanName, Array(items))
     }
@@ -365,7 +365,7 @@ final class HomeViewModel: ObservableObject {
         guard let series = try? await svc.seriesList(categoryID: cat.id), !series.isEmpty else { return nil }
         let cleanName = cleanCategoryName(cat.name)
         let items = series.prefix(20).map { s in
-            ShelfItem(id: "\(s.id)", title: s.name, imageURL: s.cover, series: s, onTap: {})
+            ShelfItem(id: "\(s.id)", title: cleanTitle(s.name), imageURL: s.cover, series: s, onTap: {})
         }
         return (cleanName, Array(items))
     }
@@ -375,6 +375,20 @@ final class HomeViewModel: ObservableObject {
         return first.items.prefix(5).map { item in
             HeroBannerItem(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
         }
+    }
+
+    func cleanTitle(_ title: String) -> String {
+        let prefixes = ["AMZ - ", "AMZ-", "NF - ", "NF-", "NETFLIX - ", "Netflix - ",
+                        "Netflix 4K Premium - ", "Netflix 4K - ",
+                        "4K - ", "HD - ", "FHD - ", "UHD - "]
+        var result = title
+        for prefix in prefixes {
+            if result.uppercased().hasPrefix(prefix.uppercased()) {
+                result = String(result.dropFirst(prefix.count))
+                break
+            }
+        }
+        return result.trimmingCharacters(in: .whitespaces)
     }
 
     func cleanCategoryName(_ name: String) -> String {

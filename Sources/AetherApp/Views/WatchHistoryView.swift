@@ -18,7 +18,9 @@ struct WatchHistoryShelf: View {
     }
 
     private var recentlyWatched: [WatchHistoryRecord] {
-        Array(allHistory.prefix(10))
+        var seen = Set<String>()
+        let deduped = allHistory.filter { seen.insert($0.streamURLString).inserted }
+        return Array(deduped.prefix(10))
     }
 
     var body: some View {
@@ -36,12 +38,18 @@ struct WatchHistoryShelf: View {
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 if !continueWatching.isEmpty {
-                    Text("Kontynuuj oglądanie")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 24)
-                        .padding(.bottom, 12)
+                    HStack(spacing: 8) {
+                        Rectangle()
+                            .fill(Color.accentColor)
+                            .frame(width: 3, height: 20)
+                            .clipShape(RoundedRectangle(cornerRadius: 2))
+                        Text("Kontynuuj oglądanie")
+                            .font(.title2).fontWeight(.bold)
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.leading, 16)
+                    .padding(.top, 24)
+                    .padding(.bottom, 12)
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(spacing: 12) {
@@ -53,12 +61,18 @@ struct WatchHistoryShelf: View {
                     }
                 }
 
-                Text("Ostatnio oglądane")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.top, 24)
-                    .padding(.bottom, 12)
+                HStack(spacing: 8) {
+                    Rectangle()
+                        .fill(Color.accentColor)
+                        .frame(width: 3, height: 20)
+                        .clipShape(RoundedRectangle(cornerRadius: 2))
+                    Text("Ostatnio oglądane")
+                        .font(.title2).fontWeight(.bold)
+                        .foregroundStyle(.white)
+                }
+                .padding(.leading, 16)
+                .padding(.top, 24)
+                .padding(.bottom, 12)
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 12) {
