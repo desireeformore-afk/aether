@@ -12,6 +12,7 @@ final class HomeViewModel: ObservableObject {
     @Published var allVODs: [XstreamVOD] = []
     @Published var allSeries: [XstreamSeries] = []
     @Published var errorMessage: String? = nil
+    @Published var error: Error? = nil
 
     // Priority-sorted VOD shelves exposed to VODBrowserView
     @Published var streamingServiceShelves: [(title: String, icon: String, items: [ShelfItem], allItems: [ShelfItem])] = []
@@ -119,8 +120,16 @@ final class HomeViewModel: ObservableObject {
             if Task.isCancelled { hasLoaded = false }
         }
 
-        // Fetch all categories
-        let allCats = (try? await svc.vodCategories()) ?? []
+        // Fetch all categories — propagate to UI on failure
+        let allCats: [XstreamCategory]
+        do {
+            allCats = try await svc.vodCategories()
+        } catch {
+            self.error = error
+            self.errorMessage = error.localizedDescription
+            isPhase1Loaded = true
+            return
+        }
         let filtered = allCats.filter { !isGarbageCategory($0.name) }
 
         // Sort: streaming services first, then alphabetically

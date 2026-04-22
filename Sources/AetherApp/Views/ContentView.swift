@@ -5,6 +5,16 @@ import AetherCore
 import AppKit
 #endif
 
+// MARK: - Menu-bar navigation notification names
+
+extension Notification.Name {
+    static let aetherNavigateFavorites  = Notification.Name("aetherNavigateFavorites")
+    static let aetherNavigateSearch     = Notification.Name("aetherNavigateSearch")
+    static let aetherNavigateHistory    = Notification.Name("aetherNavigateHistory")
+    static let aetherNavigateLive       = Notification.Name("aetherNavigateLive")
+    static let aetherRefreshPlaylist    = Notification.Name("aetherRefreshPlaylist")
+}
+
 // MARK: - ContentView
 
 struct ContentView: View {
@@ -145,6 +155,23 @@ struct ContentView: View {
             guard event.modifiers.contains(.command) else { return .ignored }
             showCommandPalette.toggle()
             return .handled
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .aetherNavigateFavorites)) { _ in
+            withAnimation(.easeInOut(duration: 0.2)) { sidebarSelection = .favorites }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .aetherNavigateSearch)) { _ in
+            withAnimation(.easeInOut(duration: 0.2)) { sidebarSelection = .search }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .aetherNavigateHistory)) { _ in
+            withAnimation(.easeInOut(duration: 0.2)) { sidebarSelection = .history }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .aetherNavigateLive)) { _ in
+            withAnimation(.easeInOut(duration: 0.2)) { sidebarSelection = .live }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .aetherRefreshPlaylist)) { _ in
+            if let creds = activeCredentials {
+                homeViewModel.forceReload(credentials: creds)
+            }
         }
         #endif
     }
@@ -300,6 +327,7 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
+        .animation(.easeInOut(duration: 0.2), value: sidebarSelection)
     }
 
     private var noPlaylistPrompt: some View {

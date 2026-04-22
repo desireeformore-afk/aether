@@ -495,7 +495,9 @@ struct ChannelListView: View {
 
             // Empty state: channels loaded but active filter returns nothing
             let filteredEmpty = !channels.isEmpty && !isRefreshing && cachedGrouped.isEmpty
-            if channels.isEmpty && !isRefreshing {
+            if channels.isEmpty && isRefreshing {
+                channelLoadingSkeleton
+            } else if channels.isEmpty && !isRefreshing {
                 VStack(spacing: 12) {
                     if !networkMonitor.isOnline {
                         Image(systemName: "wifi.slash").font(.system(size: 48)).foregroundStyle(.orange)
@@ -541,6 +543,19 @@ struct ChannelListView: View {
                     channelListView
                 case .grid:
                     channelGridView
+                }
+            }
+        }
+    }
+
+    // MARK: - Loading skeleton
+
+    private var channelLoadingSkeleton: some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(0..<20, id: \.self) { _ in
+                    ChannelRowSkeletonView()
+                    Divider()
                 }
             }
         }

@@ -123,6 +123,60 @@ struct AetherApp: App {
         #if os(macOS)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
+        .commands {
+            CommandMenu("Odtwarzacz") {
+                Button("Odtwarzaj / Pauza") {
+                    playerCore.togglePlayPause()
+                }
+                .keyboardShortcut("p", modifiers: .command)
+
+                Button("Stop") {
+                    playerCore.stop()
+                }
+                .keyboardShortcut(".", modifiers: .command)
+
+                Divider()
+
+                Button("Następny kanał") {
+                    playerCore.playNext()
+                }
+                .keyboardShortcut(.rightArrow, modifiers: .command)
+
+                Button("Poprzedni kanał") {
+                    playerCore.playPrevious()
+                }
+                .keyboardShortcut(.leftArrow, modifiers: .command)
+            }
+
+            CommandMenu("Nawigacja") {
+                Button("Ulubione") {
+                    NotificationCenter.default.post(name: .aetherNavigateFavorites, object: nil)
+                }
+                .keyboardShortcut("f", modifiers: .command)
+
+                Button("Wyszukaj") {
+                    NotificationCenter.default.post(name: .aetherNavigateSearch, object: nil)
+                }
+                .keyboardShortcut("f", modifiers: [.command, .shift])
+
+                Button("Historia") {
+                    NotificationCenter.default.post(name: .aetherNavigateHistory, object: nil)
+                }
+                .keyboardShortcut("h", modifiers: [.command, .shift])
+
+                Button("EPG / Na żywo") {
+                    NotificationCenter.default.post(name: .aetherNavigateLive, object: nil)
+                }
+                .keyboardShortcut("e", modifiers: .command)
+            }
+
+            CommandMenu("Konto") {
+                Button("Odśwież listę kanałów") {
+                    NotificationCenter.default.post(name: .aetherRefreshPlaylist, object: nil)
+                }
+                .keyboardShortcut("r", modifiers: [.command, .shift])
+            }
+        }
         #endif
 
         #if os(macOS)

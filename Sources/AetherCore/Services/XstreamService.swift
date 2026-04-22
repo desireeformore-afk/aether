@@ -519,7 +519,9 @@ public actor XstreamService {
     }
 
     private func fetch(queryItems: [URLQueryItem]) async throws -> Data {
-        var components = URLComponents(url: credentials.apiBase, resolvingAgainstBaseURL: false)!
+        guard var components = URLComponents(url: credentials.apiBase, resolvingAgainstBaseURL: false) else {
+            throw XstreamError.invalidURL
+        }
         var existing = components.queryItems ?? []
         existing.append(contentsOf: queryItems)
         components.queryItems = existing

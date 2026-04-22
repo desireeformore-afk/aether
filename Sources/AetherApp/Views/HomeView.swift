@@ -73,6 +73,14 @@ struct HomeView: View {
             viewModel.load(credentials: credentials)
             updateHeroBanner()
         }
+        .alert("Błąd ładowania", isPresented: Binding(
+            get: { viewModel.error != nil },
+            set: { if !$0 { viewModel.error = nil } }
+        )) {
+            Button("OK") { viewModel.error = nil }
+        } message: {
+            Text(viewModel.error?.localizedDescription ?? "Nieznany błąd")
+        }
         .onChange(of: viewModel.shelves.count) { _, _ in updateHeroBanner() }
         .sheet(item: $selectedVOD) { vod in
             VODDetailSheet(vod: vod, credentials: credentials, player: player)
