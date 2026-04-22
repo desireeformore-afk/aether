@@ -110,6 +110,7 @@ struct AetherApp: App {
                     // Setup status bar
                     statusBarController.setup()
                     // Request notification authorization once at startup
+                    guard Bundle.main.bundleIdentifier != nil else { return }
                     Task { await NotificationManager.shared.requestAuthorization() }
                 }
                 .sheet(isPresented: .constant(!hasCompletedOnboarding)) {

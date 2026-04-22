@@ -9,6 +9,10 @@ public actor NotificationManager {
     /// Requests notification authorization from the user. Returns true if granted.
     @discardableResult
     public func requestAuthorization() async -> Bool {
+        guard Bundle.main.bundleIdentifier != nil else {
+            print("[NotificationManager] Skipping notification auth — no bundle identifier")
+            return false
+        }
         do {
             return try await UNUserNotificationCenter.current().requestAuthorization(
                 options: [.alert, .sound, .badge]
