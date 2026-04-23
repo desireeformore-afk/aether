@@ -73,7 +73,7 @@ struct ContentView: View {
                 PlayerView(player: playerCore)
                     .ignoresSafeArea()
                     .overlay(alignment: .topLeading) {
-                        Button(action: { isFullscreenPlayer = false }) {
+                        Button(action: { playerCore.stop() }) {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 28))
                                 .foregroundStyle(.white.opacity(0.8))
