@@ -337,6 +337,7 @@ public final class PlayerCore {
                 do {
                     try await proxy.start(from: url)
                     guard let self, self.currentChannel?.id == channel.id else { return }
+                    guard self.hlsProxy === proxy else { return }
                     // isLoadingProxy stays true until AVPlayer confirms readyToPlay or fails.
                     // Clearing it here would open a window where a duplicate play() call could
                     // stop the proxy before AVPlayer has had a chance to connect to it.
@@ -359,6 +360,7 @@ public final class PlayerCore {
                     self.registerRetryObservers(for: item)
                 } catch {
                     guard let self, self.currentChannel?.id == channel.id else { return }
+                    guard self.hlsProxy === proxy else { return }
                     self.isLoadingProxy = false
                     let errMsg = error.localizedDescription
                     print("[PlayerCore] HLS proxy error: \(errMsg)")
