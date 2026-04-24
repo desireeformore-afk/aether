@@ -308,11 +308,9 @@ public final class PlayerCore {
         if channel.contentType == .movie {
             let absolute = url.absoluteString
             if absolute.hasSuffix(".mkv") || absolute.hasSuffix(".avi") || absolute.hasSuffix(".ts") {
-                let baseURL = (absolute as NSString).deletingPathExtension
-                if let newURL = URL(string: baseURL + ".mp4") {
-                    url = newURL
-                    print("[PlayerCore] Overriding VOD extension to .mp4 -> \(newURL.absoluteString)")
-                }
+                let newURL = url.deletingPathExtension().appendingPathExtension("mp4")
+                url = newURL
+                print("[PlayerCore] Overriding VOD extension to .mp4 -> \(url.absoluteString)")
             }
         }
         
