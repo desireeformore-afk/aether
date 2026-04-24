@@ -356,7 +356,7 @@ public final class PlayerCore {
                     ]
                     let proxyAsset = AVURLAsset(url: proxy.playlistURL, options: proxyAssetOptions)
                     let item = AVPlayerItem(asset: proxyAsset)
-                    item.preferredForwardBufferDuration = channel.contentType == .liveTV ? 4 : 10
+                    item.preferredForwardBufferDuration = channel.contentType == .liveTV ? 4 : 2
                     self.player.replaceCurrentItem(with: item)
                     self.player.play()
                     self.observePlayerItem(item)
@@ -708,19 +708,24 @@ public final class PlayerCore {
                       let item,
                       item === self.player.currentItem else { return }
                 guard !self.isLoadingProxy else { return }
-                // If we have an HLS proxy, check if it's still alive before retrying.
-                // A dead proxy means we must restart it and replace the AVPlayerItem —
-                // simply retrying the old URL (on the old port) will get Connection refused.
                 if let proxy = self.hlsProxy {
                     if proxy.isRunning {
-                        // Proxy alive — AVPlayer is just buffering waiting for the next segment.
-                        // Wait passively. `automaticallyWaitsToMinimizeStalling` handles resuming natively.
+                        // Proxy is alive and writing segments — AVPlayer will resume automatically
+                        // when `isPlaybackLikelyToKeepUp` becomes true. No action needed.
+                        // Only nudge play() if the player actually stopped (rate == 0).
+                        // This handles cases where AVPlayer stalled and did NOT auto-resume.
+                        if self.player.timeControlStatus == .paused && !self.isLiveStream {
+                            self.player.play()
+                        }
                     } else {
                         // Proxy died — restart proxy and replace AVPlayerItem with new URL
                         await self.restartProxyAndReplaceItem()
                     }
                 } else {
-                    self.scheduleRetry(for: item)
+                    // For direct (non-proxy) streams: only retry live TV, not VODs
+                    if self.currentChannel?.contentType == .liveTV {
+                        self.scheduleRetry(for: item)
+                    }
                 }
             }
         }

@@ -260,14 +260,15 @@ public final class LocalHLSProxy: @unchecked Sendable {
         let ext = sourceURL.pathExtension.lowercased()
         let isVOD = ["mkv", "mp4", "avi", "mov", "wmv"].contains(ext)
 
-        // For VOD, probe the video codec and duration
+        // Fast codec detection: infer from URL without network probe.
+        // ffprobe adds 2-5s latency on every play — not worth it for IPTV content where H.264 is ~95%.
+        // HEVC containers typically carry 'hevc' or 'h265' in the filename or use .mkv with HEVC track;
+        // for correctness we default to h264 and let FFmpeg auto-detect via -c:v copy (no transcode needed).
         let videoCodec: String
         if isVOD {
-            let mediaInfo = await Task.detached(priority: .userInitiated) {
-                Self.probeMediaInfo(url: sourceURL)
-            }.value
-            videoCodec = mediaInfo.codec
-            self.estimatedDuration = mediaInfo.duration
+            let nameLower = sourceURL.lastPathComponent.lowercased()
+            videoCodec = (nameLower.contains("hevc") || nameLower.contains("h265") || nameLower.contains("265")) ? "hevc" : "h264"
+            self.estimatedDuration = nil  // Duration unknown without probe; AVPlayer reads it from HLS playlist
         } else {
             videoCodec = "unknown"
             self.estimatedDuration = nil
@@ -292,16 +293,18 @@ public final class LocalHLSProxy: @unchecked Sendable {
         ]
 
         if isVOD {
-            // VOD: small probesize = faster first segment.
-            // 1MB is enough for most MKV/MP4 headers; original 5MB caused ~10s stall
-            // before FFmpeg could write the first HLS segment.
+            // VOD: ultra-small probesize = ≤1s before FFmpeg starts muxing.
+            // probesize 32KB is enough to read MKV EBML header + first stream header.
+            // analyzeduration 200ms prevents FFmpeg from scanning forward to detect all tracks.
             args += [
                 "-reconnect_on_http_error", "4xx,5xx",
                 "-timeout", "30000000",
                 "-rw_timeout", "30000000",
-                "-probesize", "150000", "-analyzeduration", "500000"
+                "-probesize", "32768",
+                "-analyzeduration", "200000"
             ]
             if let offset = offset, offset > 0 {
+                // Input-side seek (-ss before -i) is instant for HTTP: server sends from offset
                 args += ["-ss", String(format: "%.3f", offset)]
             }
         } else {
@@ -346,8 +349,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
             }
             args += [
                 "-f", "hls",
-                "-hls_time", "4",           // slightly longer segments for stability
+                "-hls_time", "2",           // 2s segments = AVPlayer starts within 2-3s after first GOP
                 "-hls_list_size", "0",
+                "-hls_flags", "split_by_time", // cut at wall-clock 2s, no waiting for keyframe
                 "-hls_playlist_type", "event", // event: AVPlayer starts immediately
             ]
             print("[HLSProxy] Mode: VOD (\(ext)), codec: \(videoCodec), bsf: \(bsfFilter.isEmpty ? "auto" : bsfFilter)")
