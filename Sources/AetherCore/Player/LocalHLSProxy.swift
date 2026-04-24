@@ -147,18 +147,28 @@ public final class LocalHLSProxy: @unchecked Sendable {
         return nil
     }
 
-    /// Probe the video codec of a remote URL using ffprobe.
-    /// Returns "hevc", "h264", etc. Falls back to "h264" if probe fails.
-    private static func probeVideoCodec(url: URL) -> String {
-        guard let ffprobe = ffprobeURL else { return "h264" }
+    /// Estimated duration (in seconds) of the original source video retrieved via ffprobe.
+    public private(set) var estimatedDuration: Double?
 
+    // Extracted struct for ffprobe results
+    private struct MediaInfo {
+        var codec: String
+        var duration: Double?
+    }
+
+    /// Probe the video codec and duration of a remote URL using ffprobe.
+    private static func probeMediaInfo(url: URL) -> MediaInfo {
+        guard let ffprobe = ffprobeURL else { return MediaInfo(codec: "h264", duration: nil) }
+
+        // We use JSON output to easily parse both codec and duration.
         let process = Process()
         process.executableURL = ffprobe
         process.arguments = [
             "-v", "quiet",
+            "-print_format", "json",
+            "-show_format",
+            "-show_streams",
             "-select_streams", "v:0",
-            "-show_entries", "stream=codec_name",
-            "-of", "csv=p=0",
             "-probesize", "2000000",
             "-analyzeduration", "2000000",
             "-headers", "User-Agent: \(userAgent)\r\n",
@@ -174,14 +184,24 @@ public final class LocalHLSProxy: @unchecked Sendable {
             try process.run()
             process.waitUntilExit()
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let codec = String(data: data, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .lowercased() ?? "h264"
-            print("[HLSProxy] Detected video codec: \(codec)")
-            return codec.isEmpty ? "h264" : codec
+            
+            struct ProbeResult: Decodable {
+                struct Stream: Decodable { let codec_name: String? }
+                struct Format: Decodable { let duration: String? }
+                var streams: [Stream]?
+                var format: Format?
+            }
+            
+            let result = try JSONDecoder().decode(ProbeResult.self, from: data)
+            let codec = result.streams?.first?.codec_name?.lowercased() ?? "h264"
+            let durationStr = result.format?.duration ?? ""
+            let duration = Double(durationStr)
+            
+            print("[HLSProxy] Detected video codec: \(codec), duration: \(duration ?? 0)s")
+            return MediaInfo(codec: codec, duration: duration)
         } catch {
-            print("[HLSProxy] ffprobe failed, assuming h264")
-            return "h264"
+            print("[HLSProxy] ffprobe failed (\(error)), assuming h264")
+            return MediaInfo(codec: "h264", duration: nil)
         }
     }
 
@@ -240,16 +260,17 @@ public final class LocalHLSProxy: @unchecked Sendable {
         let ext = sourceURL.pathExtension.lowercased()
         let isVOD = ["mkv", "mp4", "avi", "mov", "wmv"].contains(ext)
 
-        // For VOD, probe the video codec to select correct bitstream filter
+        // For VOD, probe the video codec and duration
         let videoCodec: String
         if isVOD {
-            // probeVideoCodec() calls waitUntilExit() — run it off the MainActor
-            // so the UI stays responsive while ffprobe probes the stream.
-            videoCodec = await Task.detached(priority: .userInitiated) {
-                Self.probeVideoCodec(url: sourceURL)
+            let mediaInfo = await Task.detached(priority: .userInitiated) {
+                Self.probeMediaInfo(url: sourceURL)
             }.value
+            videoCodec = mediaInfo.codec
+            self.estimatedDuration = mediaInfo.duration
         } else {
             videoCodec = "unknown"
+            self.estimatedDuration = nil
         }
 
         let process = Process()

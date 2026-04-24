@@ -9,10 +9,12 @@ public struct PlayerControlsView: View {
     @Binding public var showStats: Bool
     @State private var showTrackPicker = false
     @FocusState private var isFocused: Bool
+    public var customDuration: Double?
 
-    public init(player: PlayerCore, showStats: Binding<Bool>) {
+    public init(player: PlayerCore, showStats: Binding<Bool>, customDuration: Double? = nil) {
         self.player = player
         self._showStats = showStats
+        self.customDuration = customDuration
     }
 
     private var isPlaying: Bool { player.state == .playing }
@@ -22,7 +24,7 @@ public struct PlayerControlsView: View {
     public var body: some View {
         VStack(spacing: 0) {
             if isVOD {
-                SeekBarView(player: player)
+                SeekBarView(player: player, customDuration: customDuration)
                     .padding(.horizontal)
                     .padding(.top, 8)
             }

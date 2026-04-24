@@ -4,14 +4,16 @@ import AetherCore
 
 public struct SeekBarView: View {
     @Bindable public var player: PlayerCore
+    public var customDuration: Double?
     @State private var isSeeking = false
     @State private var seekPosition: Double = 0
     @State private var duration: Double = 0
 
     private let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
-    public init(player: PlayerCore) {
+    public init(player: PlayerCore, customDuration: Double? = nil) {
         self.player = player
+        self.customDuration = customDuration
     }
 
     public var body: some View {
@@ -36,7 +38,11 @@ public struct SeekBarView: View {
             .onReceive(timer) { _ in
                 if !isSeeking {
                     let raw = player.player.currentItem?.duration.seconds ?? 0
-                    duration = (raw.isNaN || raw.isInfinite) ? 0 : raw
+                    if raw.isNaN || raw.isInfinite || raw == .zero {
+                        duration = customDuration ?? 0
+                    } else {
+                        duration = raw
+                    }
                 }
             }
 

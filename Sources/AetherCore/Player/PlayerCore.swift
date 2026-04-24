@@ -178,6 +178,9 @@ public final class PlayerCore {
 
     /// FFmpeg HLS proxy — remuxes TS/MKV to local HLS segments for AVPlayer
     private var hlsProxy: LocalHLSProxy?
+    
+    /// Returns the estimated duration extracted by FFprobe if the proxy is running.
+    public var proxyEstimatedDuration: Double? { hlsProxy?.estimatedDuration }
 
     /// True while a LocalHLSProxy is in the process of starting up (between proxy creation and
     /// first-segment ready). Guards against rapid duplicate play() calls that stop the proxy

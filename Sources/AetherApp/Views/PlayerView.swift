@@ -34,181 +34,171 @@ struct PlayerView: View {
 
     var body: some View {
         ZStack {
-            Color.aetherBackground.ignoresSafeArea()
+            // Professional black backdrop for the player
+            Color.black.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Video layer
-                ZStack(alignment: .bottom) {
-                    VideoPlayerLayer(avPlayer: player.player, playerCore: player)
-                        .aspectRatio(16 / 9, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(alignment: .bottomLeading) {
-                            stateOverlay
-                                .padding([.horizontal, .bottom], 20)
-                        }
-                        .overlay(alignment: .bottom) {
-                            // EPG Timeline Overlay (bottom, auto-hide)
-                            if showEPGOverlay, let current = nowPlaying {
-                                EPGTimelineOverlay(current: current, next: nextUp)
-                                    .padding(.horizontal, 20)
-                                    .padding(.bottom, 16)
-                                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                            }
-                        }
-                        .overlay(alignment: .topLeading) {
-                            Group {
-                                if let channel = player.currentChannel {
-                                    channelInfoBadge(channel: channel)
-                                }
-                            }
-                            .opacity(showControls ? 1 : 0)
-                            .animation(.easeInOut(duration: 0.3), value: showControls)
-                            .padding([.top, .leading], 16)
-                        }
-                        .overlay(alignment: .topTrailing) {
-                            Button { player.startPiP() } label: {
-                                Image(systemName: "pip.enter")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(.white)
-                                    .padding(8)
-                                    .background(.black.opacity(0.5), in: Circle())
-                            }
-                            .buttonStyle(.plain)
-                            .opacity(showControls ? 1 : 0)
-                            .animation(.easeInOut(duration: 0.3), value: showControls)
-                            .padding([.top, .trailing], 12)
-                            .disabled(player.currentChannel == nil)
-                        }
-                        .onHover { hovering in
-                            if hovering {
-                                showEPGOverlayWithAutoHide()
-                                showControlsWithAutoHide()
-                            }
-                        }
-                        .onTapGesture(count: 1) {
-                            showControlsWithAutoHide()
-                        }
-                        .contextMenu {
-                            if let url = player.currentChannel?.streamURL {
-                                Button("Copy Stream URL") {
-                                    NSPasteboard.general.clearContents()
-                                    NSPasteboard.general.setString(url.absoluteString, forType: .string)
-                                }
-                                Divider()
-                            }
-                            Button(showStats ? "Hide Stream Stats" : "Show Stream Stats") {
-                                showStats.toggle()
-                            }
-                            Divider()
-                            Menu("Quality") {
-                                ForEach(player.qualityPresets) { preset in
-                                    Button {
-                                        player.selectedQuality = preset
-                                    } label: {
-                                        if player.selectedQuality.id == preset.id {
-                                            Label(preset.label, systemImage: "checkmark")
-                                        } else {
-                                            Text(preset.label)
-                                        }
-                                    }
-                                }
-                            }
-                            if !player.availableSubtitleOptions.isEmpty {
-                                Divider()
-                                Menu("Subtitles") {
-                                    Button {
-                                        player.selectSubtitleOption(nil)
-                                    } label: {
-                                        if player.selectedSubtitleOption == nil {
-                                            Label("Off", systemImage: "checkmark")
-                                        } else {
-                                            Text("Off")
-                                        }
-                                    }
-                                    ForEach(player.availableSubtitleOptions, id: \.self) { option in
-                                        Button {
-                                            player.selectSubtitleOption(option)
-                                        } label: {
-                                            if option == player.selectedSubtitleOption {
-                                                Label(option.displayName, systemImage: "checkmark")
-                                            } else {
-                                                Text(option.displayName)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            if !subtitleStore.tracks.isEmpty {
-                                Divider()
-                                Menu("OpenSubtitles") {
-                                    Button("None") { subtitleStore.clear() }
-                                    ForEach(subtitleStore.tracks) { track in
-                                        Button("\(track.language) — \(track.languageName)") {
-                                            subtitleStore.load(track: track)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        #if os(macOS)
-                        .onScrollWheel { event in
-                            // Scroll wheel up/down → volume ±5%
-                            let delta = Float(event.scrollingDeltaY) * 0.005
-                            player.adjustVolume(delta: -delta)
-                        }
-                        #endif
-
-                    // Subtitle overlay — non-interactive
-                    SubtitleOverlayView(store: subtitleStore)
-
-                    // Stream stats HUD — top-trailing corner
-                    if showStats {
-                        StreamStatsView(player: player.player)
-                            .padding(10)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                            .allowsHitTesting(false)
+            // Video takes full available space, natively letterboxing content
+            VideoPlayerLayer(avPlayer: player.player, playerCore: player)
+                .ignoresSafeArea()
+                .onHover { hovering in
+                    if hovering {
+                        showEPGOverlayWithAutoHide()
+                        showControlsWithAutoHide()
                     }
                 }
-                .padding([.horizontal, .top])
-
-                // EPG info bar
-                if let entry = nowPlaying {
-                    EPGInfoBar(current: entry, next: nextUp, showTimeline: $showTimeline)
-                        .padding(.horizontal)
-                        .padding(.top, 4)
-
-                    // EPG Timeline — collapsible
-                    if showTimeline && !allEPGEntries.isEmpty {
-                        EPGTimelineView(entries: allEPGEntries, channelID: player.currentChannel?.epgId ?? player.currentChannel?.name ?? "", channelName: player.currentChannel?.name ?? "")
-                            .padding(.horizontal, 4)
-                            .transition(.move(edge: .top).combined(with: .opacity))
+                .onTapGesture(count: 1) {
+                    showControlsWithAutoHide()
+                }
+                .contextMenu {
+                    if let url = player.currentChannel?.streamURL {
+                        Button("Copy Stream URL") {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(url.absoluteString, forType: .string)
+                        }
+                        Divider()
+                    }
+                    Button(showStats ? "Hide Stream Stats" : "Show Stream Stats") {
+                        showStats.toggle()
+                    }
+                    Divider()
+                    Menu("Quality") {
+                        ForEach(player.qualityPresets) { preset in
+                            Button {
+                                player.selectedQuality = preset
+                            } label: {
+                                if player.selectedQuality.id == preset.id {
+                                    Label(preset.label, systemImage: "checkmark")
+                                } else {
+                                    Text(preset.label)
+                                }
+                            }
+                        }
+                    }
+                    if !player.availableSubtitleOptions.isEmpty {
+                        Divider()
+                        Menu("Subtitles") {
+                            Button {
+                                player.selectSubtitleOption(nil)
+                            } label: {
+                                if player.selectedSubtitleOption == nil {
+                                    Label("Off", systemImage: "checkmark")
+                                } else {
+                                    Text("Off")
+                                }
+                            }
+                            ForEach(player.availableSubtitleOptions, id: \.self) { option in
+                                Button {
+                                    player.selectSubtitleOption(option)
+                                } label: {
+                                    if option == player.selectedSubtitleOption {
+                                        Label(option.displayName, systemImage: "checkmark")
+                                    } else {
+                                        Text(option.displayName)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if !subtitleStore.tracks.isEmpty {
+                        Divider()
+                        Menu("OpenSubtitles") {
+                            Button("None") { subtitleStore.clear() }
+                            ForEach(subtitleStore.tracks) { track in
+                                Button("\(track.language) — \(track.languageName)") {
+                                    subtitleStore.load(track: track)
+                                }
+                            }
+                        }
                     }
                 }
+                #if os(macOS)
+                .onScrollWheel { event in
+                    let delta = Float(event.scrollingDeltaY) * 0.005
+                    player.adjustVolume(delta: -delta)
+                }
+                #endif
 
-                Spacer(minLength: 8)
+            // Subtitle overlay — non-interactive
+            SubtitleOverlayView(store: subtitleStore)
 
-                // Controls — auto-hide after 3s of inactivity, shown on hover/tap
-                PlayerControlsView(player: player, showStats: $showStats)
-                    .padding(.horizontal)
-                    .padding(.bottom)
-                    .opacity(showControls ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.3), value: showControls)
-            }
-
-            // Stream error banner — auto-dismissing, appears at top of player
-            if let banner = player.streamErrorBanner {
-                VStack {
+            // Top Layer: Badges, Stats & Error Banner
+            VStack {
+                HStack(alignment: .top) {
+                    // Top Left Badge
+                    if let channel = player.currentChannel {
+                        channelInfoBadge(channel: channel)
+                            .opacity(showControls ? 1 : 0)
+                            .animation(.easeInOut(duration: 0.3), value: showControls)
+                    }
+                    
+                    Spacer()
+                    
+                    // Top Right Controls (PiP, Stats)
+                    HStack(alignment: .top, spacing: 12) {
+                        if showStats {
+                            StreamStatsView(player: player.player)
+                                .allowsHitTesting(false)
+                        }
+                        
+                        Button { player.startPiP() } label: {
+                            Image(systemName: "pip.enter")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(.white)
+                                .padding(8)
+                                .background(.black.opacity(0.5), in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .opacity(showControls ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.3), value: showControls)
+                        .disabled(player.currentChannel == nil)
+                    }
+                }
+                .padding([.top, .horizontal], 16)
+                
+                // Error Banner
+                if let banner = player.streamErrorBanner {
                     Text(banner)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                        .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 8))
+                        .background(.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 8))
                         .transition(.move(edge: .top).combined(with: .opacity))
-                    Spacer()
+                        .padding(.top, 16)
                 }
-                .padding(.top, 16)
-                .animation(.easeInOut(duration: 0.3), value: player.streamErrorBanner)
+                
+                Spacer() // Push the rest to bottom
+                
+                // Loading Overlay (Centered)
+                if case .loading = player.state {
+                    stateOverlay
+                } else if case .error(_) = player.state {
+                    stateOverlay
+                }
+
+                Spacer()
+                
+                // Bottom Floating HUD Area
+                VStack(spacing: 8) {
+                    if showEPGOverlay, let current = nowPlaying {
+                        EPGTimelineOverlay(current: current, next: nextUp)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    
+                    if let entry = nowPlaying {
+                        EPGInfoBar(current: entry, next: nextUp, showTimeline: $showTimeline)
+                        if showTimeline && !allEPGEntries.isEmpty {
+                            EPGTimelineView(entries: allEPGEntries, channelID: player.currentChannel?.epgId ?? player.currentChannel?.name ?? "", channelName: player.currentChannel?.name ?? "")
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                    }
+                    
+                    PlayerControlsView(player: player, showStats: $showStats, customDuration: player.proxyEstimatedDuration)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+                .opacity(showControls ? 1 : 0)
+                .animation(.easeInOut(duration: 0.3), value: showControls)
             }
 
             // Hidden Cmd+I shortcut: toggle stream stats HUD
