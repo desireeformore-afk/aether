@@ -714,9 +714,7 @@ public final class PlayerCore {
                 if let proxy = self.hlsProxy {
                     if proxy.isRunning {
                         // Proxy alive — AVPlayer is just buffering waiting for the next segment.
-                        // Do NOT seek here, because `self.player.seek()` intercepts and restarts FFmpeg from scratch!
-                        // Just ensure the player starts playing again when the buffer fills.
-                        self.player.play()
+                        // Wait passively. `automaticallyWaitsToMinimizeStalling` handles resuming natively.
                     } else {
                         // Proxy died — restart proxy and replace AVPlayerItem with new URL
                         await self.restartProxyAndReplaceItem()
