@@ -518,69 +518,32 @@ public final class PlayerCore {
         guard current.isFinite else { return }
         let target = max(0, current + seconds)
         let cmTime = CMTime(seconds: target, preferredTimescale: 600)
-        self.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        userSeek(to: cmTime)
     }
 
-    /// Seeks to a specific `CMTime`. Intercepts the request to accurately seek VOD streams served by the FFmpeg proxy.
+    /// Native seek pass-through — used by AVPlayer internally (timeline probes, buffering).
+    /// Does NOT restart the proxy. Always native.
     public func seek(to time: CMTime, toleranceBefore: CMTime = .zero, toleranceAfter: CMTime = .zero) {
         guard !isLiveStream else { return }
-        
-        let seconds = time.seconds
-        guard seconds.isFinite else { return }
-        
-        if hlsProxy != nil {
-            // For VOD proxy streams, scrubbing the AVPlayer natively stalls because `event` playlists
-            // don't have future segments written yet. We must restart the FFmpeg proxy at the new offset.
-            Task { @MainActor in
-                await self.restartProxy(at: seconds)
-            }
-        } else {
-            player.seek(to: time, toleranceBefore: toleranceBefore, toleranceAfter: toleranceAfter)
-        }
+        guard time.seconds.isFinite else { return }
+        player.seek(to: time, toleranceBefore: toleranceBefore, toleranceAfter: toleranceAfter)
     }
-    
-    @MainActor
-    private func restartProxy(at offset: Double) async {
-        guard let channel = currentChannel else { return }
-        let currentURL = channel.streamURL
-        print("[PlayerCore] Restarting proxy for seek to \(offset)s")
-        
-        // Stop current AVPlayer playback and current proxy gracefully
-        player.pause()
-        player.replaceCurrentItem(with: nil)
-        hlsProxy?.stop()
-        hlsProxy = nil
-        
-        // Let the state machine know we are buffering a proxy seek
-        state = .loading
-        isLoadingProxy = true
-        
-        let newProxy = LocalHLSProxy()
-        self.hlsProxy = newProxy
-        
-        do {
-            try await newProxy.start(from: currentURL, offset: offset)
-            guard self.hlsProxy === newProxy else { return }
-            
-            isLoadingProxy = false
-            let proxyAssetOptions: [String: Any] = [
-                "AVURLAssetOutOfBandMIMETypeKey": "application/vnd.apple.mpegurl"
-            ]
-            let proxyAsset = AVURLAsset(url: newProxy.playlistURL, options: proxyAssetOptions)
-            let item = AVPlayerItem(asset: proxyAsset)
-            player.replaceCurrentItem(with: item)
-            player.play()
-            
-            observePlayerItem(item)
-            registerRetryObservers(for: item)
-            // State is managed by the player item observer now, but we can optimistically set loading.
-            state = .loading
-        } catch {
-            guard self.hlsProxy === newProxy else { return }
-            isLoadingProxy = false
-            state = .error("Seek failed: proxy timeout or error")
-            print("[PlayerCore] Seek proxy restart failed: \(error)")
-        }
+
+    /// User-initiated seek from the scrubber or skip buttons.
+    /// For proxy streams: AVPlayer can seek inside already-muxed segments natively (HLS event playlist).
+    /// Only restarts the proxy if the target is beyond the last muxed segment AND more than 10s ahead.
+    public func userSeek(to time: CMTime) {
+        guard !isLiveStream else { return }
+        let targetSeconds = time.seconds
+        guard targetSeconds.isFinite else { return }
+
+        // Always use native AVPlayer seek. For HLS event playlists, all muxed segments are
+        // listed in the m3u8 from the beginning — AVPlayer can jump to any already-muxed position.
+        // If the target segment hasn't been written yet, AVPlayer will pause and wait for FFmpeg
+        // to produce it, then resume automatically. No proxy restart needed.
+        print("[PlayerCore] User seek to \(String(format: "%.1f", targetSeconds))s")
+        player.seek(to: time, toleranceBefore: CMTime(seconds: 1, preferredTimescale: 600),
+                    toleranceAfter: CMTime(seconds: 1, preferredTimescale: 600))
     }
 
     /// Adjusts volume by delta (-1.0 to +1.0), clamped to 0–1.
