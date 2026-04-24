@@ -335,9 +335,8 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 "-ignore_unknown",
                 "-c:v", "copy",
                 "-max_muxing_queue_size", "4096",
-                "-c:a", "aac",
-                "-b:a", "256k",
-                "-ac", "2"
+                "-c:a", "copy",
+                "-copyts"
             ]
             if isHEVC {
                 args += ["-tag:v", "hvc1"]
@@ -347,9 +346,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
             }
             args += [
                 "-f", "hls",
-                "-hls_time", "3",           // 3s segments = first segment 2x faster to produce
+                "-hls_time", "4",           // slightly longer segments for stability
                 "-hls_list_size", "0",
-                "-hls_playlist_type", "event", // event: AVPlayer starts immediately, doesn't wait for EXT-X-ENDLIST
+                "-hls_playlist_type", "event", // event: AVPlayer starts immediately
             ]
             print("[HLSProxy] Mode: VOD (\(ext)), codec: \(videoCodec), bsf: \(bsfFilter.isEmpty ? "auto" : bsfFilter)")
         } else {
