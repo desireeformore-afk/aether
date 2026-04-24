@@ -80,6 +80,7 @@ struct ContentView: View {
                                 .padding(20)
                         }
                         .buttonStyle(.plain)
+                        .padding(.top, 24)
                     }
                     .overlay {
                         if playerCore.state == .loading {

@@ -518,7 +518,68 @@ public final class PlayerCore {
         guard current.isFinite else { return }
         let target = max(0, current + seconds)
         let cmTime = CMTime(seconds: target, preferredTimescale: 600)
-        player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        self.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
+    /// Seeks to a specific `CMTime`. Intercepts the request to accurately seek VOD streams served by the FFmpeg proxy.
+    public func seek(to time: CMTime, toleranceBefore: CMTime = .zero, toleranceAfter: CMTime = .zero) {
+        guard !isLiveStream else { return }
+        
+        let seconds = time.seconds
+        guard seconds.isFinite else { return }
+        
+        if hlsProxy != nil {
+            // For VOD proxy streams, scrubbing the AVPlayer natively stalls because `event` playlists
+            // don't have future segments written yet. We must restart the FFmpeg proxy at the new offset.
+            Task { @MainActor in
+                await self.restartProxy(at: seconds)
+            }
+        } else {
+            player.seek(to: time, toleranceBefore: toleranceBefore, toleranceAfter: toleranceAfter)
+        }
+    }
+    
+    @MainActor
+    private func restartProxy(at offset: Double) async {
+        guard let channel = currentChannel else { return }
+        let currentURL = channel.streamURL
+        print("[PlayerCore] Restarting proxy for seek to \(offset)s")
+        
+        // Stop current AVPlayer playback and current proxy gracefully
+        player.pause()
+        hlsProxy?.stop()
+        hlsProxy = nil
+        
+        // Let the state machine know we are buffering a proxy seek
+        state = .loading
+        isLoadingProxy = true
+        
+        let newProxy = LocalHLSProxy()
+        self.hlsProxy = newProxy
+        
+        do {
+            try await newProxy.start(from: currentURL, offset: offset)
+            guard self.hlsProxy === newProxy else { return }
+            
+            isLoadingProxy = false
+            let proxyAssetOptions: [String: Any] = [
+                "AVURLAssetOutOfBandMIMETypeKey": "application/vnd.apple.mpegurl"
+            ]
+            let proxyAsset = AVURLAsset(url: newProxy.playlistURL, options: proxyAssetOptions)
+            let item = AVPlayerItem(asset: proxyAsset)
+            player.replaceCurrentItem(with: item)
+            player.play()
+            
+            observePlayerItem(item)
+            registerRetryObservers(for: item)
+            // State is managed by the player item observer now, but we can optimistically set loading.
+            state = .loading
+        } catch {
+            guard self.hlsProxy === newProxy else { return }
+            isLoadingProxy = false
+            state = .error("Seek failed: proxy timeout or error")
+            print("[PlayerCore] Seek proxy restart failed: \(error)")
+        }
     }
 
     /// Adjusts volume by delta (-1.0 to +1.0), clamped to 0–1.

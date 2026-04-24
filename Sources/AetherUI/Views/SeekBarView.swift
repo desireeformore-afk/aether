@@ -29,7 +29,7 @@ public struct SeekBarView: View {
                     if !editing {
                         let targetTime = seekPosition * duration
                         let cmTime = CMTime(seconds: targetTime, preferredTimescale: 600)
-                        player.player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+                        player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
                     }
                 }
             )

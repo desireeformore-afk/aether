@@ -227,7 +227,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
 
     /// Start remuxing `sourceURL` to local HLS served via HTTP.
     /// Returns when the first HLS segment is ready (or throws on timeout/error).
-    public func start(from sourceURL: URL) async throws {
+    public func start(from sourceURL: URL, offset: Double? = nil) async throws {
         stop()
         // Reset flags AFTER stop() so any in-progress polling loop is aborted first,
         // then we start fresh for this invocation.
@@ -301,6 +301,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 "-rw_timeout", "30000000",
                 "-probesize", "1000000", "-analyzeduration", "1000000",
             ]
+            if let offset = offset, offset > 0 {
+                args += ["-ss", String(format: "%.3f", offset)]
+            }
         } else {
             // Live: minimize startup latency
             args += ["-timeout", "10000000", "-probesize", "1000000", "-analyzeduration", "1000000"]
@@ -332,7 +335,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 "-ignore_unknown",
                 "-c:v", "copy",
                 "-max_muxing_queue_size", "4096",
-                "-c:a", "copy",
+                "-c:a", "aac",
+                "-b:a", "256k",
+                "-ac", "2"
             ]
             if isHEVC {
                 args += ["-tag:v", "hvc1"]
@@ -345,7 +350,6 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 "-hls_time", "3",           // 3s segments = first segment 2x faster to produce
                 "-hls_list_size", "0",
                 "-hls_playlist_type", "event", // event: AVPlayer starts immediately, doesn't wait for EXT-X-ENDLIST
-                "-hls_flags", "independent_segments",
             ]
             print("[HLSProxy] Mode: VOD (\(ext)), codec: \(videoCodec), bsf: \(bsfFilter.isEmpty ? "auto" : bsfFilter)")
         } else {
