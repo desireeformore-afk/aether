@@ -1001,7 +1001,7 @@ public final class PlayerCore {
                     // BUT: HLS 'event' type proxy playlists show indefinite
                     // duration until FFmpeg ends. If proxy is active, it's VOD.
                     let dur = item.duration
-                    if self.activeProxy != nil {
+                    if self.hlsProxy != nil {
                         self.isLiveStream = false
                     } else if dur.isIndefinite || dur == .zero {
                         self.isLiveStream = true
