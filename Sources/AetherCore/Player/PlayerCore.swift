@@ -301,16 +301,16 @@ public final class PlayerCore {
 
         var url = channel.streamURL
         
-        // For VODs, force the URL extension to `.mp4`. Almost all modern Xtream Codes panels
+        // For VODs (movies and series), force the URL extension to `.mp4`. Almost all modern Xtream Codes panels
         // dynamically mux mkv/avi/ts VODs to MP4 on-the-fly when requested.
         // This allows AVPlayer to play the VOD natively WITHOUT the LocalHLSProxy!
         // Native AVPlayer `.mp4` playback supports perfect HTTP Range-based seeking and instant start.
-        if channel.contentType == .movie {
-            let absolute = url.absoluteString
-            if absolute.hasSuffix(".mkv") || absolute.hasSuffix(".avi") || absolute.hasSuffix(".ts") {
+        if channel.contentType == .movie || channel.contentType == .series {
+            let currentExt = url.pathExtension.lowercased()
+            if currentExt == "mkv" || currentExt == "avi" || currentExt == "ts" || currentExt == "webm" {
                 let newURL = url.deletingPathExtension().appendingPathExtension("mp4")
                 url = newURL
-                print("[PlayerCore] Overriding VOD extension to .mp4 -> \(url.absoluteString)")
+                print("[PlayerCore] Overriding VOD extension from .\(currentExt) to .mp4 -> \(url.absoluteString)")
             }
         }
         
