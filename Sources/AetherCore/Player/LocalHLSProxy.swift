@@ -299,8 +299,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 "-reconnect_on_http_error", "4xx,5xx",
                 "-timeout", "30000000",
                 "-rw_timeout", "30000000",
-                "-probesize", "1000000", "-analyzeduration", "1000000",
-                "-seekable", "1"
+                "-probesize", "150000", "-analyzeduration", "500000"
             ]
             if let offset = offset, offset > 0 {
                 args += ["-ss", String(format: "%.3f", offset)]
