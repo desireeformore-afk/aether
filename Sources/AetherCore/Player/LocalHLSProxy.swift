@@ -293,15 +293,16 @@ public final class LocalHLSProxy: @unchecked Sendable {
         ]
 
         if isVOD {
-            // VOD: ultra-small probesize = ≤1s before FFmpeg starts muxing.
-            // probesize 32KB is enough to read MKV EBML header + first stream header.
-            // analyzeduration 200ms prevents FFmpeg from scanning forward to detect all tracks.
+            // VOD: 500KB probesize is large enough to fully parse MKV EBML header + track entries.
+            // 32KB was too small — FFmpeg wrote the first .ts segment before reading track metadata,
+            // producing an empty/corrupt file that AVPlayer cannot decode.
+            // analyzeduration 500ms is enough to identify streams without scanning the whole file.
             args += [
                 "-reconnect_on_http_error", "4xx,5xx",
                 "-timeout", "30000000",
                 "-rw_timeout", "30000000",
-                "-probesize", "32768",
-                "-analyzeduration", "200000"
+                "-probesize", "500000",
+                "-analyzeduration", "500000"
             ]
             if let offset = offset, offset > 0 {
                 // Input-side seek (-ss before -i) is instant for HTTP: server sends from offset
@@ -315,18 +316,21 @@ public final class LocalHLSProxy: @unchecked Sendable {
         args += ["-i", sourceURL.absoluteString]
 
         if isVOD {
-            // VOD (MKV/MP4): pick correct bitstream filter based on detected codec
+            // BSF decision:
+            // - MKV stores H.264 in Annex B format → DO NOT apply h264_mp4toannexb (would corrupt stream)
+            // - MP4/MOV stores H.264 in AVCC format → MUST apply h264_mp4toannexb
+            // - HEVC: same rule applies (hevc_mp4toannexb only for MP4/MOV)
+            let isMKVSource = ["mkv", "webm"].contains(ext)
             let bsfFilter: String
             let isHEVC: Bool
             switch videoCodec {
             case "hevc", "h265":
-                bsfFilter = "hevc_mp4toannexb"
+                bsfFilter = isMKVSource ? "" : "hevc_mp4toannexb"
                 isHEVC = true
             case "h264", "avc":
-                bsfFilter = "h264_mp4toannexb"
+                bsfFilter = isMKVSource ? "" : "h264_mp4toannexb"
                 isHEVC = false
             default:
-                // For unknown codecs, try without BSF (FFmpeg may auto-detect)
                 bsfFilter = ""
                 isHEVC = false
             }
@@ -351,10 +355,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 "-f", "hls",
                 "-hls_time", "2",           // 2s segments = AVPlayer starts within 2-3s after first GOP
                 "-hls_list_size", "0",
-                "-hls_flags", "split_by_time", // cut at wall-clock 2s, no waiting for keyframe
-                "-hls_playlist_type", "event", // event: AVPlayer starts immediately
+                "-hls_playlist_type", "event", // event: AVPlayer starts immediately, no split_by_time (breaks keyframe alignment)
             ]
-            print("[HLSProxy] Mode: VOD (\(ext)), codec: \(videoCodec), bsf: \(bsfFilter.isEmpty ? "auto" : bsfFilter)")
+            print("[HLSProxy] Mode: VOD (\(ext)), codec: \(videoCodec), bsf: \(bsfFilter.isEmpty ? "none" : bsfFilter)")
         } else {
             // Live TS: let FFmpeg pick streams automatically — explicit mapping fails
             // when the stream hasn't fully buffered headers at probe time.
@@ -437,13 +440,16 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 stderrLines.append(contentsOf: chunk.components(separatedBy: "\n").filter { !$0.isEmpty })
             }
 
-            // Check if the first segment file exists and playlist references it
+            // Check if the first segment exists, is referenced in the playlist, AND has actual content.
+            // Minimum 50KB ensures FFmpeg wrote at least partial video data; smaller = corrupt empty segment.
             let seg0Path = outputDir.appendingPathComponent("seg_00000.ts").path
-            if FileManager.default.fileExists(atPath: seg0Path),
+            let seg0URL = URL(fileURLWithPath: seg0Path)
+            let seg0Size = (try? seg0URL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            if seg0Size > 50_000,
                FileManager.default.fileExists(atPath: m3u8Path),
                let content = try? String(contentsOf: URL(fileURLWithPath: m3u8Path), encoding: .utf8),
                content.contains(".ts") {
-                print("[HLSProxy] Ready (seg_00000.ts present) after \(Double(i + 1) * 0.15)s")
+                print("[HLSProxy] Ready (seg_00000.ts = \(seg0Size / 1024)KB) after \(Double(i + 1) * 0.15)s")
                 return
             }
         }
