@@ -32,7 +32,15 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
         return URLSession(configuration: config)
     }()
 
-    // MARK: - URLProtocol overrides
+    // File extensions routed through AVPlayer natively (not through HTTPBypassProtocol).
+    // This protocol uses a non-streaming dataTask — intercepting large video files
+    // causes it to buffer the entire file before passing data to AVPlayer.
+    private static let directPlayExtensions: Set<String> = [
+        "mp4", "m4v", "mov", "m3u8", "m3u", "mpd"
+    ]
+    // IPTV path prefixes already routed via LocalHLSProxy to localhost
+    // (live, mkv, avi, wmv, ts) — but also skip them here as defence-in-depth.
+    private static let iptvStreamPrefixes: Set<String> = ["live", "movie", "series", "timeshift"]
 
     public override class func canInit(with request: URLRequest) -> Bool {
         guard let url = request.url,
@@ -43,15 +51,28 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
             return false
         }
 
-        let shouldIntercept = scheme == "http" || scheme == "https"
+        guard scheme == "http" || scheme == "https" else { return false }
+
+        // Skip re-entrant requests from our own bypass session
+        if URLProtocol.property(forKey: "HTTPBypassHandled", in: request) as? Bool == true {
+            return false
+        }
+
+        // Skip direct-play video extensions — AVPlayer handles these natively
+        // (NSAllowsArbitraryLoads=true in Info.plist already covers ATS).
+        let ext = url.pathExtension.lowercased()
+        if !ext.isEmpty && directPlayExtensions.contains(ext) { return false }
+
+        // Skip IPTV stream paths (/live/ /movie/ /series/) as defence-in-depth —
+        // LocalHLSProxy already handles unsupported formats via FFmpeg.
+        let firstPathComponent = url.pathComponents.dropFirst().first?.lowercased() ?? ""
+        if iptvStreamPrefixes.contains(firstPathComponent) { return false }
 
         #if DEBUG
-        if shouldIntercept {
-            print("[HTTPBypassProtocol] Intercepting: \(request.url?.absoluteString ?? "unknown")")
-        }
+        print("[HTTPBypassProtocol] Intercepting: \(url.absoluteString)")
         #endif
 
-        return shouldIntercept
+        return true
     }
 
     public override class func canonicalRequest(for request: URLRequest) -> URLRequest {
@@ -63,6 +84,8 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
         guard self.client != nil else { return }
 
         var mutableRequest = request
+        // Mark so canInit skips our own bypass session's requests
+        URLProtocol.setProperty(true, forKey: "HTTPBypassHandled", in: &mutableRequest)
 
         if mutableRequest.value(forHTTPHeaderField: "User-Agent") == nil {
             mutableRequest.setValue(
