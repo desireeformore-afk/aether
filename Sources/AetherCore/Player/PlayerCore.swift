@@ -997,9 +997,13 @@ public final class PlayerCore {
                     self.retryCount = 0
                     self.retrySourceItem = nil
                     self.state = .playing
-                    // Determine live vs VOD from actual item duration
+                    // Determine live vs VOD from actual item duration,
+                    // BUT: HLS 'event' type proxy playlists show indefinite
+                    // duration until FFmpeg ends. If proxy is active, it's VOD.
                     let dur = item.duration
-                    if dur.isIndefinite || dur == .zero {
+                    if self.activeProxy != nil {
+                        self.isLiveStream = false
+                    } else if dur.isIndefinite || dur == .zero {
                         self.isLiveStream = true
                     } else if dur.isNumeric && dur.seconds > 0 {
                         self.isLiveStream = false

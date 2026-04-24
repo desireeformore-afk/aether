@@ -42,6 +42,14 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
     // (live, mkv, avi, wmv, ts) — but also skip them here as defence-in-depth.
     private static let iptvStreamPrefixes: Set<String> = ["live", "movie", "series", "timeshift"]
 
+    // Image/media extensions served by native URLSession with built-in URLCache.
+    // Routing these through HTTPBypassProtocol (urlCache = nil) caused 40+ duplicate
+    // network requests for the same thumbnail on every SwiftUI re-render.
+    private static let imageExtensions: Set<String> = [
+        "jpg", "jpeg", "png", "webp", "gif", "heic", "heif", "avif",
+        "svg", "bmp", "ico", "tiff", "tif", "wbmp"
+    ]
+
     public override class func canInit(with request: URLRequest) -> Bool {
         guard let url = request.url,
               let scheme = url.scheme?.lowercased() else { return false }
@@ -53,14 +61,15 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
 
         guard scheme == "http" || scheme == "https" else { return false }
 
-        // Skip re-entrant requests from our own bypass session
-        if URLProtocol.property(forKey: "HTTPBypassHandled", in: request) as? Bool == true {
-            return false
-        }
+        // Strip query string before checking extension (e.g. image.jpg?ver=123)
+        let ext = (url.pathExtension.lowercased()).components(separatedBy: "?").first ?? ""
+
+        // Images: handled natively by AsyncImage / URLSession with URLCache.
+        // Bypassing this was causing 40+ duplicate TMDB fetches per scroll event.
+        if imageExtensions.contains(ext) { return false }
 
         // Skip direct-play video extensions — AVPlayer handles these natively
         // (NSAllowsArbitraryLoads=true in Info.plist already covers ATS).
-        let ext = url.pathExtension.lowercased()
         if !ext.isEmpty && directPlayExtensions.contains(ext) { return false }
 
         // Skip IPTV stream paths (/live/ /movie/ /series/) as defence-in-depth —
@@ -84,8 +93,6 @@ public final class HTTPBypassProtocol: URLProtocol, @unchecked Sendable {
         guard self.client != nil else { return }
 
         var mutableRequest = request
-        // Mark so canInit skips our own bypass session's requests
-        URLProtocol.setProperty(true, forKey: "HTTPBypassHandled", in: &mutableRequest)
 
         if mutableRequest.value(forHTTPHeaderField: "User-Agent") == nil {
             mutableRequest.setValue(

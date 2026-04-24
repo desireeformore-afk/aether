@@ -16,7 +16,7 @@ public final class RecordingService {
     private var writerInputs: [UUID: (video: AVAssetWriterInput, audio: AVAssetWriterInput)] = [:]
     private let fileManager = FileManager.default
     private let userDefaults: UserDefaults
-    nonisolated(unsafe) private var scheduleCheckerTask: Task<Void, Never>?
+    nonisolated private var scheduleCheckerTask: Task<Void, Never>?
 
     private let recordingsKey = "aether.recordings.completed"
     private let schedulesKey = "aether.recordings.schedules"

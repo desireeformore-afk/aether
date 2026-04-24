@@ -271,12 +271,14 @@ public final class LocalHLSProxy: @unchecked Sendable {
         ]
 
         if isVOD {
-            // VOD needs longer timeouts — IPTV servers often send MKV headers slowly
+            // VOD: small probesize = faster first segment.
+            // 1MB is enough for most MKV/MP4 headers; original 5MB caused ~10s stall
+            // before FFmpeg could write the first HLS segment.
             args += [
                 "-reconnect_on_http_error", "4xx,5xx",
                 "-timeout", "30000000",
                 "-rw_timeout", "30000000",
-                "-probesize", "5000000", "-analyzeduration", "5000000",
+                "-probesize", "1000000", "-analyzeduration", "1000000",
             ]
         } else {
             // Live: minimize startup latency
@@ -319,9 +321,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
             }
             args += [
                 "-f", "hls",
-                "-hls_time", "6",
+                "-hls_time", "3",           // 3s segments = first segment 2x faster to produce
                 "-hls_list_size", "0",
-                "-hls_playlist_type", "vod",
+                "-hls_playlist_type", "event", // event: AVPlayer starts immediately, doesn't wait for EXT-X-ENDLIST
                 "-hls_flags", "independent_segments",
             ]
             print("[HLSProxy] Mode: VOD (\(ext)), codec: \(videoCodec), bsf: \(bsfFilter.isEmpty ? "auto" : bsfFilter)")
@@ -371,8 +373,9 @@ public final class LocalHLSProxy: @unchecked Sendable {
         ffmpegStarted = true
         self.ffmpegProcess = process
 
-        // 3. Wait for first segment — 30s for both VOD and Live (200*150ms)
-        let maxWaitIterations = 200
+        // 3. Wait for first segment — 45s max (300*150ms).
+        // VOD: with probesize=1MB + hls_time=3s, first segment typically appears in 3-8s.
+        let maxWaitIterations = 300
         var stderrLines: [String] = []
         for i in 0..<maxWaitIterations {
             try await Task.sleep(nanoseconds: 150_000_000) // 150ms
