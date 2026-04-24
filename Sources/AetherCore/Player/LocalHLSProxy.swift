@@ -279,7 +279,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
         var args: [String] = [
             "-y",
             "-loglevel", "warning",
-            "-fflags", "+genpts+discardcorrupt+nobuffer",
+            "-fflags", "+genpts+discardcorrupt+nobuffer+fastseek",
             // Spoof User-Agent — IPTV servers often return 400 for ffmpeg's default UA
             "-user_agent", Self.userAgent,
             "-headers", "Accept: */*\r\nAccept-Language: en-US,en;q=0.9\r\n",
@@ -300,6 +300,7 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 "-timeout", "30000000",
                 "-rw_timeout", "30000000",
                 "-probesize", "1000000", "-analyzeduration", "1000000",
+                "-seekable", "1"
             ]
             if let offset = offset, offset > 0 {
                 args += ["-ss", String(format: "%.3f", offset)]

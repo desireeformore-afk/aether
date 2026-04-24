@@ -547,6 +547,7 @@ public final class PlayerCore {
         
         // Stop current AVPlayer playback and current proxy gracefully
         player.pause()
+        player.replaceCurrentItem(with: nil)
         hlsProxy?.stop()
         hlsProxy = nil
         

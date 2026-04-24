@@ -72,16 +72,6 @@ struct ContentView: View {
             } else if isFullscreenPlayer {
                 PlayerView(player: playerCore)
                     .ignoresSafeArea()
-                    .overlay(alignment: .topLeading) {
-                        Button(action: { playerCore.stop() }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 28))
-                                .foregroundStyle(.white.opacity(0.8))
-                                .padding(20)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.top, 24)
-                    }
                     .overlay {
                         if playerCore.state == .loading {
                             ZStack {
@@ -100,6 +90,16 @@ struct ContentView: View {
                                 }
                             }
                         }
+                    }
+                    .overlay(alignment: .topLeading) {
+                        Button(action: { playerCore.stop() }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 28))
+                                .foregroundStyle(.white.opacity(0.8))
+                                .padding(20)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.top, 24)
                     }
             } else {
                 mainLayout
