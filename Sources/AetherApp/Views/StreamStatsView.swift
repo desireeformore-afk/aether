@@ -6,11 +6,12 @@ import AetherCore
 struct StreamStatsView: View {
     let player: AVPlayer
     @State private var stats = StreamStats()
+    @State private var codec: String = "—"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             statRow("Resolution", value: stats.resolutionLabel)
-            statRow("Codec",      value: stats.codec)
+            statRow("Codec",      value: codec)
             statRow("Bitrate",    value: stats.bitrateKbps.map { "\($0) kbps" } ?? "—")
             statRow("Buffer",     value: stats.bufferingPercent.map { "\($0)%" } ?? "—")
             statRow("Dropped",    value: "\(stats.droppedFrames) frames")
@@ -21,6 +22,9 @@ struct StreamStatsView: View {
         .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 6))
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             stats = StreamStats(player: player)
+            Task {
+                codec = await StreamStats.resolveCodec(from: player)
+            }
         }
     }
 
@@ -38,7 +42,6 @@ struct StreamStats {
     let droppedFrames: Int
     let bufferSeconds: Double?
     let presentationSize: CGSize?
-    let codec: String
 
     var resolutionLabel: String {
         guard let size = presentationSize, size.width > 0 else { return "—" }
@@ -55,7 +58,6 @@ struct StreamStats {
         droppedFrames = 0
         bufferSeconds = nil
         presentationSize = nil
-        codec = "—"
     }
 
     init(player: AVPlayer) {
@@ -84,17 +86,17 @@ struct StreamStats {
 
         // Presentation size (video resolution)
         presentationSize = player.currentItem?.presentationSize
-
-        // Codec: read from video track format description
-        codec = StreamStats.resolveCodec(from: player)
     }
 
-    private static func resolveCodec(from player: AVPlayer) -> String {
+    /// Async codec resolution via load(.formatDescriptions) (replaces deprecated .formatDescriptions).
+    /// @MainActor required: AVPlayerItemTrack.assetTrack is main-actor-isolated in Swift 6.
+    @MainActor
+    static func resolveCodec(from player: AVPlayer) async -> String {
         guard let item = player.currentItem else { return "—" }
         let videoTrack = item.tracks.first { $0.assetTrack?.mediaType == .video }
-        guard let assetTrack = videoTrack?.assetTrack,
-              let descAny = assetTrack.formatDescriptions.first else { return "—" }
-        let desc = descAny as! CMFormatDescription
+        guard let assetTrack = videoTrack?.assetTrack else { return "—" }
+        guard let descriptions = try? await assetTrack.load(.formatDescriptions),
+              let desc = descriptions.first else { return "—" }
         let subType = CMFormatDescriptionGetMediaSubType(desc)
         let bytes: [UInt8] = [
             UInt8((subType >> 24) & 0xFF),
