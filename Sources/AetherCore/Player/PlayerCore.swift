@@ -299,7 +299,23 @@ public final class PlayerCore {
         audioSelectionGroup = nil
         subtitleSelectionGroup = nil
 
-        let url = channel.streamURL
+        var url = channel.streamURL
+        
+        // For VODs, force the URL extension to `.mp4`. Almost all modern Xtream Codes panels
+        // dynamically mux mkv/avi/ts VODs to MP4 on-the-fly when requested.
+        // This allows AVPlayer to play the VOD natively WITHOUT the LocalHLSProxy!
+        // Native AVPlayer `.mp4` playback supports perfect HTTP Range-based seeking and instant start.
+        if channel.contentType == .movie {
+            let absolute = url.absoluteString
+            if absolute.hasSuffix(".mkv") || absolute.hasSuffix(".avi") || absolute.hasSuffix(".ts") {
+                let baseURL = (absolute as NSString).deletingPathExtension
+                if let newURL = URL(string: baseURL + ".mp4") {
+                    url = newURL
+                    print("[PlayerCore] Overriding VOD extension to .mp4 -> \(newURL.absoluteString)")
+                }
+            }
+        }
+        
         let ext = url.pathExtension.lowercased()
         print("[PlayerCore] Playing: \(channel.name)")
         print("[PlayerCore]   URL: \(url.absoluteString)")
@@ -518,69 +534,15 @@ public final class PlayerCore {
         guard current.isFinite else { return }
         let target = max(0, current + seconds)
         let cmTime = CMTime(seconds: target, preferredTimescale: 600)
-        self.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
-    /// Seeks to a specific `CMTime`. Intercepts the request to accurately seek VOD streams served by the FFmpeg proxy.
+    /// Seeks to a specific `CMTime`. Used natively by AVPlayer since MP4 VOD extensions bypass proxy.
     public func seek(to time: CMTime, toleranceBefore: CMTime = .zero, toleranceAfter: CMTime = .zero) {
         guard !isLiveStream else { return }
-        
         let seconds = time.seconds
         guard seconds.isFinite else { return }
-        
-        if hlsProxy != nil {
-            // For VOD proxy streams, scrubbing the AVPlayer natively stalls because `event` playlists
-            // don't have future segments written yet. We must restart the FFmpeg proxy at the new offset.
-            Task { @MainActor in
-                await self.restartProxy(at: seconds)
-            }
-        } else {
-            player.seek(to: time, toleranceBefore: toleranceBefore, toleranceAfter: toleranceAfter)
-        }
-    }
-    
-    @MainActor
-    private func restartProxy(at offset: Double) async {
-        guard let channel = currentChannel else { return }
-        let currentURL = channel.streamURL
-        print("[PlayerCore] Restarting proxy for seek to \(offset)s")
-        
-        // Stop current AVPlayer playback and current proxy gracefully
-        player.pause()
-        player.replaceCurrentItem(with: nil)
-        hlsProxy?.stop()
-        hlsProxy = nil
-        
-        // Let the state machine know we are buffering a proxy seek
-        state = .loading
-        isLoadingProxy = true
-        
-        let newProxy = LocalHLSProxy()
-        self.hlsProxy = newProxy
-        
-        do {
-            try await newProxy.start(from: currentURL, offset: offset)
-            guard self.hlsProxy === newProxy else { return }
-            
-            isLoadingProxy = false
-            let proxyAssetOptions: [String: Any] = [
-                "AVURLAssetOutOfBandMIMETypeKey": "application/vnd.apple.mpegurl"
-            ]
-            let proxyAsset = AVURLAsset(url: newProxy.playlistURL, options: proxyAssetOptions)
-            let item = AVPlayerItem(asset: proxyAsset)
-            player.replaceCurrentItem(with: item)
-            player.play()
-            
-            observePlayerItem(item)
-            registerRetryObservers(for: item)
-            // State is managed by the player item observer now, but we can optimistically set loading.
-            state = .loading
-        } catch {
-            guard self.hlsProxy === newProxy else { return }
-            isLoadingProxy = false
-            state = .error("Seek failed: proxy timeout or error")
-            print("[PlayerCore] Seek proxy restart failed: \(error)")
-        }
+        player.seek(to: time, toleranceBefore: toleranceBefore, toleranceAfter: toleranceAfter)
     }
 
     /// Adjusts volume by delta (-1.0 to +1.0), clamped to 0–1.
@@ -722,7 +684,12 @@ public final class PlayerCore {
                         await self.restartProxyAndReplaceItem()
                     }
                 } else {
-                    self.scheduleRetry(for: item)
+                    // For native streams, only auto-retry if it's a live stream.
+                    // For VODs, a stall just means we are scrubbing/buffering, so AVPlayer
+                    // will automatically resume once `isPlaybackLikelyToKeepUp` becomes true.
+                    if self.currentChannel?.contentType == .liveTV {
+                        self.scheduleRetry(for: item)
+                    }
                 }
             }
         }
