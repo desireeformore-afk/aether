@@ -342,8 +342,10 @@ public final class LocalHLSProxy: @unchecked Sendable {
                 "-ignore_unknown",
                 "-c:v", "copy",
                 "-max_muxing_queue_size", "4096",
-                "-c:a", "copy",
-                "-copyts"
+                "-c:a", "copy"
+                // NOTE: NO -copyts here. MKV timestamps often start at large non-zero values.
+                // Without -copyts, FFmpeg resets PTS to 0 for the first segment, giving AVPlayer
+                // clean 0-based HLS timestamps. This eliminates the <<< timebase >>> -12753 spam.
             ]
             if isHEVC {
                 args += ["-tag:v", "hvc1"]

@@ -27,6 +27,10 @@ public struct SeekBarView: View {
                 onEditingChanged: { editing in
                     isSeeking = editing
                     if !editing {
+                        // Guard: only seek if user actually dragged to a real position.
+                        // Without this, macOS SwiftUI fires onEditingChanged(false) on re-render
+                        // with seekPosition=0 / duration=0, endlessly seeking to t=0.
+                        guard duration > 0, seekPosition > 0.005 else { return }
                         let targetTime = seekPosition * duration
                         let cmTime = CMTime(seconds: targetTime, preferredTimescale: 600)
                         player.userSeek(to: cmTime)
