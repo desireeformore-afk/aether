@@ -179,8 +179,10 @@ public final class PlayerCore {
     /// FFmpeg HLS proxy — remuxes TS/MKV to local HLS segments for AVPlayer
     private var hlsProxy: LocalHLSProxy?
     
-    /// Returns the estimated duration extracted by FFprobe if the proxy is running.
-    public var proxyEstimatedDuration: Double? { hlsProxy?.estimatedDuration }
+    /// Estimated VOD duration populated asynchronously by background ffprobe.
+    /// Nil until probe completes (~0.5-2s after playback starts). SeekBarView uses this as fallback
+    /// when AVPlayer cannot determine duration from the HLS event playlist.
+    public var proxyEstimatedDuration: Double? = nil
 
     /// True while a LocalHLSProxy is in the process of starting up (between proxy creation and
     /// first-segment ready). Guards against rapid duplicate play() calls that stop the proxy
@@ -291,6 +293,7 @@ public final class PlayerCore {
         retryCount = 0
         isRetrying = false
         retrySourceItem = nil
+        proxyEstimatedDuration = nil  // reset until async probe returns for this channel
         shouldBlockRetry = false
         availableAudioOptions = []
         availableSubtitleOptions = []
@@ -361,6 +364,16 @@ public final class PlayerCore {
                     self.player.play()
                     self.observePlayerItem(item)
                     self.registerRetryObservers(for: item)
+
+                    // Async duration probe: runs in background after playback starts.
+                    // Updates proxyEstimatedDuration (stored @Observable var) → SeekBarView refreshes automatically.
+                    // Typical time: 0.5-2s. Does not block startup.
+                    let capturedURL = url
+                    Task.detached(priority: .utility) { [weak self] in
+                        guard let self else { return }
+                        await proxy.probeDurationAsync(url: capturedURL)
+                        await MainActor.run { self.proxyEstimatedDuration = proxy.estimatedDuration }
+                    }
                 } catch {
                     guard let self, self.currentChannel?.id == channel.id else { return }
                     guard self.hlsProxy === proxy else { return }

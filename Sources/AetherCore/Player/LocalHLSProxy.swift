@@ -156,6 +156,53 @@ public final class LocalHLSProxy: @unchecked Sendable {
         var duration: Double?
     }
 
+    /// Probe ONLY the duration of a remote URL using ffprobe (very fast — format only, no stream scan).
+    /// Run this asynchronously after proxy starts so it doesn't block playback startup.
+    func probeDurationAsync(url: URL) async {
+        guard let ffprobe = Self.ffprobeURL else { return }
+
+        let process = Process()
+        process.executableURL = ffprobe
+        process.arguments = [
+            "-v", "quiet",
+            "-print_format", "json",
+            "-show_format",                   // only format (contains duration) — no streams
+            "-probesize", "204800",            // 200KB — enough to get MKV EBML duration tag
+            "-analyzeduration", "0",           // skip stream analysis — we only need container duration
+            "-headers", "User-Agent: \(Self.userAgent)\r\n",
+            "-rw_timeout", "8000000",          // 8s timeout for slow servers
+            url.absoluteString
+        ]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+
+        do {
+            try process.run()
+            // Non-blocking wait via continuation
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                DispatchQueue.global(qos: .utility).async {
+                    process.waitUntilExit()
+                    continuation.resume()
+                }
+            }
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            struct FormatResult: Decodable {
+                struct Format: Decodable { let duration: String? }
+                var format: Format?
+            }
+            let result = try JSONDecoder().decode(FormatResult.self, from: data)
+            if let dStr = result.format?.duration, let d = Double(dStr), d > 0 {
+                await MainActor.run { self.estimatedDuration = d }
+                print("[HLSProxy] Duration (async probe): \(String(format: "%.1f", d))s")
+            }
+        } catch {
+            print("[HLSProxy] Async duration probe failed: \(error)")
+        }
+    }
+
     /// Probe the video codec and duration of a remote URL using ffprobe.
     private static func probeMediaInfo(url: URL) -> MediaInfo {
         guard let ffprobe = ffprobeURL else { return MediaInfo(codec: "h264", duration: nil) }
