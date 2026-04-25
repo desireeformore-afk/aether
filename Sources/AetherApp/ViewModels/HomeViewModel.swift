@@ -201,6 +201,32 @@ final class HomeViewModel: ObservableObject {
         await seriesTask
         await liveTask
 
+        // TIER 4: Full search index — loads ALL remaining VOD categories (beyond top 16) into allVODs.
+        // Runs detached so it never blocks UI or series/live loading.
+        // allVODs is already partially filled from Tier 1+2; this appends the rest.
+        let top16IDs = Set(top16.map { $0.id })
+        let remainingCats = allCats.filter { !self.isGarbageCategory($0.name) && !top16IDs.contains($0.id) }
+        Task.detached(priority: .background) { [weak self] in
+            guard let self else { return }
+            var extra: [XstreamVOD] = []
+            await withTaskGroup(of: [XstreamVOD].self) { group in
+                for cat in remainingCats {
+                    group.addTask {
+                        (try? await svc.vodStreams(categoryID: cat.id)) ?? []
+                    }
+                }
+                for await batch in group {
+                    extra.append(contentsOf: batch)
+                }
+            }
+            guard !extra.isEmpty else { return }
+            await MainActor.run {
+                self.allVODs.append(contentsOf: extra)
+                Self.cachedAllVODs = self.allVODs
+                print("[HomeVM] Search index complete — \(self.allVODs.count) VODs indexed")
+            }
+        }
+
         isFullyLoaded = true
     }
 

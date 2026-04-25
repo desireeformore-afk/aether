@@ -490,11 +490,12 @@ public final class LocalHLSProxy: @unchecked Sendable {
             }
 
             // Check if the first segment exists, is referenced in the playlist, AND has actual content.
-            // Minimum 50KB ensures FFmpeg wrote at least partial video data; smaller = corrupt empty segment.
+            // Minimum 8KB ensures FFmpeg wrote at least some video data (not an empty shell).
+            // 50KB was too aggressive for low-bitrate or short-segment content.
             let seg0Path = outputDir.appendingPathComponent("seg_00000.ts").path
             let seg0URL = URL(fileURLWithPath: seg0Path)
             let seg0Size = (try? seg0URL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-            if seg0Size > 50_000,
+            if seg0Size > 8_000,
                FileManager.default.fileExists(atPath: m3u8Path),
                let content = try? String(contentsOf: URL(fileURLWithPath: m3u8Path), encoding: .utf8),
                content.contains(".ts") {
