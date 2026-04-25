@@ -67,11 +67,12 @@ public struct PlayerControlsView: View {
                 .accessibilityLabel("Next channel")
 
                 if let channel = player.currentChannel {
-                    Text(channel.name)
+                    Text(cleanPlayerTitle(channel.name))
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.85))
                         .lineLimit(1)
-                        .truncationMode(.tail)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: 260, alignment: .leading)
                 }
 
                 Spacer()
@@ -161,7 +162,26 @@ public struct PlayerControlsView: View {
     }
 }
 
-// MARK: - TrackPickerView
+// MARK: - Helpers
+
+private func cleanPlayerTitle(_ name: String) -> String {
+    let prefixes = [
+        "AMZ - ", "AMZ-", "NF - ", "NF-", "NETFLIX - ", "Netflix - ",
+        "Netflix 4K Premium - ", "Netflix 4K - ", "4K-A+ - ", "4K+ - ",
+        "4K - ", "HD - ", "FHD - ", "UHD - ", "DSNP - ", "HMAX - ",
+        "ATVP - ", "PCOK - ", "HULU - ", "STAN - ",
+    ]
+    var result = name
+    for prefix in prefixes {
+        if result.uppercased().hasPrefix(prefix.uppercased()) {
+            result = String(result.dropFirst(prefix.count))
+            break
+        }
+    }
+    return result.trimmingCharacters(in: .whitespaces)
+}
+
+
 
 struct TrackPickerView: View {
     @Bindable var player: PlayerCore

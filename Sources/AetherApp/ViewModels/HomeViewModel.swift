@@ -209,15 +209,21 @@ final class HomeViewModel: ObservableObject {
         Task.detached(priority: .background) { [weak self] in
             guard let self else { return }
             var extra: [XstreamVOD] = []
-            await withTaskGroup(of: [XstreamVOD].self) { group in
-                for cat in remainingCats {
-                    group.addTask {
-                        (try? await svc.vodStreams(categoryID: cat.id)) ?? []
+            let batchSize = 4  // 4 concurrent requests — won't saturate the connection during playback
+            let cats = remainingCats
+            var i = 0
+            while i < cats.count {
+                guard await self.canContinueIndexing() else { break }
+                let batch = Array(cats[i..<min(i + batchSize, cats.count)])
+                await withTaskGroup(of: [XstreamVOD].self) { group in
+                    for cat in batch {
+                        group.addTask { (try? await svc.vodStreams(categoryID: cat.id)) ?? [] }
                     }
+                    for await vods in group { extra.append(contentsOf: vods) }
                 }
-                for await batch in group {
-                    extra.append(contentsOf: batch)
-                }
+                i += batchSize
+                // 200ms pause between batches — lets the OS scheduler breathe for active playback
+                try? await Task.sleep(for: .milliseconds(200))
             }
             guard !extra.isEmpty else { return }
             await MainActor.run {
@@ -228,6 +234,12 @@ final class HomeViewModel: ObservableObject {
         }
 
         isFullyLoaded = true
+    }
+
+    /// Guard for Tier 4 batched indexing. Returns false to abort indexing early (e.g., could
+    /// be extended to pause when user is actively watching a stream).
+    private func canContinueIndexing() async -> Bool {
+        return !Task.isCancelled
     }
 
     private func loadSeriesInBackground(_ svc: XstreamService) async {
