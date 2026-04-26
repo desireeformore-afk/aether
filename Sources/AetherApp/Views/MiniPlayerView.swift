@@ -19,9 +19,9 @@ public struct MiniPlayerView: View {
 
     public var body: some View {
         ZStack {
-            // Video layer — tap to expand back to main window
-            VideoPlayerLayer(avPlayer: player.player, playerCore: player)
-                .aspectRatio(16 / 9, contentMode: .fit)
+            // Video layer — VLC renders directly into NSView
+            VLCVideoView(player: player)
+                .aspectRatio(16 / 9, contentMode: .fill)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             // Overlay controls (show on hover or when not playing)

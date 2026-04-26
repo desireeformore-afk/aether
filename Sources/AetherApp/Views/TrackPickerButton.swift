@@ -17,12 +17,76 @@ struct TrackPickerButton: View {
         }
         .buttonStyle(.plain)
         .help("Audio & Subtitle Tracks")
-        .sheet(isPresented: $showTrackPicker) {
-            TrackPickerView(trackService: trackService, playerItem: player.player.currentItem)
+        .popover(isPresented: $showTrackPicker, arrowEdge: .top) {
+            TrackPickerPopoverContent(player: player)
         }
     }
 
     private var hasMultipleTracks: Bool {
-        trackService.audioTracks.count > 1 || !trackService.subtitleTracks.isEmpty
+        player.availableAudioTracks.count > 1 || !player.availableSubtitleTracks.isEmpty
+    }
+}
+
+// MARK: - TrackPickerPopoverContent
+
+private struct TrackPickerPopoverContent: View {
+    @Bindable var player: PlayerCore
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if !player.availableAudioTracks.isEmpty {
+                Text("Audio")
+                    .font(.headline)
+                ForEach(player.availableAudioTracks) { track in
+                    Button {
+                        player.selectAudioTrack(track)
+                    } label: {
+                        HStack {
+                            Text(track.displayName)
+                            Spacer()
+                            if player.selectedAudioTrackID == track.id {
+                                Image(systemName: "checkmark").foregroundStyle(Color.accentColor)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            if !player.availableSubtitleTracks.isEmpty {
+                if !player.availableAudioTracks.isEmpty { Divider() }
+                Text("Subtitles").font(.headline)
+                Button {
+                    player.selectSubtitleTrack(nil)
+                } label: {
+                    HStack {
+                        Text("Off")
+                        Spacer()
+                        if player.selectedSubtitleTrackID == -1 {
+                            Image(systemName: "checkmark").foregroundStyle(Color.accentColor)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                ForEach(player.availableSubtitleTracks) { track in
+                    Button {
+                        player.selectSubtitleTrack(track)
+                    } label: {
+                        HStack {
+                            Text(track.displayName)
+                            Spacer()
+                            if player.selectedSubtitleTrackID == track.id {
+                                Image(systemName: "checkmark").foregroundStyle(Color.accentColor)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            if player.availableAudioTracks.isEmpty && player.availableSubtitleTracks.isEmpty {
+                Text("No tracks available").foregroundStyle(.secondary)
+            }
+        }
+        .padding()
+        .frame(minWidth: 180)
     }
 }

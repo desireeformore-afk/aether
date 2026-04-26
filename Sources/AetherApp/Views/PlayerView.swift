@@ -1,10 +1,9 @@
 import SwiftUI
 import SwiftData
-import AVKit
 import AetherCore
 import AetherUI
 
-/// Detail pane: AVPlayer video + transport controls + EPG info bar + timeline.
+/// Detail pane: VLC video + transport controls + EPG info bar + timeline.
 struct PlayerView: View {
     @Environment(EPGStore.self) private var epgStore
     @Environment(SleepTimerService.self) private var sleepTimer
@@ -37,8 +36,8 @@ struct PlayerView: View {
             // Professional black backdrop for the player
             Color.black.ignoresSafeArea()
 
-            // Video takes full available space, natively letterboxing content
-            VideoPlayerLayer(avPlayer: player.player, playerCore: player)
+            // Video takes full available space — VLC renders directly into NSView
+            VLCVideoView(player: player)
                 .ignoresSafeArea()
                 .onHover { hovering in
                     if hovering {
@@ -74,26 +73,26 @@ struct PlayerView: View {
                             }
                         }
                     }
-                    if !player.availableSubtitleOptions.isEmpty {
+                    if !player.availableSubtitleTracks.isEmpty {
                         Divider()
                         Menu("Subtitles") {
                             Button {
-                                player.selectSubtitleOption(nil)
+                                player.selectSubtitleTrack(nil)
                             } label: {
-                                if player.selectedSubtitleOption == nil {
+                                if player.selectedSubtitleTrackID == -1 {
                                     Label("Off", systemImage: "checkmark")
                                 } else {
                                     Text("Off")
                                 }
                             }
-                            ForEach(player.availableSubtitleOptions, id: \.self) { option in
+                            ForEach(player.availableSubtitleTracks) { track in
                                 Button {
-                                    player.selectSubtitleOption(option)
+                                    player.selectSubtitleTrack(track)
                                 } label: {
-                                    if option == player.selectedSubtitleOption {
-                                        Label(option.displayName, systemImage: "checkmark")
+                                    if player.selectedSubtitleTrackID == track.id {
+                                        Label(track.displayName, systemImage: "checkmark")
                                     } else {
-                                        Text(option.displayName)
+                                        Text(track.displayName)
                                     }
                                 }
                             }
@@ -136,7 +135,7 @@ struct PlayerView: View {
                     // Top Right Controls (PiP, Stats)
                     HStack(alignment: .top, spacing: 12) {
                         if showStats {
-                            StreamStatsView(player: player.player)
+                            StreamStatsView(player: player)
                                 .allowsHitTesting(false)
                         }
                         
@@ -193,7 +192,7 @@ struct PlayerView: View {
                         }
                     }
                     
-                    PlayerControlsView(player: player, showStats: $showStats, customDuration: player.proxyEstimatedDuration)
+                    PlayerControlsView(player: player, showStats: $showStats)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
@@ -253,7 +252,7 @@ struct PlayerView: View {
         }
         // Subtitle cue update ticker (0.5s)
         .onReceive(Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()) { _ in
-            let t = player.player.currentTime().seconds
+            let t = player.currentTime
             if t.isFinite { subtitleStore.updateCurrentCue(time: t) }
         }
         // Keyboard shortcuts (macOS only — iOS/tvOS use focus-based controls)
@@ -615,86 +614,7 @@ struct EPGProgressBarView: View {
     }
 }
 
-// MARK: - VideoPlayerLayer (AVKit, fullscreen + PiP)
-
-struct VideoPlayerLayer: NSViewRepresentable {
-    let avPlayer: AVPlayer
-    /// Weak reference so the coordinator can report PiP state changes back.
-    weak var playerCore: PlayerCore?
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(playerCore: playerCore)
-    }
-
-    func makeNSView(context: Context) -> AVPlayerView {
-        let view = AVPlayerView()
-        view.player = avPlayer
-        view.controlsStyle = .none
-        view.allowsPictureInPicturePlayback = true
-        view.showsFullScreenToggleButton = true
-        view.pictureInPictureDelegate = context.coordinator
-        context.coordinator.playerView = view
-
-        // Double-click to toggle fullscreen
-        let doubleClick = NSClickGestureRecognizer(
-            target: context.coordinator,
-            action: #selector(Coordinator.handleDoubleClick(_:))
-        )
-        doubleClick.numberOfClicksRequired = 2
-        view.addGestureRecognizer(doubleClick)
-
-        return view
-    }
-
-    func updateNSView(_ nsView: AVPlayerView, context: Context) {
-        if nsView.player !== avPlayer { nsView.player = avPlayer }
-        context.coordinator.playerCore = playerCore
-    }
-
-    static func dismantleNSView(_ nsView: AVPlayerView, coordinator: Coordinator) {}
-
-    // MARK: - Coordinator (AVKit)
-
-    final class Coordinator: NSObject, AVPlayerViewPictureInPictureDelegate {
-        weak var playerCore: PlayerCore?
-        weak var playerView: AVPlayerView?
-
-        init(playerCore: PlayerCore?) {
-            self.playerCore = playerCore
-            super.init()
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(handlePiPStartRequest),
-                name: .pipStartRequested,
-                object: nil
-            )
-        }
-
-        deinit {
-            NotificationCenter.default.removeObserver(self)
-        }
-
-        @objc private func handlePiPStartRequest() {
-            // AVPlayerView manages PiP via its built-in overlay controls.
-            // Programmatic PiP activation requires AVPictureInPictureController;
-            // AVPlayerView does not expose a public startPictureInPicture() method.
-            // The user can activate PiP via the floating controls overlay.
-        }
-
-        @objc func handleDoubleClick(_ gesture: NSClickGestureRecognizer) {
-            gesture.view?.window?.toggleFullScreen(nil)
-        }
-
-        nonisolated func playerViewWillStartPicture(inPicture playerView: AVPlayerView) {}
-        nonisolated func playerViewDidStartPicture(inPicture playerView: AVPlayerView) {
-            Task { @MainActor [weak self] in self?.playerCore?.setPiPActive(true) }
-        }
-        nonisolated func playerViewWillStopPicture(inPicture playerView: AVPlayerView) {}
-        nonisolated func playerViewDidStopPicture(inPicture playerView: AVPlayerView) {
-            Task { @MainActor [weak self] in self?.playerCore?.setPiPActive(false) }
-        }
-    }
-}
+// VideoPlayerLayer removed — replaced by VLCVideoView (see VLCVideoView.swift)
 
 // MARK: - PulsingCircle
 

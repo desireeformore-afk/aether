@@ -1,30 +1,26 @@
 import SwiftUI
-@preconcurrency import AVFoundation
 import AetherCore
 
-/// Transport controls: play/pause, prev, next, mute, volume.
-/// Shared across macOS, iOS, tvOS — layout adapts via environment.
+/// Transport controls: play/pause, prev, next, mute, volume, seek.
+/// All platforms — layout adapts via environment.
 public struct PlayerControlsView: View {
     @Bindable public var player: PlayerCore
     @Binding public var showStats: Bool
     @State private var showTrackPicker = false
     @FocusState private var isFocused: Bool
-    public var customDuration: Double?
 
-    public init(player: PlayerCore, showStats: Binding<Bool>, customDuration: Double? = nil) {
+    public init(player: PlayerCore, showStats: Binding<Bool>) {
         self.player = player
         self._showStats = showStats
-        self.customDuration = customDuration
     }
 
     private var isPlaying: Bool { player.state == .playing }
-
     private var isVOD: Bool { !player.isLiveStream }
 
     public var body: some View {
         VStack(spacing: 0) {
             if isVOD {
-                SeekBarView(player: player, customDuration: customDuration)
+                SeekBarView(player: player)
                     .padding(.horizontal)
                     .padding(.top, 8)
             }
@@ -92,17 +88,6 @@ public struct PlayerControlsView: View {
                 .accessibilityLabel("Volume")
                 #endif
 
-                #if os(macOS)
-                Button {
-                    player.startPiP()
-                } label: {
-                    Image(systemName: "pip.enter")
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Picture in Picture")
-                .disabled(player.currentChannel == nil)
-                #endif
-
                 #if !os(tvOS)
                 if player.currentChannel != nil {
                     Button {
@@ -113,7 +98,7 @@ public struct PlayerControlsView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Audio and Subtitles")
                     .popover(isPresented: $showTrackPicker, arrowEdge: .top) {
-                        TrackPickerView(player: player)
+                        VLCTrackPickerView(player: player)
                     }
                 }
                 #endif
@@ -181,25 +166,25 @@ private func cleanPlayerTitle(_ name: String) -> String {
     return result.trimmingCharacters(in: .whitespaces)
 }
 
+// MARK: - VLCTrackPickerView
 
-
-struct TrackPickerView: View {
+struct VLCTrackPickerView: View {
     @Bindable var player: PlayerCore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if !player.availableAudioOptions.isEmpty {
+            if !player.availableAudioTracks.isEmpty {
                 Text("Audio")
                     .font(.headline)
                     .padding(.bottom, 2)
-                ForEach(Array(player.availableAudioOptions.enumerated()), id: \.offset) { _, option in
+                ForEach(player.availableAudioTracks) { track in
                     Button {
-                        player.selectAudioOption(option)
+                        player.selectAudioTrack(track)
                     } label: {
                         HStack {
-                            Text(option.displayName)
+                            Text(track.displayName)
                             Spacer()
-                            if option == player.selectedAudioOption {
+                            if player.selectedAudioTrackID == track.id {
                                 Image(systemName: "checkmark")
                                     .foregroundStyle(Color.accentColor)
                             }
@@ -209,32 +194,32 @@ struct TrackPickerView: View {
                 }
             }
 
-            if !player.availableSubtitleOptions.isEmpty {
-                if !player.availableAudioOptions.isEmpty { Divider() }
+            if !player.availableSubtitleTracks.isEmpty {
+                if !player.availableAudioTracks.isEmpty { Divider() }
                 Text("Subtitles")
                     .font(.headline)
                     .padding(.bottom, 2)
                 Button {
-                    player.selectSubtitleOption(nil)
+                    player.selectSubtitleTrack(nil)
                 } label: {
                     HStack {
                         Text("Off")
                         Spacer()
-                        if player.selectedSubtitleOption == nil {
+                        if player.selectedSubtitleTrackID == -1 {
                             Image(systemName: "checkmark")
                                 .foregroundStyle(Color.accentColor)
                         }
                     }
                 }
                 .buttonStyle(.plain)
-                ForEach(Array(player.availableSubtitleOptions.enumerated()), id: \.offset) { _, option in
+                ForEach(player.availableSubtitleTracks) { track in
                     Button {
-                        player.selectSubtitleOption(option)
+                        player.selectSubtitleTrack(track)
                     } label: {
                         HStack {
-                            Text(option.displayName)
+                            Text(track.displayName)
                             Spacer()
-                            if option == player.selectedSubtitleOption {
+                            if player.selectedSubtitleTrackID == track.id {
                                 Image(systemName: "checkmark")
                                     .foregroundStyle(Color.accentColor)
                             }
@@ -244,7 +229,7 @@ struct TrackPickerView: View {
                 }
             }
 
-            if player.availableAudioOptions.isEmpty && player.availableSubtitleOptions.isEmpty {
+            if player.availableAudioTracks.isEmpty && player.availableSubtitleTracks.isEmpty {
                 Text("No tracks available")
                     .foregroundStyle(.secondary)
                     .font(.subheadline)

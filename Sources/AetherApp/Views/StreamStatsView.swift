@@ -1,30 +1,60 @@
 import SwiftUI
-@preconcurrency import AVFoundation
-import CoreMedia
+import VLCKit
 import AetherCore
 
+/// HUD overlay showing live stream statistics from VLC's built-in stats engine.
+/// VLC provides richer, more accurate stats than AVPlayer's accessLog:
+/// - Decoded/displayed/lost frames (from GPU decoder)
+/// - Demux bitrate (actual bytes from network, not HLS manifest estimate)
+/// - Input bitrate (raw transport layer)
 struct StreamStatsView: View {
-    let player: AVPlayer
-    @State private var stats = StreamStats()
+    let player: PlayerCore
+    @State private var decoded: Int = 0
+    @State private var displayed: Int = 0
+    @State private var lost: Int = 0
+    @State private var demuxBitrate: Float = 0
+    @State private var inputBitrate: Float = 0
     @State private var codec: String = "—"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            statRow("Resolution", value: stats.resolutionLabel)
-            statRow("Codec",      value: codec)
-            statRow("Bitrate",    value: stats.bitrateKbps.map { "\($0) kbps" } ?? "—")
-            statRow("Buffer",     value: stats.bufferingPercent.map { "\($0)%" } ?? "—")
-            statRow("Dropped",    value: "\(stats.droppedFrames) frames")
+            statRow("Codec",       value: codec)
+            statRow("Net In",      value: inputBitrate > 0 ? String(format: "%.0f kbps", inputBitrate * 8) : "—")
+            statRow("Demux",       value: demuxBitrate > 0 ? String(format: "%.0f kbps", demuxBitrate * 8) : "—")
+            statRow("Decoded",     value: "\(decoded) frames")
+            statRow("Displayed",   value: "\(displayed) frames")
+            statRow("Dropped",     value: "\(lost) frames")
         }
         .font(.system(size: 10, design: .monospaced))
         .foregroundStyle(.white)
         .padding(8)
         .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 6))
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            stats = StreamStats(player: player)
-            Task {
-                codec = await StreamStats.resolveCodec(from: player)
-            }
+            refreshStats()
+        }
+        .onAppear { refreshStats() }
+    }
+
+    private func refreshStats() {
+        guard let vlc = player.vlcPlayerInternal else { return }
+
+        // VLC stats: cumulative frame counts since playback started
+        if let media = vlc.media {
+            let stats = media.statistics  // VLCMedia.Stats is non-optional in VLCKit 4
+            decoded      = Int(stats.decodedVideo)
+            displayed    = Int(stats.displayedPictures)
+            lost         = Int(stats.lostPictures)
+            demuxBitrate = stats.demuxBitrate
+            inputBitrate = stats.inputBitrate
+        }
+
+        // VLCKit 4: codec name via instance method on VLCMediaTrack (returns non-optional String)
+        if let videoTrack = vlc.videoTracks.first {
+            let name = videoTrack.codecName()
+            codec = name.isEmpty ? "—" : name
+        } else if let audioTrack = vlc.audioTracks.first {
+            let name = audioTrack.codecName()
+            codec = name.isEmpty ? "—" : name
         }
     }
 
@@ -34,78 +64,5 @@ struct StreamStatsView: View {
             Spacer()
             Text(value)
         }
-    }
-}
-
-struct StreamStats {
-    let bitrateKbps: Int?
-    let droppedFrames: Int
-    let bufferSeconds: Double?
-    let presentationSize: CGSize?
-
-    var resolutionLabel: String {
-        guard let size = presentationSize, size.width > 0 else { return "—" }
-        return "\(Int(size.width))×\(Int(size.height))"
-    }
-
-    var bufferingPercent: Int? {
-        guard let sec = bufferSeconds else { return nil }
-        return min(100, Int(sec / 10.0 * 100))
-    }
-
-    init() {
-        bitrateKbps = nil
-        droppedFrames = 0
-        bufferSeconds = nil
-        presentationSize = nil
-    }
-
-    init(player: AVPlayer) {
-        // Indicated bitrate from HLS access log
-        if let log = player.currentItem?.accessLog(),
-           let event = log.events.last {
-            bitrateKbps = event.indicatedBitrate > 0
-                ? Int(event.indicatedBitrate / 1000) : nil
-        } else {
-            bitrateKbps = nil
-        }
-
-        // Dropped video frames
-        droppedFrames = Int(player.currentItem?
-            .accessLog()?.events.last?.numberOfDroppedVideoFrames ?? 0)
-
-        // Loaded time ranges → buffer ahead
-        if let item = player.currentItem,
-           let range = item.loadedTimeRanges.first?.timeRangeValue {
-            let current = item.currentTime().seconds
-            let end = (range.start + range.duration).seconds
-            bufferSeconds = max(0, end - current)
-        } else {
-            bufferSeconds = nil
-        }
-
-        // Presentation size (video resolution)
-        presentationSize = player.currentItem?.presentationSize
-    }
-
-    /// Async codec resolution via load(.formatDescriptions) (replaces deprecated .formatDescriptions).
-    /// @MainActor required: AVPlayerItemTrack.assetTrack is main-actor-isolated in Swift 6.
-    @MainActor
-    static func resolveCodec(from player: AVPlayer) async -> String {
-        guard let item = player.currentItem else { return "—" }
-        let videoTrack = item.tracks.first { $0.assetTrack?.mediaType == .video }
-        guard let assetTrack = videoTrack?.assetTrack else { return "—" }
-        guard let descriptions = try? await assetTrack.load(.formatDescriptions),
-              let desc = descriptions.first else { return "—" }
-        let subType = CMFormatDescriptionGetMediaSubType(desc)
-        let bytes: [UInt8] = [
-            UInt8((subType >> 24) & 0xFF),
-            UInt8((subType >> 16) & 0xFF),
-            UInt8((subType >> 8)  & 0xFF),
-            UInt8( subType        & 0xFF)
-        ]
-        let tag = String(bytes: bytes, encoding: .ascii)?
-            .trimmingCharacters(in: .whitespaces) ?? "—"
-        return tag.isEmpty ? "—" : tag
     }
 }

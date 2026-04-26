@@ -17,10 +17,14 @@ let package = Package(
         .library(name: "AetherCore", targets: ["AetherCore"]),
         .library(name: "AetherUI", targets: ["AetherUI"]),
     ],
+    dependencies: [],
     targets: [
         // Shared library — models, services, storage (all platforms)
         .target(
             name: "AetherCore",
+            dependencies: [
+                "VLCKit"
+            ],
             path: "Sources/AetherCore",
             swiftSettings: swiftV5,
             linkerSettings: [
@@ -72,6 +76,13 @@ let package = Package(
             dependencies: ["AetherCore"],
             path: "Sources/AetherTests",
             swiftSettings: swiftV5
-        )
+        ),
+        // VLCKit local XCFramework — extracted to .vlckit/ to avoid 753MB network download.
+        // The zip is kept at .vlckit/VLCKit.xcframework.zip for reference.
+        // Add .vlckit/ to .gitignore — it's too large for git.
+        .binaryTarget(
+            name: "VLCKit",
+            path: ".vlckit/VLCKit.xcframework"
+        ),
     ]
 )

@@ -1,61 +1,57 @@
 import SwiftUI
-import AVFoundation
 import AetherCore
 
 public struct SeekBarView: View {
     @Bindable public var player: PlayerCore
-    public var customDuration: Double?
     @State private var isSeeking = false
-    @State private var seekPosition: Double = 0
-    @State private var duration: Double = 0
+    @State private var seekPosition: Double = 0   // 0.0 – 1.0 (fraction)
+    @State private var displayDuration: Double = 0
 
     private let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
-    public init(player: PlayerCore, customDuration: Double? = nil) {
+    public init(player: PlayerCore) {
         self.player = player
-        self.customDuration = customDuration
     }
 
     public var body: some View {
         VStack(spacing: 4) {
             Slider(
                 value: isSeeking ? $seekPosition : Binding(
-                    get: { duration > 0 ? player.currentTime / duration : 0 },
+                    get: { displayDuration > 0 ? player.currentTime / displayDuration : 0 },
                     set: { _ in }
                 ),
                 in: 0...1,
                 onEditingChanged: { editing in
                     isSeeking = editing
                     if !editing {
-                        // Guard: only seek if user actually dragged to a real position.
-                        // Without this, macOS SwiftUI fires onEditingChanged(false) on re-render
-                        // with seekPosition=0 / duration=0, endlessly seeking to t=0.
-                        guard duration > 0, seekPosition > 0.005 else { return }
-                        let targetTime = seekPosition * duration
-                        let cmTime = CMTime(seconds: targetTime, preferredTimescale: 600)
-                        player.userSeek(to: cmTime)
+                        guard displayDuration > 0, seekPosition > 0.005 else { return }
+                        player.userSeek(to: seekPosition * displayDuration)
                     }
                 }
             )
             .accessibilityLabel("Seek position")
-            .accessibilityValue(Text(formatTime(isSeeking ? seekPosition * duration : player.currentTime)))
+            .accessibilityValue(Text(formatTime(isSeeking ? seekPosition * displayDuration : player.currentTime)))
             .onReceive(timer) { _ in
                 if !isSeeking {
-                    let raw = player.player.currentItem?.duration.seconds ?? 0
-                    if raw.isNaN || raw.isInfinite || raw == .zero {
-                        duration = customDuration ?? 0
-                    } else {
-                        duration = raw
-                    }
+                    // VLC gives us duration directly — no ffprobe needed
+                    let d = player.duration
+                    if d > 0 { displayDuration = d }
+                }
+            }
+            .onChange(of: player.state) { _, newState in
+                // When a new channel starts, reset the bar
+                if case .loading = newState {
+                    seekPosition = 0
+                    displayDuration = 0
                 }
             }
 
             HStack {
-                Text(formatTime(isSeeking ? seekPosition * duration : player.currentTime))
+                Text(formatTime(isSeeking ? seekPosition * displayDuration : player.currentTime))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text(formatTime(duration))
+                Text(formatTime(displayDuration))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
