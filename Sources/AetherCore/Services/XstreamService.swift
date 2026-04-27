@@ -341,9 +341,7 @@ public struct XstreamSeries: Decodable, Sendable, Identifiable, Hashable {
         case categoryID = "category_id"
         case categoryName = "category_name"
     }
-}
 
-extension XstreamSeries {
     public init(
         id: Int,
         name: String,
@@ -381,7 +379,9 @@ extension XstreamSeries {
         self.normalizedCategory = resolvedCategory
         self.categoryName = resolvedCategory.displayName
     }
+}
 
+extension XstreamSeries {
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let id = try c.decode(FlexInt.self, forKey: .id).value
