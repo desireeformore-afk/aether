@@ -36,13 +36,10 @@ struct VODBrowserView: View {
     private var availableGenres: [String] {
         var seen = Set<String>()
         var result: [String] = []
-        let garbage = ["netflix", "apple", "amazon", "disney", "hbo", "prime", "peacock", "paramount", "4k", "premium", "iptv"]
         for vod in homeViewModel.allVODs {
-            guard let name = vod.categoryName, !name.isEmpty, name.count <= 40 else { continue }
-            let lower = name.lowercased()
-            guard !garbage.contains(where: { lower.contains($0) }) else { continue }
-            let asciiCount = name.unicodeScalars.filter { $0.value < 0x0250 }.count
-            guard asciiCount > name.count / 2 else { continue }
+            let category = normalizedCategory(for: vod)
+            guard category.isPrimaryVisible, category.displayName.count <= 40 else { continue }
+            let name = category.displayName
             if seen.insert(name).inserted { result.append(name) }
         }
         return result.sorted()
@@ -52,7 +49,7 @@ struct VODBrowserView: View {
         guard let genre = selectedGenre else { return [] }
         
         var dict: [String: ShelfItem] = [:]
-        for vod in homeViewModel.allVODs where vod.categoryName == genre {
+        for vod in homeViewModel.allVODs where normalizedCategory(for: vod).displayName == genre {
             let (cleanTitle, tags) = VODNormalizer.extractTagsAndClean(vod.name)
             let lowerTitle = cleanTitle.lowercased()
             
@@ -89,6 +86,15 @@ struct VODBrowserView: View {
             }
         }
         return items
+    }
+
+    private func normalizedCategory(for vod: XstreamVOD) -> NormalizedContentCategory {
+        vod.normalizedCategory ?? CategoryNormalizer.normalize(
+            rawID: vod.categoryID,
+            rawName: vod.rawCategoryName ?? vod.categoryName,
+            provider: .xtream,
+            contentType: .movie
+        )
     }
 
     var body: some View {

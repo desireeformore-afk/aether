@@ -11,15 +11,14 @@ public struct MetaSyncEngine {
         var grouped: [String: [String]] = [:]
         
         for category in rawCategories {
-            var normalizedName = cleanCategoryName(category.name)
-            
-            // Fallback if regex stripped the entire name (e.g., category was strictly "PL 4K")
-            if normalizedName.isEmpty {
-                normalizedName = category.name.trimmingCharacters(in: .whitespaces)
-            }
-            
-            // Skip pure garbage
-            if isGarbage(normalizedName) { continue }
+            let normalized = CategoryNormalizer.normalize(
+                rawID: category.id,
+                rawName: category.name,
+                provider: .xtream,
+                contentType: .movie
+            )
+            guard normalized.isPrimaryVisible else { continue }
+            let normalizedName = normalized.displayName
             
             if grouped[normalizedName] == nil {
                 grouped[normalizedName] = []
@@ -54,35 +53,5 @@ public struct MetaSyncEngine {
         return Array(mergedVODs.values)
     }
     
-    // MARK: - internal cleaning algorithms
-    
-    private static func cleanCategoryName(_ rawName: String) -> String {
-        var name = rawName
-        
-        // Remove known exact prefixes like "PL |", "DE - ", "UK:", "VOD"
-        let pattern = "^(PL|DE|UK|US|ES|FR|IT|TR|NL|RU|RO|VOD|VIP|4K|FHD|HD)[\\s\\|\\-\\:]+"
-        if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
-            let range = NSRange(location: 0, length: name.utf16.count)
-            name = regex.stringByReplacingMatches(in: name, options: [], range: range, withTemplate: "")
-        }
-        
-        // Catch suffixes "[PL]" or "(DE)" or " PL"
-        let suffixPattern = "[\\s\\-\\|]*[\\(\\[]?(PL|DE|UK|US|ES|FR|IT|TR|NL|RU|RO|VOD|VIP)[\\)\\]]?$"
-        if let regex = try? NSRegularExpression(pattern: suffixPattern, options: .caseInsensitive) {
-            let range = NSRange(location: 0, length: name.utf16.count)
-            name = regex.stringByReplacingMatches(in: name, options: [], range: range, withTemplate: "")
-        }
-        
-        return name.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-    
-    private static func isGarbage(_ name: String) -> Bool {
-        let n = name.lowercased()
-        let junk = ["xxx", "adult", "test", "for adults", "24/7", "vip", "zapasowe", "backup", "inne"]
-        
-        // Check Arabic/RTL script
-        if name.unicodeScalars.contains(where: { $0.value > 0x0600 && $0.value < 0x06FF }) { return true }
-        
-        return junk.contains { n.contains($0) }
-    }
+    // Category cleanup lives in AetherCore.CategoryNormalizer.
 }

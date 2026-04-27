@@ -70,6 +70,12 @@ public struct XstreamStream: Decodable, Sendable, Identifiable {
     public let streamIcon: String?
     public let epgChannelID: String?
     public let categoryID: String?
+    /// Backward-compatible display category. Prefer this for UI labels.
+    public let categoryName: String?
+    /// Raw category name as returned by the provider/category endpoint.
+    public let rawCategoryName: String?
+    /// Structured category metadata for catalog builders and search.
+    public let normalizedCategory: NormalizedContentCategory?
     public let containerExtension: String?
 
     enum CodingKeys: String, CodingKey {
@@ -78,13 +84,88 @@ public struct XstreamStream: Decodable, Sendable, Identifiable {
         case streamIcon = "stream_icon"
         case epgChannelID = "epg_channel_id"
         case categoryID = "category_id"
+        case categoryName = "category_name"
         case containerExtension = "container_extension"
     }
 
+    public init(
+        id: Int,
+        name: String,
+        streamIcon: String?,
+        epgChannelID: String?,
+        categoryID: String?,
+        categoryName: String?,
+        rawCategoryName: String? = nil,
+        normalizedCategory: NormalizedContentCategory? = nil,
+        containerExtension: String?
+    ) {
+        self.id = id
+        self.name = name
+        self.streamIcon = streamIcon
+        self.epgChannelID = epgChannelID
+        self.categoryID = categoryID
+        self.containerExtension = containerExtension
+
+        let rawName = rawCategoryName ?? categoryName
+        let resolvedCategory = normalizedCategory ?? CategoryNormalizer.normalize(
+            rawID: categoryID,
+            rawName: rawName,
+            provider: .xtream,
+            contentType: .liveTV
+        )
+        self.rawCategoryName = rawName
+        self.normalizedCategory = resolvedCategory
+        self.categoryName = resolvedCategory.displayName
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let id = try c.decode(FlexInt.self, forKey: .id).value
+        let name = try c.decode(String.self, forKey: .name)
+        let streamIcon = try c.decodeIfPresent(String.self, forKey: .streamIcon)
+        let epgChannelID = try c.decodeIfPresent(String.self, forKey: .epgChannelID)
+        let categoryID = try c.decodeIfPresent(String.self, forKey: .categoryID)
+        let categoryName = try c.decodeIfPresent(String.self, forKey: .categoryName)
+        let containerExtension = try c.decodeIfPresent(String.self, forKey: .containerExtension)
+        self.init(
+            id: id,
+            name: name,
+            streamIcon: streamIcon,
+            epgChannelID: epgChannelID,
+            categoryID: categoryID,
+            categoryName: categoryName,
+            rawCategoryName: categoryName,
+            containerExtension: containerExtension
+        )
+    }
+
+    public func resolvingCategory(_ category: NormalizedContentCategory?) -> XstreamStream {
+        guard let category else { return self }
+        return XstreamStream(
+            id: id,
+            name: name,
+            streamIcon: streamIcon,
+            epgChannelID: epgChannelID,
+            categoryID: categoryID,
+            categoryName: category.displayName,
+            rawCategoryName: category.raw.rawName ?? rawCategoryName ?? categoryName,
+            normalizedCategory: category,
+            containerExtension: containerExtension
+        )
+    }
+
     /// Converts to a `Channel` given the credentials (to build the stream URL).
-    public func toChannel(credentials: XstreamCredentials) -> Channel {
+    public func toChannel(credentials: XstreamCredentials, categoryName: String? = nil) -> Channel {
         let ext = containerExtension ?? "ts"
         let streamURL = credentials.streamURL(type: "live", id: id, ext: ext)
+        let rawCategoryName = categoryName ?? self.categoryName ?? categoryID ?? ""
+        let category = CategoryNormalizer.normalize(
+            rawID: categoryID,
+            rawName: rawCategoryName,
+            provider: .xtream,
+            contentType: .liveTV
+        )
+        let groupTitle = rawCategoryName.isEmpty ? "" : category.displayName
 
         // Deterministic UUID from streamID so Favorites/navigation survive re-fetch.
         let deterministicID = UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", id))") ?? UUID()
@@ -94,7 +175,7 @@ public struct XstreamStream: Decodable, Sendable, Identifiable {
             name: name,
             streamURL: streamURL,
             logoURL: streamIcon.flatMap(URL.init(string:)),
-            groupTitle: categoryID ?? "",
+            groupTitle: groupTitle,
             epgId: epgChannelID
         )
     }
@@ -106,7 +187,12 @@ public struct XstreamVOD: Decodable, Sendable, Identifiable, Hashable {
     public let name: String
     public let streamIcon: String?
     public let categoryID: String?
+    /// Backward-compatible display category. Prefer this for UI labels.
     public let categoryName: String?
+    /// Raw category name as returned by the provider/category endpoint.
+    public let rawCategoryName: String?
+    /// Structured category metadata for catalog builders and search.
+    public let normalizedCategory: NormalizedContentCategory?
     public let containerExtension: String?
     public let rating: String?
 
@@ -118,6 +204,72 @@ public struct XstreamVOD: Decodable, Sendable, Identifiable, Hashable {
         case categoryName = "category_name"
         case containerExtension = "container_extension"
         case rating
+    }
+
+    public init(
+        id: Int,
+        name: String,
+        streamIcon: String?,
+        categoryID: String?,
+        categoryName: String?,
+        rawCategoryName: String? = nil,
+        normalizedCategory: NormalizedContentCategory? = nil,
+        containerExtension: String?,
+        rating: String?
+    ) {
+        self.id = id
+        self.name = name
+        self.streamIcon = streamIcon
+        self.categoryID = categoryID
+        self.containerExtension = containerExtension
+        self.rating = rating
+
+        let rawName = rawCategoryName ?? categoryName
+        let resolvedCategory = normalizedCategory ?? CategoryNormalizer.normalize(
+            rawID: categoryID,
+            rawName: rawName,
+            provider: .xtream,
+            contentType: .movie
+        )
+        self.rawCategoryName = rawName
+        self.normalizedCategory = resolvedCategory
+        self.categoryName = resolvedCategory.displayName
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let id = try c.decode(FlexInt.self, forKey: .id).value
+        let name = try c.decode(String.self, forKey: .name)
+        let streamIcon = try c.decodeIfPresent(String.self, forKey: .streamIcon)
+        let categoryID = try c.decodeIfPresent(String.self, forKey: .categoryID)
+        let categoryName = try c.decodeIfPresent(String.self, forKey: .categoryName)
+        let containerExtension = try c.decodeIfPresent(String.self, forKey: .containerExtension)
+        let rating = try c.decodeIfPresent(String.self, forKey: .rating)
+        self.init(
+            id: id,
+            name: name,
+            streamIcon: streamIcon,
+            categoryID: categoryID,
+            categoryName: categoryName,
+            rawCategoryName: categoryName,
+            containerExtension: containerExtension,
+            rating: rating
+        )
+    }
+
+    public func resolvingCategory(_ category: NormalizedContentCategory?) -> XstreamVOD {
+        guard let category else { return self }
+        return XstreamVOD(
+            id: id,
+            name: name,
+            streamIcon: streamIcon,
+            categoryID: categoryID,
+            categoryName: category.displayName,
+            rawCategoryName: category.raw.rawName ?? rawCategoryName ?? categoryName,
+            normalizedCategory: category,
+            containerExtension: containerExtension,
+            rating: rating
+        )
     }
 
     /// Converts to a `Channel` (VOD playback URL).
@@ -134,7 +286,7 @@ public struct XstreamVOD: Decodable, Sendable, Identifiable, Hashable {
             name: name,
             streamURL: streamURL,
             logoURL: streamIcon.flatMap(URL.init(string:)),
-            groupTitle: categoryID ?? "",
+            groupTitle: categoryName ?? categoryID ?? "",
             epgId: nil,
             contentType: .movie
         )
@@ -175,7 +327,12 @@ public struct XstreamSeries: Decodable, Sendable, Identifiable, Hashable {
     public let releaseDate: String?
     public let rating: String?
     public let categoryID: String?
+    /// Backward-compatible display category. Prefer this for UI labels.
     public let categoryName: String?
+    /// Raw category name as returned by the provider/category endpoint.
+    public let rawCategoryName: String?
+    /// Structured category metadata for catalog builders and search.
+    public let normalizedCategory: NormalizedContentCategory?
 
     enum CodingKeys: String, CodingKey {
         case id = "series_id"
@@ -187,19 +344,90 @@ public struct XstreamSeries: Decodable, Sendable, Identifiable, Hashable {
 }
 
 extension XstreamSeries {
+    public init(
+        id: Int,
+        name: String,
+        cover: String?,
+        plot: String?,
+        cast: String?,
+        director: String?,
+        genre: String?,
+        releaseDate: String?,
+        rating: String?,
+        categoryID: String?,
+        categoryName: String?,
+        rawCategoryName: String? = nil,
+        normalizedCategory: NormalizedContentCategory? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.cover = cover
+        self.plot = plot
+        self.cast = cast
+        self.director = director
+        self.genre = genre
+        self.releaseDate = releaseDate
+        self.rating = rating
+        self.categoryID = categoryID
+
+        let rawName = rawCategoryName ?? categoryName
+        let resolvedCategory = normalizedCategory ?? CategoryNormalizer.normalize(
+            rawID: categoryID,
+            rawName: rawName,
+            provider: .xtream,
+            contentType: .series
+        )
+        self.rawCategoryName = rawName
+        self.normalizedCategory = resolvedCategory
+        self.categoryName = resolvedCategory.displayName
+    }
+
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = try c.decode(FlexInt.self, forKey: .id).value
-        name = try c.decode(String.self, forKey: .name)
-        cover = try c.decodeIfPresent(String.self, forKey: .cover)
-        plot = try c.decodeIfPresent(String.self, forKey: .plot)
-        cast = try c.decodeIfPresent(String.self, forKey: .cast)
-        director = try c.decodeIfPresent(String.self, forKey: .director)
-        genre = try c.decodeIfPresent(String.self, forKey: .genre)
-        releaseDate = try c.decodeIfPresent(String.self, forKey: .releaseDate)
-        rating = try c.decodeIfPresent(String.self, forKey: .rating)
-        categoryID = try c.decodeIfPresent(String.self, forKey: .categoryID)
-        categoryName = try c.decodeIfPresent(String.self, forKey: .categoryName)
+        let id = try c.decode(FlexInt.self, forKey: .id).value
+        let name = try c.decode(String.self, forKey: .name)
+        let cover = try c.decodeIfPresent(String.self, forKey: .cover)
+        let plot = try c.decodeIfPresent(String.self, forKey: .plot)
+        let cast = try c.decodeIfPresent(String.self, forKey: .cast)
+        let director = try c.decodeIfPresent(String.self, forKey: .director)
+        let genre = try c.decodeIfPresent(String.self, forKey: .genre)
+        let releaseDate = try c.decodeIfPresent(String.self, forKey: .releaseDate)
+        let rating = try c.decodeIfPresent(String.self, forKey: .rating)
+        let categoryID = try c.decodeIfPresent(String.self, forKey: .categoryID)
+        let categoryName = try c.decodeIfPresent(String.self, forKey: .categoryName)
+        self.init(
+            id: id,
+            name: name,
+            cover: cover,
+            plot: plot,
+            cast: cast,
+            director: director,
+            genre: genre,
+            releaseDate: releaseDate,
+            rating: rating,
+            categoryID: categoryID,
+            categoryName: categoryName,
+            rawCategoryName: categoryName
+        )
+    }
+
+    public func resolvingCategory(_ category: NormalizedContentCategory?) -> XstreamSeries {
+        guard let category else { return self }
+        return XstreamSeries(
+            id: id,
+            name: name,
+            cover: cover,
+            plot: plot,
+            cast: cast,
+            director: director,
+            genre: genre,
+            releaseDate: releaseDate,
+            rating: rating,
+            categoryID: categoryID,
+            categoryName: category.displayName,
+            rawCategoryName: category.raw.rawName ?? rawCategoryName ?? categoryName,
+            normalizedCategory: category
+        )
     }
 }
 
@@ -268,6 +496,11 @@ public struct XstreamSeriesInfo: Decodable, Sendable {
     /// Key = season number string ("1", "2", …)
     public let episodes: [String: [XstreamEpisode]]
 
+    public init(series: XstreamSeries, episodes: [String: [XstreamEpisode]]) {
+        self.series = series
+        self.episodes = episodes
+    }
+
     private struct SeriesInfoBody: Decodable {
         let name: String
         let cover: String?
@@ -329,6 +562,10 @@ public actor XstreamService {
     public var cachedVods: [XstreamVOD] = []
     public var cachedSeries: [XstreamSeries] = []
 
+    private var cachedLiveCategoryMap: [String: NormalizedContentCategory]?
+    private var cachedVODCategoryMap: [String: NormalizedContentCategory]?
+    private var cachedSeriesCategoryMap: [String: NormalizedContentCategory]?
+
     public init(credentials: XstreamCredentials, session: URLSession = .shared) {
         self.credentials = credentials
         self.session = session
@@ -350,9 +587,14 @@ public actor XstreamService {
 
     /// Fetches all live stream categories.
     public func liveCategories() async throws -> [XstreamCategory] {
-        try await getArray(queryItems: [
+        let categories: [XstreamCategory] = try await getArray(queryItems: [
             URLQueryItem(name: "action", value: "get_live_categories")
         ])
+        cachedLiveCategoryMap = Self.normalizedCategoryMap(
+            categories,
+            contentType: .liveTV
+        )
+        return categories
     }
 
     /// Fetches live streams, optionally filtered by `categoryID`.
@@ -361,7 +603,11 @@ public actor XstreamService {
         if let cid = categoryID {
             items.append(URLQueryItem(name: "category_id", value: cid))
         }
-        return try await getArray(queryItems: items)
+        let rawResult: [XstreamStream] = try await getArray(queryItems: items)
+        let categoryMap = (try? await liveCategoryMap()) ?? [:]
+        return rawResult.map { stream in
+            stream.resolvingCategory(stream.categoryID.flatMap { categoryMap[$0] })
+        }
     }
 
     /// Returns all live streams as `[Channel]`.
@@ -374,9 +620,14 @@ public actor XstreamService {
 
     /// Fetches all VOD categories.
     public func vodCategories() async throws -> [XstreamCategory] {
-        try await getArray(queryItems: [
+        let categories: [XstreamCategory] = try await getArray(queryItems: [
             URLQueryItem(name: "action", value: "get_vod_categories")
         ])
+        cachedVODCategoryMap = Self.normalizedCategoryMap(
+            categories,
+            contentType: .movie
+        )
+        return categories
     }
 
     /// Fetches VOD streams, optionally filtered by `categoryID`.
@@ -385,7 +636,11 @@ public actor XstreamService {
         if let cid = categoryID {
             items.append(URLQueryItem(name: "category_id", value: cid))
         }
-        let result: [XstreamVOD] = try await getArray(queryItems: items)
+        let rawResult: [XstreamVOD] = try await getArray(queryItems: items)
+        let categoryMap = (try? await vodCategoryMap()) ?? [:]
+        let result = rawResult.map { vod in
+            vod.resolvingCategory(vod.categoryID.flatMap { categoryMap[$0] })
+        }
         if categoryID == nil { cachedVods = result }
         return result
     }
@@ -394,13 +649,13 @@ public actor XstreamService {
     /// Much faster than loading all streams; fetches only ~1–2 MB vs 60 MB.
     public func vodStreamsFast() async throws -> [XstreamVOD] {
         let cats = try await vodCategories()
-        let cleanCats = cats.filter { cat in
-            let n = cat.name.lowercased()
-            return !n.contains("netflix") && !n.contains("apple") &&
-                   !n.contains("amazon") && !n.contains("disney") &&
-                   !n.contains("hbo") && !n.contains("premium") &&
-                   !cat.name.isEmpty &&
-                   cat.name.unicodeScalars.allSatisfy({ $0.value < 0x0600 })
+        let cleanCats = cats.filter {
+            CategoryNormalizer.isPrimaryCategoryVisible(
+                $0.name,
+                rawID: $0.id,
+                provider: .xtream,
+                contentType: .movie
+            )
         }
         let topCats = Array(cleanCats.prefix(3))
         guard !topCats.isEmpty else {
@@ -433,9 +688,11 @@ public actor XstreamService {
 
     /// Fetches all series categories.
     public func seriesCategories() async throws -> [XstreamSeriesCategory] {
-        try await getArray(queryItems: [
+        let categories: [XstreamSeriesCategory] = try await getArray(queryItems: [
             URLQueryItem(name: "action", value: "get_series_categories")
         ])
+        cachedSeriesCategoryMap = Self.normalizedSeriesCategoryMap(categories)
+        return categories
     }
 
     /// Fetches series list, optionally filtered by category.
@@ -444,17 +701,29 @@ public actor XstreamService {
         if let cid = categoryID {
             items.append(URLQueryItem(name: "category_id", value: cid))
         }
-        let result: [XstreamSeries] = try await getArray(queryItems: items)
+        let rawResult: [XstreamSeries] = try await getArray(queryItems: items)
+        let categoryMap = (try? await seriesCategoryMap()) ?? [:]
+        let result = rawResult.map { series in
+            series.resolvingCategory(series.categoryID.flatMap { categoryMap[$0] })
+        }
         if categoryID == nil { cachedSeries = result }
         return result
     }
 
     /// Fetches full info + episode list for a series.
     public func seriesInfo(seriesID: Int) async throws -> XstreamSeriesInfo {
-        try await get(queryItems: [
+        let info: XstreamSeriesInfo = try await get(queryItems: [
             URLQueryItem(name: "action", value: "get_series_info"),
             URLQueryItem(name: "series_id", value: "\(seriesID)")
         ])
+        let categoryMap = (try? await seriesCategoryMap()) ?? [:]
+        guard let category = info.series.categoryID.flatMap({ categoryMap[$0] }) else {
+            return info
+        }
+        return XstreamSeriesInfo(
+            series: info.series.resolvingCategory(category),
+            episodes: info.episodes
+        )
     }
 
     // MARK: - EPG
@@ -483,6 +752,55 @@ public actor XstreamService {
     }
 
     // MARK: - Private
+
+    private func liveCategoryMap() async throws -> [String: NormalizedContentCategory] {
+        if let cachedLiveCategoryMap { return cachedLiveCategoryMap }
+        _ = try await liveCategories()
+        return cachedLiveCategoryMap ?? [:]
+    }
+
+    private func vodCategoryMap() async throws -> [String: NormalizedContentCategory] {
+        if let cachedVODCategoryMap { return cachedVODCategoryMap }
+        _ = try await vodCategories()
+        return cachedVODCategoryMap ?? [:]
+    }
+
+    private func seriesCategoryMap() async throws -> [String: NormalizedContentCategory] {
+        if let cachedSeriesCategoryMap { return cachedSeriesCategoryMap }
+        _ = try await seriesCategories()
+        return cachedSeriesCategoryMap ?? [:]
+    }
+
+    private static func normalizedCategoryMap(
+        _ categories: [XstreamCategory],
+        contentType: ContentType
+    ) -> [String: NormalizedContentCategory] {
+        var result: [String: NormalizedContentCategory] = [:]
+        for category in categories {
+            result[category.id] = CategoryNormalizer.normalize(
+                rawID: category.id,
+                rawName: category.name,
+                provider: .xtream,
+                contentType: contentType
+            )
+        }
+        return result
+    }
+
+    private static func normalizedSeriesCategoryMap(
+        _ categories: [XstreamSeriesCategory]
+    ) -> [String: NormalizedContentCategory] {
+        var result: [String: NormalizedContentCategory] = [:]
+        for category in categories {
+            result[category.id] = CategoryNormalizer.normalize(
+                rawID: category.id,
+                rawName: category.name,
+                provider: .xtream,
+                contentType: .series
+            )
+        }
+        return result
+    }
 
     private func get<T: Decodable>(queryItems: [URLQueryItem]) async throws -> T {
         let data = try await fetch(queryItems: queryItems)

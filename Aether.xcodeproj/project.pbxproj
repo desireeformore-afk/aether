@@ -43,6 +43,7 @@
 		AA0002000000000000000013 /* Playlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000013 /* Playlist.swift */; };
 		AA0002000000000000000014 /* SubtitleTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000014 /* SubtitleTrack.swift */; };
 		AA0002000000000000000015 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000015 /* Theme.swift */; };
+		AA0002000000000000000016 /* ContentTaxonomy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000016 /* ContentTaxonomy.swift */; };
 		/* Parsers */
 		AA0002000000000000000020 /* M3UParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000020 /* M3UParser.swift */; };
 		AA0002000000000000000021 /* SRTParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000021 /* SRTParser.swift */; };
@@ -60,6 +61,7 @@
 		AA0002000000000000000047 /* SubtitleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000047 /* SubtitleService.swift */; };
 		AA0002000000000000000048 /* ThemeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000048 /* ThemeService.swift */; };
 		AA0002000000000000000049 /* XstreamService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000049 /* XstreamService.swift */; };
+		AA000200000000000000004A /* CategoryNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000200000000000000004A /* CategoryNormalizer.swift */; };
 		/* Storage */
 		AA0002000000000000000050 /* ChannelRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000050 /* ChannelRecord.swift */; };
 		AA0002000000000000000051 /* FavoriteRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000051 /* FavoriteRecord.swift */; };
@@ -115,6 +117,7 @@
 		FA0002000000000000000013 /* Playlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Playlist.swift; path = Sources/AetherCore/Models/Playlist.swift; sourceTree = "<group>"; };
 		FA0002000000000000000014 /* SubtitleTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubtitleTrack.swift; path = Sources/AetherCore/Models/SubtitleTrack.swift; sourceTree = "<group>"; };
 		FA0002000000000000000015 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = Sources/AetherCore/Models/Theme.swift; sourceTree = "<group>"; };
+		FA0002000000000000000016 /* ContentTaxonomy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentTaxonomy.swift; path = Sources/AetherCore/Models/ContentTaxonomy.swift; sourceTree = "<group>"; };
 		FA0002000000000000000020 /* M3UParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = M3UParser.swift; path = Sources/AetherCore/Parsers/M3UParser.swift; sourceTree = "<group>"; };
 		FA0002000000000000000021 /* SRTParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SRTParser.swift; path = Sources/AetherCore/Parsers/SRTParser.swift; sourceTree = "<group>"; };
 		FA0002000000000000000022 /* XMLTVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = XMLTVParser.swift; path = Sources/AetherCore/Parsers/XMLTVParser.swift; sourceTree = "<group>"; };
@@ -129,6 +132,7 @@
 		FA0002000000000000000047 /* SubtitleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubtitleService.swift; path = Sources/AetherCore/Services/SubtitleService.swift; sourceTree = "<group>"; };
 		FA0002000000000000000048 /* ThemeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ThemeService.swift; path = Sources/AetherCore/Services/ThemeService.swift; sourceTree = "<group>"; };
 		FA0002000000000000000049 /* XstreamService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = XstreamService.swift; path = Sources/AetherCore/Services/XstreamService.swift; sourceTree = "<group>"; };
+		FA000200000000000000004A /* CategoryNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CategoryNormalizer.swift; path = Sources/AetherCore/Services/CategoryNormalizer.swift; sourceTree = "<group>"; };
 		FA0002000000000000000050 /* ChannelRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelRecord.swift; path = Sources/AetherCore/Storage/ChannelRecord.swift; sourceTree = "<group>"; };
 		FA0002000000000000000051 /* FavoriteRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FavoriteRecord.swift; path = Sources/AetherCore/Storage/FavoriteRecord.swift; sourceTree = "<group>"; };
 		FA0002000000000000000052 /* LastChannelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LastChannelStore.swift; path = Sources/AetherCore/Storage/LastChannelStore.swift; sourceTree = "<group>"; };
@@ -266,6 +270,7 @@
 				FA0002000000000000000013 /* Playlist.swift */,
 				FA0002000000000000000014 /* SubtitleTrack.swift */,
 				FA0002000000000000000015 /* Theme.swift */,
+				FA0002000000000000000016 /* ContentTaxonomy.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -304,6 +309,7 @@
 				FA0002000000000000000047 /* SubtitleService.swift */,
 				FA0002000000000000000048 /* ThemeService.swift */,
 				FA0002000000000000000049 /* XstreamService.swift */,
+				FA000200000000000000004A /* CategoryNormalizer.swift */,
 			);
 			name = Services;
 			sourceTree = "<group>";
@@ -446,6 +452,7 @@
 				AA0002000000000000000013 /* Playlist.swift in Sources */,
 				AA0002000000000000000014 /* SubtitleTrack.swift in Sources */,
 				AA0002000000000000000015 /* Theme.swift in Sources */,
+				AA0002000000000000000016 /* ContentTaxonomy.swift in Sources */,
 				AA0002000000000000000020 /* M3UParser.swift in Sources */,
 				AA0002000000000000000021 /* SRTParser.swift in Sources */,
 				AA0002000000000000000022 /* XMLTVParser.swift in Sources */,
@@ -460,6 +467,7 @@
 				AA0002000000000000000047 /* SubtitleService.swift in Sources */,
 				AA0002000000000000000048 /* ThemeService.swift in Sources */,
 				AA0002000000000000000049 /* XstreamService.swift in Sources */,
+				AA000200000000000000004A /* CategoryNormalizer.swift in Sources */,
 				AA0002000000000000000050 /* ChannelRecord.swift in Sources */,
 				AA0002000000000000000051 /* FavoriteRecord.swift in Sources */,
 				AA0002000000000000000052 /* LastChannelStore.swift in Sources */,

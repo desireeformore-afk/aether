@@ -72,6 +72,24 @@ final class M3UParserTests: XCTestCase {
         XCTAssertEqual(channels[1].groupTitle, "News")
     }
 
+    func testGroupTitleRawValueIsPreservedAndNormalizable() throws {
+        let m3u = """
+            #EXTM3U
+            #EXTINF:-1 group-title="VIP | PL - 4K Action",Action Movie
+            http://stream.example.com/movie.mp4
+            """
+        let channels = try M3UParser.parse(content: m3u)
+        let category = CategoryNormalizer.normalize(
+            rawName: channels[0].groupTitle,
+            provider: .m3u,
+            contentType: channels[0].contentType
+        )
+
+        XCTAssertEqual(channels[0].groupTitle, "VIP | PL - 4K Action")
+        XCTAssertEqual(category.displayName, "Action")
+        XCTAssertTrue(category.isPrimaryVisible)
+    }
+
     func testLogoURL() throws {
         let channels = try M3UParser.parse(content: basicM3U)
         XCTAssertEqual(channels[0].logoURL?.absoluteString, "https://example.com/bbc1.png")

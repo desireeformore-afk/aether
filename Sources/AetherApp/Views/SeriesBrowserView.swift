@@ -18,7 +18,9 @@ struct SeriesBrowserView: View {
         var seen = Set<String>()
         var result: [String] = []
         for series in homeViewModel.allSeries {
-            if let name = series.categoryName, !name.isEmpty, seen.insert(name).inserted {
+            let category = normalizedCategory(for: series)
+            if category.isPrimaryVisible, seen.insert(category.displayName).inserted {
+                let name = category.displayName
                 result.append(name)
             }
         }
@@ -29,7 +31,7 @@ struct SeriesBrowserView: View {
     private var filteredSeriesItems: [ShelfItem] {
         guard let genre = selectedGenre else { return [] }
         return homeViewModel.allSeries
-            .filter { $0.categoryName == genre }
+            .filter { normalizedCategory(for: $0).displayName == genre }
             .map { series in
                 ShelfItem(
                     id: String(series.id),
@@ -39,6 +41,15 @@ struct SeriesBrowserView: View {
                     onTap: { selectedSeries = series }
                 )
             }
+    }
+
+    private func normalizedCategory(for series: XstreamSeries) -> NormalizedContentCategory {
+        series.normalizedCategory ?? CategoryNormalizer.normalize(
+            rawID: series.categoryID,
+            rawName: series.rawCategoryName ?? series.categoryName,
+            provider: .xtream,
+            contentType: .series
+        )
     }
 
     var body: some View {

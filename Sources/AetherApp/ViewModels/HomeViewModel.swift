@@ -176,19 +176,21 @@ final class HomeViewModel: ObservableObject {
         // populates svc.cachedVods so the global search works without any extra plumbing.
         let allStreams: [XstreamVOD] = (try? await svc.vodStreams(categoryID: nil)) ?? []
 
-        let allCats = (try? await svc.vodCategories()) ?? []
-        let catDict = Dictionary(uniqueKeysWithValues: allCats.map { ($0.id, $0) })
-
         // hub -> shelfName -> normalizedTitle -> Item
         var hubToShelves: [BrandHub: [String: [String: ShelfItem]]] = [:]
 
         for vod in allStreams {
-            let catName = catDict[vod.categoryID ?? ""]?.name ?? vod.categoryName ?? "Other"
-            // Skip garbage categories (Arabic, Telugu, etc.) at the mapping stage
-            guard !isGarbageCategory(catName) else { continue }
+            let category = vod.normalizedCategory ?? CategoryNormalizer.normalize(
+                rawID: vod.categoryID,
+                rawName: vod.rawCategoryName ?? vod.categoryName,
+                provider: .xtream,
+                contentType: .movie
+            )
+            guard category.isPrimaryVisible else { continue }
 
-            let hub = VODNormalizer.mapCategoryToHub(categoryName: catName)
-            let shelfName = VODNormalizer.normalizeShelfName(categoryName: catName, hub: hub)
+            let sourceCategoryName = category.raw.rawName ?? category.displayName
+            let hub = VODNormalizer.mapCategoryToHub(categoryName: sourceCategoryName)
+            let shelfName = VODNormalizer.normalizeShelfName(categoryName: sourceCategoryName, hub: hub)
 
             let (cleanTitle, tags) = VODNormalizer.extractTagsAndClean(vod.name)
             let lowerTitle = cleanTitle.lowercased()
@@ -231,7 +233,16 @@ final class HomeViewModel: ObservableObject {
 
     private func loadSeriesInBackground(_ svc: XstreamService, cacheKey: String) async {
         let allSeriesCats = (try? await svc.seriesCategories()) ?? []
-        let clean = allSeriesCats.filter { !isGarbageCategory($0.name) }.sorted { $0.name < $1.name }
+        let clean = allSeriesCats
+            .filter {
+                CategoryNormalizer.isPrimaryCategoryVisible(
+                    $0.name,
+                    rawID: $0.id,
+                    provider: .xtream,
+                    contentType: .series
+                )
+            }
+            .sorted { $0.name < $1.name }
         var results: [(title: String, items: [ShelfItem])] = []
         var collected: [XstreamSeries] = []
 
@@ -357,7 +368,12 @@ final class HomeViewModel: ObservableObject {
 
     private func loadSeriesShelf(svc: XstreamService, cat: XstreamSeriesCategory) async -> (title: String, items: [ShelfItem])? {
         guard let series = try? await svc.seriesList(categoryID: cat.id), !series.isEmpty else { return nil }
-        let cleanName = VODNormalizer.cleanVODTitle(cat.name)
+        let cleanName = CategoryNormalizer.normalize(
+            rawID: cat.id,
+            rawName: cat.name,
+            provider: .xtream,
+            contentType: .series
+        ).displayName
         let items = series.prefix(20).map { s in
             ShelfItem(id: "\(s.id)", title: VODNormalizer.cleanVODTitle(s.name), imageURL: s.cover, series: s, onTap: {})
         }
@@ -374,12 +390,10 @@ final class HomeViewModel: ObservableObject {
 
 
     func isGarbageCategory(_ name: String) -> Bool {
-        if name.isEmpty { return true }
-        // Filter Arabic/RTL script categories
-        if name.unicodeScalars.contains(where: { $0.value > 0x0600 && $0.value < 0x06FF }) { return true }
-        // Only truly garbage categories — streaming services are KEPT and prioritized
-        let garbage = ["adult", "xxx", "18+"]
-        let lower = name.lowercased()
-        return garbage.contains(where: { lower.contains($0) })
+        !CategoryNormalizer.isPrimaryCategoryVisible(
+            name,
+            provider: .xtream,
+            contentType: .movie
+        )
     }
 }

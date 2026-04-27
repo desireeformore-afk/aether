@@ -231,12 +231,13 @@ struct GlobalContentSearchView: View {
     }
 
     private func cleanCategoryName(_ name: String?) -> String? {
-        guard let n = name, !n.isEmpty else { return nil }
-        let garbage = ["netflix", "apple", "amazon", "disney", "hbo", "premium", "4k"]
-        let lower = n.lowercased()
-        if garbage.contains(where: { lower.contains($0) }) { return nil }
-        if n.unicodeScalars.contains(where: { $0.value >= 0x0600 && $0.value <= 0x06FF }) { return nil }
-        return n
+        guard let name, !name.isEmpty else { return nil }
+        let category = CategoryNormalizer.normalize(
+            rawName: name,
+            provider: .xtream,
+            contentType: .movie
+        )
+        return category.isPrimaryVisible ? category.displayName : nil
     }
 }
 

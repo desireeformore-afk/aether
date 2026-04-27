@@ -53,23 +53,19 @@ public struct VODNormalizer {
 
     /// Maps a raw IPTV category name to a normalized premium BrandHub.
     public static func mapCategoryToHub(categoryName: String) -> BrandHub {
-        let name = categoryName.lowercased()
-        if ["netflix", "nf", "ntx"].contains(where: name.contains)              { return .netflix }
-        if ["hbo", "max"].contains(where: name.contains)                         { return .hbo }
-        if ["apple", "atvp"].contains(where: name.contains)                      { return .apple }
-        if ["disney", "dsnp", "marvel", "star wars"].contains(where: name.contains) { return .disney }
-        if ["amazon", "prime", "amz"].contains(where: name.contains)             { return .amazon }
-        if ["anime", "crunchyroll", "crt"].contains(where: name.contains)        { return .anime }
-        if ["kids", "dzieci", "bajki", "family", "children", "animacj"].contains(where: name.contains) { return .kids }
-        if ["polska", "polski", "polskie", "filmy", "kino", "seriale"].contains(where: name.contains) { return .poland }
-        return .other
+        CategoryNormalizer.hub(for: categoryName)
     }
 
     // MARK: Shelf name
 
     /// Maps a raw category name + hub to a clean English genre shelf label.
     public static func normalizeShelfName(categoryName: String, hub: BrandHub) -> String {
-        let name = categoryName.lowercased()
+        let normalizedCategory = CategoryNormalizer.normalize(
+            rawName: categoryName,
+            provider: .unknown,
+            contentType: .movie
+        )
+        let name = "\(categoryName) \(normalizedCategory.displayName)".lowercased()
         let isKids   = name.contains("kids") || name.contains("dzieci") || name.contains("bajki") || name.contains("family") || name.contains("animacj")
         let isDoc    = name.contains("docu") || name.contains("dokument")
         let isAction = name.contains("akcj") || name.contains("action")

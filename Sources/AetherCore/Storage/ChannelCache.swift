@@ -60,43 +60,70 @@ public actor ChannelCache {
 
 // MARK: - Codable wrapper
 
-/// Lightweight Codable representation of a `Channel` for JSON persistence.
-private struct CachedChannel: Codable {
-    let id: UUID
-    let name: String
-    let streamURL: String
-    let logoURL: String?
-    let groupTitle: String
-    let epgId: String?
+extension ChannelCache {
+    /// Lightweight Codable representation of a `Channel` for JSON persistence.
+    struct CachedChannel: Codable {
+        let id: UUID
+        let name: String
+        let streamURL: String
+        let logoURL: String?
+        let groupTitle: String
+        let epgId: String?
+        let contentType: ContentType
 
-    init(_ channel: Channel) {
-        self.id = channel.id
-        self.name = channel.name
-        self.streamURL = channel.streamURL.absoluteString
-        self.logoURL = channel.logoURL?.absoluteString
-        self.groupTitle = channel.groupTitle
-        self.epgId = channel.epgId
-    }
+        enum CodingKeys: String, CodingKey {
+            case id
+            case name
+            case streamURL
+            case logoURL
+            case groupTitle
+            case epgId
+            case contentType
+        }
 
-    var channel: Channel {
-        guard let streamURL = URL(string: streamURL) else {
-            // Fallback to a placeholder URL if parsing fails
+        init(_ channel: Channel) {
+            self.id = channel.id
+            self.name = channel.name
+            self.streamURL = channel.streamURL.absoluteString
+            self.logoURL = channel.logoURL?.absoluteString
+            self.groupTitle = channel.groupTitle
+            self.epgId = channel.epgId
+            self.contentType = channel.contentType
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            id = try c.decode(UUID.self, forKey: .id)
+            name = try c.decode(String.self, forKey: .name)
+            streamURL = try c.decode(String.self, forKey: .streamURL)
+            logoURL = try c.decodeIfPresent(String.self, forKey: .logoURL)
+            groupTitle = try c.decode(String.self, forKey: .groupTitle)
+            epgId = try c.decodeIfPresent(String.self, forKey: .epgId)
+            contentType = (try? c.decodeIfPresent(ContentType.self, forKey: .contentType)) ?? .liveTV
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(id, forKey: .id)
+            try c.encode(name, forKey: .name)
+            try c.encode(streamURL, forKey: .streamURL)
+            try c.encodeIfPresent(logoURL, forKey: .logoURL)
+            try c.encode(groupTitle, forKey: .groupTitle)
+            try c.encodeIfPresent(epgId, forKey: .epgId)
+            try c.encode(contentType, forKey: .contentType)
+        }
+
+        var channel: Channel {
+            let resolvedStreamURL = URL(string: streamURL) ?? URL(string: "http://invalid.stream")
             return Channel(
                 id: id,
                 name: name,
-                streamURL: URL(string: "http://invalid.stream")!,
+                streamURL: resolvedStreamURL ?? URL(fileURLWithPath: "/"),
                 logoURL: logoURL.flatMap(URL.init(string:)),
                 groupTitle: groupTitle,
-                epgId: epgId
+                epgId: epgId,
+                contentType: contentType
             )
         }
-        return Channel(
-            id: id,
-            name: name,
-            streamURL: streamURL,
-            logoURL: logoURL.flatMap(URL.init(string:)),
-            groupTitle: groupTitle,
-            epgId: epgId
-        )
     }
 }
