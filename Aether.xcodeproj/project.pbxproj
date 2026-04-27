@@ -48,7 +48,6 @@
 		AA0002000000000000000021 /* SRTParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000021 /* SRTParser.swift */; };
 		AA0002000000000000000022 /* XMLTVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000022 /* XMLTVParser.swift */; };
 		/* Player */
-		AA0002000000000000000030 /* BufferingConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000030 /* BufferingConfig.swift */; };
 		AA0002000000000000000031 /* PlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000031 /* PlayerCore.swift */; };
 		/* Services */
 		AA0002000000000000000040 /* ChannelFilterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000040 /* ChannelFilterService.swift */; };
@@ -119,7 +118,6 @@
 		FA0002000000000000000020 /* M3UParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = M3UParser.swift; path = Sources/AetherCore/Parsers/M3UParser.swift; sourceTree = "<group>"; };
 		FA0002000000000000000021 /* SRTParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SRTParser.swift; path = Sources/AetherCore/Parsers/SRTParser.swift; sourceTree = "<group>"; };
 		FA0002000000000000000022 /* XMLTVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = XMLTVParser.swift; path = Sources/AetherCore/Parsers/XMLTVParser.swift; sourceTree = "<group>"; };
-		FA0002000000000000000030 /* BufferingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BufferingConfig.swift; path = Sources/AetherCore/Player/BufferingConfig.swift; sourceTree = "<group>"; };
 		FA0002000000000000000031 /* PlayerCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlayerCore.swift; path = Sources/AetherCore/Player/PlayerCore.swift; sourceTree = "<group>"; };
 		FA0002000000000000000040 /* ChannelFilterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelFilterService.swift; path = Sources/AetherCore/Services/ChannelFilterService.swift; sourceTree = "<group>"; };
 		FA0002000000000000000041 /* EPGService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EPGService.swift; path = Sources/AetherCore/Services/EPGService.swift; sourceTree = "<group>"; };
@@ -287,7 +285,6 @@
 		BB000000000000000000GRP2PL /* Player */ = {
 			isa = PBXGroup;
 			children = (
-				FA0002000000000000000030 /* BufferingConfig.swift */,
 				FA0002000000000000000031 /* PlayerCore.swift */,
 			);
 			name = Player;
@@ -452,7 +449,6 @@
 				AA0002000000000000000020 /* M3UParser.swift in Sources */,
 				AA0002000000000000000021 /* SRTParser.swift in Sources */,
 				AA0002000000000000000022 /* XMLTVParser.swift in Sources */,
-				AA0002000000000000000030 /* BufferingConfig.swift in Sources */,
 				AA0002000000000000000031 /* PlayerCore.swift in Sources */,
 				AA0002000000000000000040 /* ChannelFilterService.swift in Sources */,
 				AA0002000000000000000041 /* EPGService.swift in Sources */,

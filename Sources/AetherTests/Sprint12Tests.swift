@@ -1,5 +1,4 @@
 import XCTest
-@preconcurrency import AVFoundation
 @testable import AetherCore
 
 // MARK: - SRTParser Tests
@@ -127,33 +126,24 @@ final class SRTParserTests: XCTestCase {
     }
 }
 
-// MARK: - BufferingConfig Tests
+// MARK: - PlayerPlaybackConfig Tests
 
-final class BufferingConfigTests: XCTestCase {
+final class PlayerPlaybackConfigTests: XCTestCase {
 
-    func testForwardBufferDurationIsPositive() {
-        XCTAssertGreaterThan(BufferingConfig.normalForwardBuffer, 0)
+    func testNetworkCachingValuesArePositive() {
+        XCTAssertGreaterThan(PlayerPlaybackConfig.liveNetworkCachingMilliseconds, 0)
+        XCTAssertGreaterThan(PlayerPlaybackConfig.vodNetworkCachingMilliseconds, 0)
     }
 
-    func testForwardBufferIsReasonable() {
-        // Normal buffer: 4s (low latency); adaptive: up to 16s
-        XCTAssertGreaterThanOrEqual(BufferingConfig.normalForwardBuffer, 1)
-        XCTAssertLessThanOrEqual(BufferingConfig.adaptiveForwardBuffer, 120)
+    func testNetworkCachingValuesMatchCurrentPlaybackPolicy() {
+        XCTAssertEqual(PlayerPlaybackConfig.liveNetworkCachingMilliseconds, 1500)
+        XCTAssertEqual(PlayerPlaybackConfig.vodNetworkCachingMilliseconds, 800)
+        XCTAssertGreaterThan(PlayerPlaybackConfig.liveNetworkCachingMilliseconds,
+                             PlayerPlaybackConfig.vodNetworkCachingMilliseconds)
     }
 
-    func testForwardBufferValues() {
-        // Normal = 4s for low latency; adaptive = 16s for weak signal recovery
-        XCTAssertEqual(BufferingConfig.normalForwardBuffer, 4, accuracy: 0.001)
-        XCTAssertEqual(BufferingConfig.adaptiveForwardBuffer, 16, accuracy: 0.001)
-    }
-
-    func testApplyToItemDoesNotCrash() {
-        // Smoke test: verify apply() runs without crashing
-        let url = URL(string: "https://example.com/stream.m3u8")!
-        let item = AVPlayerItem(url: url)
-        BufferingConfig.apply(to: item)
-        XCTAssertEqual(item.preferredForwardBufferDuration,
-                       BufferingConfig.normalForwardBuffer,
-                       accuracy: 0.001)
+    func testNetworkCachingSelectorUsesStreamType() {
+        XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: true), 1500)
+        XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: false), 800)
     }
 }

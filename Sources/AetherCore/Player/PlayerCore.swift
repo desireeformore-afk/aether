@@ -24,6 +24,17 @@ public enum PlayerState: Sendable, Equatable {
     case error(String)
 }
 
+// MARK: - PlayerPlaybackConfig
+
+enum PlayerPlaybackConfig {
+    static let liveNetworkCachingMilliseconds = 1500
+    static let vodNetworkCachingMilliseconds = 800
+
+    static func networkCachingMilliseconds(isLiveStream: Bool) -> Int {
+        isLiveStream ? liveNetworkCachingMilliseconds : vodNetworkCachingMilliseconds
+    }
+}
+
 // MARK: - VLCTrack
 
 /// Lightweight descriptor for an audio or subtitle track reported by VLC.
@@ -275,7 +286,7 @@ public final class PlayerCore {
 
         // VLC network caching: lower value = faster start, higher = smoother on bad connections.
         // 1500ms for live (tolerates jitter), 800ms for VOD (starts faster, seeks more accurately).
-        let cachingMs = isLiveStream ? 1500 : 800
+        let cachingMs = PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: isLiveStream)
         media?.addOption("--network-caching=\(cachingMs)")
 
         // Spoof UA — some IPTV servers reject the default VLC user agent
@@ -319,7 +330,7 @@ public final class PlayerCore {
         }
         
         let media = VLCMedia(url: newChannel.streamURL)
-        media?.addOption("--network-caching=800")
+        media?.addOption("--network-caching=\(PlayerPlaybackConfig.vodNetworkCachingMilliseconds)")
         media?.addOption("--http-user-agent=VLC/3.0.20 LibVLC/3.0.20")
         media?.addOption("--videotoolbox-hw-decoder-use")
         
