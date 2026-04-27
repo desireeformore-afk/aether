@@ -24,7 +24,7 @@ public actor TMDBClient {
         self.session = URLSession(configuration: config)
     }
     
-    public enum MediaType {
+    public enum MediaType: Sendable {
         case movie, tv
     }
     
@@ -93,11 +93,11 @@ public actor TMDBClient {
 
 // MARK: - Models
 
-public struct TMDBSearchResponse: Decodable {
+public struct TMDBSearchResponse: Decodable, Sendable {
     public let results: [TMDBMedia]
 }
 
-public struct TMDBMedia: Decodable, Hashable {
+public struct TMDBMedia: Decodable, Hashable, Sendable {
     public let id: Int
     public let title: String?
     public let name: String?

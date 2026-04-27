@@ -42,7 +42,7 @@ public enum CategoryNormalizer {
 
         let cleaned = cleanProviderCategoryName(collapsedSource)
         let displayCandidate = cleaned.isEmpty ? collapsedSource : cleaned
-        var reasons = noiseReasons(in: collapsedSource)
+        let reasons = noiseReasons(in: collapsedSource)
 
         if isAdultCategory(collapsedSource) {
             return category(

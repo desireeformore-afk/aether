@@ -25,6 +25,11 @@ final class HomeViewModel: ObservableObject {
     static var cachedAllSeries: [String: [XstreamSeries]] = [:]
     static var cachedBrandHubs: [String: [(hub: BrandHub, shelves: [(title: String, items: [ShelfItem])])]] = [:]
 
+    private struct SeriesShelfPayload: Sendable {
+        let title: String
+        let series: [XstreamSeries]
+    }
+
     // MARK: - Disk cache keys
     private static let baseDiskCacheKey = "homevm_shelves_v1"
     private static let baseDiskCacheAgeKey = "homevm_cache_age_v1"
@@ -246,16 +251,20 @@ final class HomeViewModel: ObservableObject {
         var results: [(title: String, items: [ShelfItem])] = []
         var collected: [XstreamSeries] = []
 
-        await withTaskGroup(of: (title: String, items: [ShelfItem])?.self) { group in
+        await withTaskGroup(of: SeriesShelfPayload?.self) { group in
             for cat in clean.prefix(8) {
-                group.addTask { await self.loadSeriesShelf(svc: svc, cat: cat) }
+                group.addTask { await Self.loadSeriesShelfPayload(svc: svc, cat: cat) }
             }
-            for await shelf in group {
+            for await payload in group {
                 guard isActive(cacheKey) else { return }
-                if let s = shelf {
-                    results.append(s)
+                if let payload {
+                    let items = payload.series.map { series in
+                        ShelfItem(id: "\(series.id)", title: VODNormalizer.cleanVODTitle(series.name), imageURL: series.cover, series: series, onTap: {})
+                    }
+                    let shelf = (title: payload.title, items: items)
+                    results.append(shelf)
                     seriesShelves = results
-                    collected.append(contentsOf: s.items.compactMap { $0.series })
+                    collected.append(contentsOf: payload.series)
                     allSeries = collected
                 }
             }
@@ -366,7 +375,7 @@ final class HomeViewModel: ObservableObject {
 
 
 
-    private func loadSeriesShelf(svc: XstreamService, cat: XstreamSeriesCategory) async -> (title: String, items: [ShelfItem])? {
+    nonisolated private static func loadSeriesShelfPayload(svc: XstreamService, cat: XstreamSeriesCategory) async -> SeriesShelfPayload? {
         guard let series = try? await svc.seriesList(categoryID: cat.id), !series.isEmpty else { return nil }
         let cleanName = CategoryNormalizer.normalize(
             rawID: cat.id,
@@ -374,10 +383,7 @@ final class HomeViewModel: ObservableObject {
             provider: .xtream,
             contentType: .series
         ).displayName
-        let items = series.prefix(20).map { s in
-            ShelfItem(id: "\(s.id)", title: VODNormalizer.cleanVODTitle(s.name), imageURL: s.cover, series: s, onTap: {})
-        }
-        return (cleanName, Array(items))
+        return SeriesShelfPayload(title: cleanName, series: Array(series.prefix(20)))
     }
 
     private static func buildHeroBanner(from shelves: [(title: String, items: [ShelfItem])]) -> [HeroBannerItem] {
