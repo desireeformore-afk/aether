@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import VLCKit
 import MediaPlayer
 #if canImport(AppKit)
@@ -107,7 +108,10 @@ public final class PlayerCore {
     // MARK: - Watch history callbacks
 
     public var onWatchSessionEnd: ((Channel, Date, Int) -> Void)?
-    public var onProgressUpdate: ((UUID, Double, Double) -> Void)?
+    public var onProgressUpdate: ((Channel, Double, Double) -> Void)?
+
+    @ObservationIgnored private var watchSessionEndObservers: [UUID: (Channel, Date, Int) -> Void] = [:]
+    @ObservationIgnored private var progressUpdateObservers: [UUID: (Channel, Double, Double) -> Void] = [:]
 
     // MARK: - Quality presets (kept for API compat — VLC handles internally)
 
@@ -127,6 +131,12 @@ public final class PlayerCore {
 
     /// Bridge that forwards VLCMediaPlayerDelegate callbacks to PlayerCore on MainActor.
     private var bridge: VLCDelegateBridge?
+
+    /// Monotonic token for the currently accepted playback session.
+    @ObservationIgnored private var playbackSessionID: UInt64 = 0
+    @ObservationIgnored private var pendingTransitionStopEvents: Int = 0
+    @ObservationIgnored private weak var currentDrawable: AnyObject?
+    @ObservationIgnored private var currentDrawableOwnerID: UUID?
 
     private let lastChannelStore = LastChannelStore()
     private var watchStartTime: Date?
@@ -158,7 +168,46 @@ public final class PlayerCore {
 
     /// Attaches the VLC renderer to an NSView/UIView so video is drawn into it.
     public func attachDrawable(_ view: AnyObject) {
+        attachDrawable(view, ownerID: UUID())
+    }
+
+    /// Attaches the VLC renderer to a drawable owned by a specific SwiftUI representable instance.
+    public func attachDrawable(_ view: AnyObject, ownerID: UUID) {
+        currentDrawable = view
+        currentDrawableOwnerID = ownerID
         vlcPlayer.drawable = view
+    }
+
+    /// Detaches the renderer only when the dismantled view still owns the drawable.
+    public func detachDrawable(_ view: AnyObject, ownerID: UUID) {
+        guard currentDrawableOwnerID == ownerID, currentDrawable === view else { return }
+        vlcPlayer.drawable = nil
+        currentDrawable = nil
+        currentDrawableOwnerID = nil
+    }
+
+    // MARK: - Watch history observers
+
+    @discardableResult
+    public func addWatchSessionEndObserver(_ observer: @escaping (Channel, Date, Int) -> Void) -> UUID {
+        let id = UUID()
+        watchSessionEndObservers[id] = observer
+        return id
+    }
+
+    public func removeWatchSessionEndObserver(_ id: UUID) {
+        watchSessionEndObservers.removeValue(forKey: id)
+    }
+
+    @discardableResult
+    public func addProgressUpdateObserver(_ observer: @escaping (Channel, Double, Double) -> Void) -> UUID {
+        let id = UUID()
+        progressUpdateObservers[id] = observer
+        return id
+    }
+
+    public func removeProgressUpdateObserver(_ id: UUID) {
+        progressUpdateObservers.removeValue(forKey: id)
     }
 
     // MARK: - Public playback API
@@ -171,22 +220,37 @@ public final class PlayerCore {
         playInternal(channel, startPosition: startPosition)
     }
 
-    private func playInternal(_ channel: Channel, startPosition: Double?) {
+    private func playInternal(
+        _ channel: Channel,
+        startPosition: Double?,
+        resetRetryCount: Bool = true,
+        endCurrentSession: Bool = true
+    ) {
         lastChannelStore.save(channel)
         stopProgressTracking()
-        endWatchSession()
+        if endCurrentSession {
+            endWatchSession()
+        }
         retryTask?.cancel()
         retryTask = nil
 
+        let shouldStopExistingMedia = vlcPlayer.isPlaying || vlcPlayer.media != nil
+        advancePlaybackSession()
+
         // Stop any ongoing VLC playback cleanly
-        if vlcPlayer.isPlaying {
+        if shouldStopExistingMedia {
+            pendingTransitionStopEvents += 1
             vlcPlayer.stop()
         }
 
         currentChannel = channel
-        watchStartTime = .now
+        if watchStartTime == nil {
+            watchStartTime = .now
+        }
         state = .loading
-        retryCount = 0
+        if resetRetryCount {
+            retryCount = 0
+        }
         hasEverPlayed = false
         currentTimeValue = 0
         pendingSeekPosition = startPosition
@@ -199,7 +263,7 @@ public final class PlayerCore {
         let ext = url.pathExtension.lowercased()
 
         print("[PlayerCore] Playing: \(channel.name)")
-        print("[PlayerCore]   URL: \(url.absoluteString)")
+        print("[PlayerCore]   URL: \(url.aetherMaskedForLog)")
         print("[PlayerCore]   Extension: \(ext)")
 
         // VOD = has a seekable duration (MKV, MP4, AVI, MOV…)
@@ -232,7 +296,11 @@ public final class PlayerCore {
         if newChannel.streamURL == currentChannel?.streamURL { return }
         
         let targetTime = currentTime
-        print("[PlayerCore] Hot-swapping stream variant at \(targetTime)s to: \(newChannel.streamURL)")
+        retryTask?.cancel()
+        retryTask = nil
+        let shouldStopExistingMedia = vlcPlayer.isPlaying || vlcPlayer.media != nil
+        advancePlaybackSession()
+        print("[PlayerCore] Hot-swapping stream variant at \(targetTime)s to: \(newChannel.streamURL.aetherMaskedForLog)")
         
         state = .loading
         hasEverPlayed = false
@@ -245,7 +313,8 @@ public final class PlayerCore {
         }
         currentChannel = updatedChannel
         
-        if vlcPlayer.isPlaying {
+        if shouldStopExistingMedia {
+            pendingTransitionStopEvents += 1
             vlcPlayer.stop()
         }
         
@@ -283,6 +352,8 @@ public final class PlayerCore {
     public func stop() {
         retryTask?.cancel()
         retryTask = nil
+        pendingTransitionStopEvents = 0
+        advancePlaybackSession()
         stopProgressTracking()
         endWatchSession()
         vlcPlayer.stop()
@@ -396,6 +467,7 @@ public final class PlayerCore {
         bannerDismissTask?.cancel()
         bannerDismissTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
             self?.streamErrorBanner = nil
         }
     }
@@ -408,7 +480,8 @@ public final class PlayerCore {
 
     // MARK: - VLC delegate callbacks (called by VLCDelegateBridge)
 
-    func vlcStateChanged(_ vlcState: VLCMediaPlayerState) {
+    func vlcStateChanged(_ vlcState: VLCMediaPlayerState, sessionID: UInt64) {
+        guard isCurrentPlaybackSession(sessionID) else { return }
         // print("[PlayerCore] vlcStateChanged: \(vlcState.rawValue) — hasEverPlayed=\(hasEverPlayed)")
         switch vlcState {
         case .opening:
@@ -428,34 +501,48 @@ public final class PlayerCore {
                 if let seekPos = pendingSeekPosition {
                     pendingSeekPosition = nil
                     // Execute seek after a small delay to ensure buffer is ready
+                    let seekSessionID = playbackSessionID
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                        self?.userSeek(to: seekPos)
+                        Task { @MainActor [weak self] in
+                            guard let self, self.isCurrentPlaybackSession(seekSessionID) else { return }
+                            self.userSeek(to: seekPos)
+                        }
                     }
                 }
                 
                 // Populate track lists once media is actually playing
+                let trackSessionID = playbackSessionID
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                    self?.refreshTrackLists()
+                    Task { @MainActor [weak self] in
+                        guard let self, self.isCurrentPlaybackSession(trackSessionID) else { return }
+                        self.refreshTrackLists()
+                    }
                 }
             }
         case .paused:
             state = .paused
         case .stopped, .stopping:
+            if pendingTransitionStopEvents > 0 {
+                pendingTransitionStopEvents -= 1
+                return
+            }
             if currentChannel != nil {
                 stopProgressTracking()
                 endWatchSession()
                 state = .idle
             }
         case .error:
+            guard currentChannel != nil else { return }
             stopProgressTracking()
             print("[PlayerCore] VLC error — scheduling retry")
-            scheduleRetry(message: "Stream error — check your connection")
+            scheduleRetry(message: "Stream error — check your connection", sessionID: sessionID)
         @unknown default:
             print("[PlayerCore] Unknown VLC state: \(vlcState.rawValue)")
         }
     }
 
-    func vlcMediaChanged() {
+    func vlcMediaChanged(sessionID: UInt64) {
+        guard isCurrentPlaybackSession(sessionID) else { return }
         // Reset tracks when media changes
         availableAudioTracks = []
         availableSubtitleTracks = []
@@ -483,7 +570,8 @@ public final class PlayerCore {
 
     // MARK: - Auto-retry
 
-    private func scheduleRetry(message: String) {
+    private func scheduleRetry(message: String, sessionID: UInt64) {
+        guard isCurrentPlaybackSession(sessionID) else { return }
         guard retryCount < maxRetries, let channel = currentChannel else {
             showStreamErrorBanner("Unable to load stream")
             state = .error("Unable to load stream")
@@ -496,14 +584,23 @@ public final class PlayerCore {
 
         retryTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(delay))
-            guard let self, self.currentChannel?.id == channel.id else { return }
-            self.playInternal(channel, startPosition: self.pendingSeekPosition)
+            guard !Task.isCancelled else { return }
+            guard let self,
+                  self.isCurrentPlaybackSession(sessionID),
+                  self.currentChannel?.id == channel.id else { return }
+            self.playInternal(
+                channel,
+                startPosition: self.pendingSeekPosition,
+                resetRetryCount: false,
+                endCurrentSession: false
+            )
         }
     }
 
     // MARK: - Watch session / progress
 
     private func startProgressTracking() {
+        let sessionID = playbackSessionID
         // UI source timer: 0.5s on DispatchQueue.main so the closure runs on the
         // main thread and can access @MainActor-isolated properties directly.
         uiRefreshTimer?.invalidate()
@@ -513,6 +610,7 @@ public final class PlayerCore {
         src.setEventHandler { [weak self] in
             guard let self else { return }
             MainActor.assumeIsolated {
+                guard self.isCurrentPlaybackSession(sessionID) else { return }
                 let ms = self.vlcPlayer.time.intValue
                 let t = Double(max(0, ms)) / 1000.0
                 if abs(t - self.currentTimeValue) > 0.1 {
@@ -526,8 +624,12 @@ public final class PlayerCore {
                         self.hasEverPlayed = true
                         self.retryCount = 0
                         self.updateNowPlayingInfo()
+                        let trackSessionID = self.playbackSessionID
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                            self?.refreshTrackLists()
+                            Task { @MainActor [weak self] in
+                                guard let self, self.isCurrentPlaybackSession(trackSessionID) else { return }
+                                self.refreshTrackLists()
+                            }
                         }
                     }
                 }
@@ -541,8 +643,10 @@ public final class PlayerCore {
         progressTimer?.invalidate()
         progressTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                guard let self, let channel = self.currentChannel else { return }
-                self.onProgressUpdate?(channel.id, self.currentTimeValue, self.duration)
+                guard let self,
+                      self.isCurrentPlaybackSession(sessionID),
+                      let channel = self.currentChannel else { return }
+                self.notifyProgressUpdate(channel: channel, watched: self.currentTimeValue, total: self.duration)
             }
         }
     }
@@ -561,9 +665,34 @@ public final class PlayerCore {
         guard let channel = currentChannel, let start = watchStartTime else { return }
         let elapsed = Int(Date.now.timeIntervalSince(start))
         if elapsed > 5 {
-            onWatchSessionEnd?(channel, start, elapsed)
+            notifyWatchSessionEnd(channel: channel, start: start, duration: elapsed)
         }
         watchStartTime = nil
+    }
+
+    @discardableResult
+    private func advancePlaybackSession() -> UInt64 {
+        playbackSessionID &+= 1
+        bridge?.playbackSessionID = playbackSessionID
+        return playbackSessionID
+    }
+
+    private func isCurrentPlaybackSession(_ sessionID: UInt64) -> Bool {
+        sessionID == playbackSessionID
+    }
+
+    private func notifyWatchSessionEnd(channel: Channel, start: Date, duration: Int) {
+        onWatchSessionEnd?(channel, start, duration)
+        for observer in watchSessionEndObservers.values {
+            observer(channel, start, duration)
+        }
+    }
+
+    private func notifyProgressUpdate(channel: Channel, watched: Double, total: Double) {
+        onProgressUpdate?(channel, watched, total)
+        for observer in progressUpdateObservers.values {
+            observer(channel, watched, total)
+        }
     }
 
     // MARK: - Now Playing (Lock Screen / Control Center)
@@ -626,6 +755,7 @@ public final class PlayerCore {
 final class VLCDelegateBridge: NSObject, VLCMediaPlayerDelegate, @unchecked Sendable {
     // nonisolated(unsafe): we only ever access this inside Task { @MainActor }, which IS safe.
     nonisolated(unsafe) private weak var owner: PlayerCore?
+    nonisolated(unsafe) var playbackSessionID: UInt64 = 0
 
     init(owner: PlayerCore) {
         self.owner = owner
@@ -635,8 +765,9 @@ final class VLCDelegateBridge: NSObject, VLCMediaPlayerDelegate, @unchecked Send
 
     /// `- (void)mediaPlayerStateChanged:(VLCMediaPlayerState)newState;`
     func mediaPlayerStateChanged(_ newState: VLCMediaPlayerState) {
+        let sessionID = playbackSessionID
         Task { @MainActor [weak owner] in
-            owner?.vlcStateChanged(newState)
+            owner?.vlcStateChanged(newState, sessionID: sessionID)
         }
     }
 
@@ -651,3 +782,39 @@ final class VLCDelegateBridge: NSObject, VLCMediaPlayerDelegate, @unchecked Send
     }
 }
 
+private extension URL {
+    var aetherMaskedForLog: String {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else {
+            return "<invalid-url>"
+        }
+
+        if components.user != nil {
+            components.user = "***"
+        }
+        if components.password != nil {
+            components.password = "***"
+        }
+
+        if let queryItems = components.queryItems {
+            components.queryItems = queryItems.map { item in
+                let lowerName = item.name.lowercased()
+                if lowerName == "username" || lowerName == "password" || lowerName == "user" || lowerName == "pass" {
+                    return URLQueryItem(name: item.name, value: "***")
+                }
+                return item
+            }
+        }
+
+        var segments = components.percentEncodedPath.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        if let markerIndex = segments.firstIndex(where: { segment in
+            let lower = segment.lowercased()
+            return lower == "live" || lower == "movie" || lower == "series"
+        }), segments.indices.contains(markerIndex + 2) {
+            segments[markerIndex + 1] = "***"
+            segments[markerIndex + 2] = "***"
+            components.percentEncodedPath = segments.joined(separator: "/")
+        }
+
+        return components.url?.absoluteString ?? "<masked-url>"
+    }
+}

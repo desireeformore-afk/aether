@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import SwiftData
 
 /// Manages series episodes, watch progress, and viewing recommendations.

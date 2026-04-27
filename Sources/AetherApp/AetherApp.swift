@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import SwiftData
 import AetherCore
 import AetherUI
@@ -68,8 +69,8 @@ struct AetherApp: App {
             diskPath: "aether_image_cache"
         )
 
-        // Wire analytics to player
-        player.onWatchSessionEnd = { channel, startTime, duration in
+        // Wire analytics to player without taking ownership of the single legacy callback.
+        player.addWatchSessionEndObserver { channel, startTime, duration in
             Task { @MainActor in
                 analytics.recordWatchSession(
                     channelName: channel.name,
@@ -206,6 +207,8 @@ struct AetherApp: App {
 // MARK: - Shared SwiftData Container
 
 extension AetherApp {
+    private static let playlistBackupKey = "playlist_backup_v7"
+
     /// Explicit store path — stable regardless of bundle ID (SPM dev-build workaround).
     static let sharedModelContainer: ModelContainer = {
         guard let base = FileManager.default.urls(
@@ -254,40 +257,9 @@ extension AetherApp {
         }
     }()
 
-    /// Removes the SQLite store if it contains entities that no longer exist in the current schema.
-    /// Prevents NSCocoaErrorDomain 134100 (incompatible model) on first launch after a schema change.
+    /// Removes the SQLite store only when metadata proves it is incompatible with the current schema.
+    /// Prevents NSCocoaErrorDomain 134100 without doing a version-flag destructive reset.
     private static func resetStoreIfIncompatible(storeURL: URL) {
-        // Nuclear reset (v7): wipe store files but preserve playlist data via UserDefaults backup
-        let resetKey = "store_reset_v7"
-        if !UserDefaults.standard.bool(forKey: resetKey) {
-            // Back up playlist records via raw SQLite read before wiping
-            let backups = backupPlaylistsFromStore(storeURL: storeURL)
-            if !backups.isEmpty {
-                UserDefaults.standard.set(backups, forKey: "playlist_backup_v7")
-                print("[AetherDB] Backed up \(backups.count) playlist(s) before reset")
-            }
-
-            let appSupport = storeURL.deletingLastPathComponent()
-            let fm = FileManager.default
-            if let items = try? fm.contentsOfDirectory(at: appSupport, includingPropertiesForKeys: nil) {
-                for item in items {
-                    let ext = item.pathExtension.lowercased()
-                    let base = item.deletingPathExtension().lastPathComponent.lowercased()
-                    if ["sqlite", "store", "wal", "shm"].contains(ext)
-                        || base.hasSuffix("-wal") || base.hasSuffix("-shm") {
-                        try? fm.removeItem(at: item)
-                    }
-                }
-            }
-            let storeWAL = storeURL.appendingPathExtension("-wal")
-            let storeSHM = storeURL.appendingPathExtension("-shm")
-            try? fm.removeItem(at: storeWAL)
-            try? fm.removeItem(at: storeSHM)
-            UserDefaults.standard.set(true, forKey: resetKey)
-            print("[AetherDB] Nuclear store reset (v7) complete")
-            return
-        }
-
         guard FileManager.default.fileExists(atPath: storeURL.path) else { return }
 
         let metadata: [String: Any]
@@ -295,7 +267,7 @@ extension AetherApp {
             metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(
                 ofType: NSSQLiteStoreType, at: storeURL, options: nil)
         } catch {
-            // Unreadable store — remove it and let SwiftData recreate
+            backupPlaylistsIfPossible(storeURL: storeURL)
             removeStore(at: storeURL)
             print("[AetherDB] Removed unreadable store, will recreate")
             return
@@ -304,15 +276,22 @@ extension AetherApp {
         // Current schema only has PlaylistRecord, FavoriteRecord, WatchHistoryRecord.
         // If the on-disk store has extra entities from an old schema, the hashes won't match.
         let storeHashes = metadata["NSStoreModelVersionHashes"] as? [String: Any] ?? [:]
-        let knownEntities: Set<String> = ["PlaylistRecord", "FavoriteRecord", "WatchHistoryRecord",
-                                          "ChannelRecord", "MovieRecord", "SeriesRecord",
-                                          "WatchProgressRecord", "WatchHistoryRecord"]
+        let knownEntities: Set<String> = ["PlaylistRecord", "FavoriteRecord", "WatchHistoryRecord"]
         let storeEntities = Set(storeHashes.keys)
         let unknownEntities = storeEntities.subtracting(knownEntities)
 
         if !unknownEntities.isEmpty {
+            backupPlaylistsIfPossible(storeURL: storeURL)
             removeStore(at: storeURL)
             print("[AetherDB] Removed incompatible store (unknown entities: \(unknownEntities)), will recreate")
+        }
+    }
+
+    private static func backupPlaylistsIfPossible(storeURL: URL) {
+        let backups = backupPlaylistsFromStore(storeURL: storeURL)
+        if !backups.isEmpty {
+            UserDefaults.standard.set(backups, forKey: playlistBackupKey)
+            print("[AetherDB] Backed up \(backups.count) playlist(s) before incompatible store reset")
         }
     }
 
@@ -385,8 +364,7 @@ extension AetherApp {
     /// Re-inserts playlist records from the UserDefaults backup into a fresh ModelContext.
     /// Call this after the ModelContainer is created, once, and then clear the backup.
     static func restorePlaylistBackupIfNeeded(context: ModelContext) {
-        let backupKey = "playlist_backup_v7"
-        guard let backups = UserDefaults.standard.array(forKey: backupKey) as? [[String: Any]],
+        guard let backups = UserDefaults.standard.array(forKey: playlistBackupKey) as? [[String: Any]],
               !backups.isEmpty else { return }
 
         print("[AetherDB] Restoring \(backups.count) playlist(s) from backup")
@@ -408,16 +386,14 @@ extension AetherApp {
             context.insert(record)
         }
         try? context.save()
-        UserDefaults.standard.removeObject(forKey: backupKey)
+        UserDefaults.standard.removeObject(forKey: playlistBackupKey)
         print("[AetherDB] Playlist restore complete")
     }
 
     private static func removeStore(at storeURL: URL) {
-        let walURL = storeURL.appendingPathExtension("wal")
-        let shmURL = storeURL.appendingPathExtension("shm")
         try? FileManager.default.removeItem(at: storeURL)
-        try? FileManager.default.removeItem(at: walURL)
-        try? FileManager.default.removeItem(at: shmURL)
+        try? FileManager.default.removeItem(at: URL(fileURLWithPath: storeURL.path + "-wal"))
+        try? FileManager.default.removeItem(at: URL(fileURLWithPath: storeURL.path + "-shm"))
     }
 }
 
@@ -430,6 +406,8 @@ extension AetherApp {
 final class HistoryCoordinator {
     private var modelContext: ModelContext?
     private var isBound = false
+    @ObservationIgnored private var watchSessionObserverID: UUID?
+    @ObservationIgnored private var progressObserverID: UUID?
 
     func bind(playerCore: PlayerCore) {
         guard !isBound else { return }
@@ -440,27 +418,73 @@ final class HistoryCoordinator {
         let ctx = ModelContext(AetherApp.sharedModelContainer)
         self.modelContext = ctx
 
-        playerCore.onWatchSessionEnd = { [weak self] channel, watchedAt, duration in
+        watchSessionObserverID = playerCore.addWatchSessionEndObserver { [weak self] channel, watchedAt, duration in
             guard let ctx = self?.modelContext else { return }
-            let record = WatchHistoryRecord(
-                channel: channel,
+            let record = Self.upsertHistoryRecord(
+                for: channel,
                 watchedAt: watchedAt,
-                durationSeconds: duration
+                durationSeconds: duration,
+                context: ctx
             )
-            ctx.insert(record)
+            if record.totalDurationSeconds <= 0 {
+                record.totalDurationSeconds = Double(duration)
+            }
+            record.durationSeconds = max(record.durationSeconds, duration)
             Self.trimHistory(context: ctx)
+            try? ctx.save()
         }
 
-        playerCore.onProgressUpdate = { [weak self] channelID, watched, total in
+        progressObserverID = playerCore.addProgressUpdateObserver { [weak self] channel, watched, total in
             guard let ctx = self?.modelContext else { return }
-            let descriptor = FetchDescriptor<WatchHistoryRecord>(
-                sortBy: [SortDescriptor(\.watchedAt, order: .reverse)]
+            let record = Self.upsertHistoryRecord(
+                for: channel,
+                watchedAt: .now,
+                durationSeconds: Int(watched),
+                context: ctx
             )
-            guard let records = try? ctx.fetch(descriptor),
-                  let record = records.first(where: { $0.channelID == channelID }) else { return }
             record.watchedSecondsDouble = watched
             record.totalDurationSeconds = total
+            record.durationSeconds = max(record.durationSeconds, Int(watched))
             try? ctx.save()
+        }
+    }
+
+    private static func upsertHistoryRecord(
+        for channel: Channel,
+        watchedAt: Date,
+        durationSeconds: Int,
+        context: ModelContext
+    ) -> WatchHistoryRecord {
+        if let existing = existingHistoryRecord(for: channel, context: context) {
+            existing.channelName = channel.name
+            existing.streamURLString = channel.streamURL.absoluteString
+            existing.logoURLString = channel.logoURL?.absoluteString
+            existing.groupTitle = channel.groupTitle
+            existing.epgId = channel.epgId
+            existing.watchedAt = watchedAt
+            existing.durationSeconds = max(existing.durationSeconds, durationSeconds)
+            existing.contentType = channel.contentType == .movie ? "movie"
+                : channel.contentType == .series ? "series"
+                : "live"
+            return existing
+        }
+
+        let record = WatchHistoryRecord(
+            channel: channel,
+            watchedAt: watchedAt,
+            durationSeconds: durationSeconds
+        )
+        context.insert(record)
+        return record
+    }
+
+    private static func existingHistoryRecord(for channel: Channel, context: ModelContext) -> WatchHistoryRecord? {
+        let descriptor = FetchDescriptor<WatchHistoryRecord>(
+            sortBy: [SortDescriptor(\.watchedAt, order: .reverse)]
+        )
+        guard let records = try? context.fetch(descriptor) else { return nil }
+        return records.first {
+            $0.channelID == channel.id || $0.streamURLString == channel.streamURL.absoluteString
         }
     }
 
@@ -473,5 +497,6 @@ final class HistoryCoordinator {
         for old in all.dropFirst(200) {
             context.delete(old)
         }
+        try? context.save()
     }
 }

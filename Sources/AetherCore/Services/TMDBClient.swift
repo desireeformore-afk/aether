@@ -7,10 +7,11 @@ public actor TMDBClient {
     private let baseURL = "https://api.themoviedb.org/3"
     private let imageBaseURL = "https://image.tmdb.org/t/p/"
     
-    /// User injected TMDB Key from settings (defaulting to hardcoded globally deployed key)
+    /// User injected TMDB key from settings or process environment.
     private var apiKey: String {
         let stored = UserDefaults.standard.string(forKey: "tmdbAPIKey") ?? ""
-        return stored.isEmpty ? "373644031c56a242c61d5d3f1a7f3764" : stored
+        if !stored.isEmpty { return stored }
+        return ProcessInfo.processInfo.environment["TMDB_API_KEY"] ?? ""
     }
     
     /// Cache memory for fast retrieval
@@ -72,7 +73,7 @@ public actor TMDBClient {
             }
             return nil
         } catch {
-            print("[TMDBClient] Fetch failed for '\\(title)': \\(error)")
+            print("[TMDBClient] Fetch failed for '\(title)': \(error)")
             return nil
         }
     }

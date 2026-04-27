@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import AetherCore
 import AetherUI
 
@@ -20,8 +21,8 @@ public struct MiniPlayerView: View {
 
     public var body: some View {
         ZStack {
-            // Video layer — VLC renders directly into NSView
-            VLCVideoView(player: player)
+            // Do not attach the shared VLC drawable here; the main player owns video output.
+            MiniPlayerVideoBackdrop(player: player)
                 .aspectRatio(16 / 9, contentMode: .fill)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
@@ -162,6 +163,35 @@ public struct MiniPlayerView: View {
     }
 }
 
+private struct MiniPlayerVideoBackdrop: View {
+    @Bindable var player: PlayerCore
+
+    var body: some View {
+        ZStack {
+            Color.black
+            if let logoURL = player.currentChannel?.logoURL {
+                AsyncImage(url: logoURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .opacity(0.35)
+                    } else {
+                        Image(systemName: "tv")
+                            .font(.system(size: 42, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.2))
+                    }
+                }
+                .frame(maxWidth: 120, maxHeight: 80)
+            } else {
+                Image(systemName: "tv")
+                    .font(.system(size: 42, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.2))
+            }
+        }
+    }
+}
+
 /// Mini player window controller.
 @MainActor
 @Observable
@@ -170,6 +200,7 @@ public final class MiniPlayerWindowController {
 
     private var window: NSWindow?
     private let player: PlayerCore
+    @ObservationIgnored private var closeObserver: NSObjectProtocol?
     public var epgStore: EPGStore = EPGStore()
 
     public init(player: PlayerCore) {
@@ -217,12 +248,13 @@ public final class MiniPlayerWindowController {
         self.isShowing = true
 
         // Handle window close
-        NotificationCenter.default.addObserver(
+        closeObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification,
             object: window,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
+                self?.removeCloseObserver()
                 self?.isShowing = false
                 self?.window = nil
             }
@@ -231,6 +263,7 @@ public final class MiniPlayerWindowController {
 
     public func hide() {
         window?.close()
+        removeCloseObserver()
         window = nil
         isShowing = false
     }
@@ -240,6 +273,19 @@ public final class MiniPlayerWindowController {
             hide()
         } else {
             show()
+        }
+    }
+
+    deinit {
+        if let closeObserver {
+            NotificationCenter.default.removeObserver(closeObserver)
+        }
+    }
+
+    private func removeCloseObserver() {
+        if let closeObserver {
+            NotificationCenter.default.removeObserver(closeObserver)
+            self.closeObserver = nil
         }
     }
 }

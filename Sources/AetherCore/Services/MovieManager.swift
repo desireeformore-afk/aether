@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import SwiftData
 
 /// Manages movie catalog, watch tracking, and filtering.

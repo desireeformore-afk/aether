@@ -123,6 +123,9 @@ struct ContentView: View {
                 return
             }
             playerCore.currentXstreamCredentials = playlist.xstreamCredentials
+            if let credentials = playlist.xstreamCredentials {
+                homeViewModel.load(credentials: credentials)
+            }
             Task { await epgStore.loadGuide(for: playlist) }
         }
         .onAppear {

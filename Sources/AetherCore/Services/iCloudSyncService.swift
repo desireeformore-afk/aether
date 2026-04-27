@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import CloudKit
 
 /// Service for syncing data via iCloud
@@ -121,7 +122,9 @@ public final class iCloudSyncService {
         record["url"] = playlist.url
         record["type"] = playlist.type.rawValue
         record["username"] = playlist.username
-        record["password"] = playlist.password
+        // Passwords are intentionally not synced as plaintext. Restored Xtream playlists
+        // must be completed locally with the account password.
+        record["password"] = nil
         record["lastModified"] = playlist.lastModified
 
         _ = try await requireDatabase().save(record)
@@ -146,7 +149,7 @@ public final class iCloudSyncService {
             url: url,
             type: type,
             username: record["username"] as? String,
-            password: record["password"] as? String
+            password: nil
         )
         playlist.lastModified = lastModified
         playlist.syncStatus = .synced

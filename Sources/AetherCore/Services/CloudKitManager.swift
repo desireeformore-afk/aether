@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import CloudKit
 
 public enum CloudKitError: Error, LocalizedError {

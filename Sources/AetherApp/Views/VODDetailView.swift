@@ -12,7 +12,7 @@ struct VODDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SubtitleStore.self) private var subtitleStore
 
-    @State private var selectedVOD: XstreamVOD
+    @State private var selectedVOD: XstreamVOD?
     @State private var tmdbMedia: TMDBMedia? = nil
     @State private var backdropURL: URL? = nil
     @State private var posterURL: URL? = nil
@@ -22,7 +22,7 @@ struct VODDetailView: View {
         self.item = item
         self.credentials = credentials
         self.player = player
-        _selectedVOD = State(initialValue: item.vod ?? item.alternateVODs.first!)
+        _selectedVOD = State(initialValue: item.vod ?? item.alternateVODs.first)
     }
 
     var body: some View {
@@ -41,7 +41,7 @@ struct VODDetailView: View {
                 .frame(width: 680, height: 420)
                 .clipped()
             } else {
-                AsyncImage(url: selectedVOD.streamIcon.flatMap(URL.init(string:))) { phase in
+                AsyncImage(url: selectedVOD?.streamIcon.flatMap(URL.init(string:))) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill()
                            .blur(radius: 40)
@@ -89,7 +89,7 @@ struct VODDetailView: View {
     // MARK: - Poster
 
     private var posterPanel: some View {
-        AsyncImage(url: posterURL ?? selectedVOD.streamIcon.flatMap(URL.init(string:))) { phase in
+        AsyncImage(url: posterURL ?? selectedVOD?.streamIcon.flatMap(URL.init(string:))) { phase in
             switch phase {
             case .success(let img):
                 img.resizable().scaledToFill()
@@ -153,7 +153,7 @@ struct VODDetailView: View {
                         
                         Picker("", selection: $selectedVOD) {
                             ForEach(item.alternateVODs) { altVod in
-                                Text(altVod.name).tag(altVod)
+                                Text(altVod.name).tag(Optional(altVod))
                             }
                         }
                         .pickerStyle(.menu)
@@ -183,7 +183,7 @@ struct VODDetailView: View {
                     .foregroundStyle(.secondary)
             }
             
-            if let cat = selectedVOD.categoryName, !cat.isEmpty {
+            if let cat = selectedVOD?.categoryName, !cat.isEmpty {
                 if tmdbMedia?.yearString != nil {
                     Circle()
                         .fill(Color.secondary.opacity(0.4))
@@ -197,7 +197,7 @@ struct VODDetailView: View {
             }
 
             // Fallback to Xtream rating if TMDB hasn't provided one
-            let finalRating = tmdbMedia?.voteAverage ?? (selectedVOD.rating.flatMap { Double($0) } ?? 0)
+            let finalRating = tmdbMedia?.voteAverage ?? (selectedVOD?.rating.flatMap { Double($0) } ?? 0)
             
             if finalRating > 0 {
                 Circle()
@@ -230,6 +230,7 @@ struct VODDetailView: View {
     private var playButton: some View {
         HStack(spacing: 12) {
             Button {
+                guard let selectedVOD else { return }
                 var ch = selectedVOD.toChannel(credentials: credentials)
                 ch.availableVariants = item.alternateVODs.map { $0.toChannel(credentials: credentials) }
                 Task { @MainActor in player.play(ch) }
@@ -249,6 +250,7 @@ struct VODDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
+            .disabled(selectedVOD == nil)
 
             Button { toggleVODFavorite() } label: {
                 Image(systemName: isVODFavorited ? "star.fill" : "star")
@@ -264,11 +266,13 @@ struct VODDetailView: View {
     }
 
     private var vodDeterministicID: UUID {
+        guard let selectedVOD else { return UUID() }
         let offset = selectedVOD.id + 0xE00000000000
         return UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012x", offset))") ?? UUID()
     }
 
     private var isVODFavorited: Bool {
+        guard selectedVOD != nil else { return false }
         let fav = vodDeterministicID
         let matching = (try? modelContext.fetch(
             FetchDescriptor<FavoriteRecord>(predicate: #Predicate { $0.channelID == fav })
@@ -277,6 +281,7 @@ struct VODDetailView: View {
     }
 
     private func toggleVODFavorite() {
+        guard let selectedVOD else { return }
         let fav = vodDeterministicID
         let matching = (try? modelContext.fetch(
             FetchDescriptor<FavoriteRecord>(predicate: #Predicate { $0.channelID == fav })

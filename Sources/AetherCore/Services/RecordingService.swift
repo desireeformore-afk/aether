@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 @preconcurrency import AVFoundation
 
 /// Service for recording live streams to disk.

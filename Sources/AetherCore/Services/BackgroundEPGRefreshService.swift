@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// Background EPG refresh service that periodically updates EPG data.
 @MainActor

@@ -17,22 +17,23 @@ final class HomeViewModel: ObservableObject {
     // Priority-sorted VOD shelves exposed to VODBrowserView
     @Published var brandHubs: [(hub: BrandHub, shelves: [(title: String, items: [ShelfItem])])] = []
 
-    // Static cache — shared across views, survives navigation
-    static var cachedVODShelves: [(title: String, items: [ShelfItem])]? = nil
-    static var cachedSeriesShelves: [(title: String, items: [ShelfItem])]? = nil
-    static var cachedLive: [ShelfItem]? = nil
-    static var cachedAllVODs: [XstreamVOD]? = nil
-    static var cachedAllSeries: [XstreamSeries]? = nil
-    static var cachedBrandHubs: [(hub: BrandHub, shelves: [(title: String, items: [ShelfItem])])]? = nil
+    // Static cache — shared across views, but partitioned by server/account.
+    static var cachedVODShelves: [String: [(title: String, items: [ShelfItem])]] = [:]
+    static var cachedSeriesShelves: [String: [(title: String, items: [ShelfItem])]] = [:]
+    static var cachedLive: [String: [ShelfItem]] = [:]
+    static var cachedAllVODs: [String: [XstreamVOD]] = [:]
+    static var cachedAllSeries: [String: [XstreamSeries]] = [:]
+    static var cachedBrandHubs: [String: [(hub: BrandHub, shelves: [(title: String, items: [ShelfItem])])]] = [:]
 
     // MARK: - Disk cache keys
-    private static let cacheKey = "homevm_shelves_v1"
-    private static let cacheAgeKey = "homevm_cache_age_v1"
+    private static let baseDiskCacheKey = "homevm_shelves_v1"
+    private static let baseDiskCacheAgeKey = "homevm_cache_age_v1"
     private static let maxCacheAge: TimeInterval = 3600 // 1 hour
 
     private var service: XstreamService?
     private var hasLoaded = false
     private var loadTask: Task<Void, Never>?
+    private var activeCacheKey: String?
 
     @AppStorage("preferredLanguage") var preferredLanguage: String = "pl"
     @AppStorage("preferredCountry") var preferredCountry: String = "PL"
@@ -45,18 +46,25 @@ final class HomeViewModel: ObservableObject {
     }
 
     func loadIfNeeded() {
-        guard !hasLoaded, let svc = service else { return }
+        guard !hasLoaded, let svc = service, let cacheKey = activeCacheKey else { return }
         hasLoaded = true
-        loadTask = Task { await performLoad(svc) }
+        loadTask = Task { await performLoad(svc, cacheKey: cacheKey) }
     }
 
     func load(credentials: XstreamCredentials) {
-        if service == nil {
+        let cacheKey = Self.accountCacheKey(for: credentials)
+
+        if activeCacheKey != cacheKey {
+            loadTask?.cancel()
+            resetLoadedState()
+            activeCacheKey = cacheKey
+            service = XstreamService(credentials: credentials)
+        } else if service == nil {
             service = XstreamService(credentials: credentials)
         }
 
         // INSTANT: show disk cache before even starting network load
-        if shelves.isEmpty, let diskCached = Self.loadFromDiskCache() {
+        if shelves.isEmpty, let diskCached = Self.loadFromDiskCache(cacheKey: cacheKey) {
             shelves = diskCached
             heroBannerItems = Self.buildHeroBanner(from: diskCached)
             isPhase1Loaded = true
@@ -65,55 +73,50 @@ final class HomeViewModel: ObservableObject {
         // Restore from in-memory cache if already loaded
         if hasLoaded {
             if !shelves.isEmpty { return }
-            if let cached = Self.cachedVODShelves {
+            if let cached = Self.cachedVODShelves[cacheKey] {
                 shelves = cached
                 heroBannerItems = Self.buildHeroBanner(from: cached)
                 isPhase1Loaded = true
             }
-            if let cachedHubs = Self.cachedBrandHubs { brandHubs = cachedHubs }
-            if let cached = Self.cachedSeriesShelves { seriesShelves = cached }
-            if let cached = Self.cachedLive { liveItems = cached }
-            if let cached = Self.cachedAllVODs { allVODs = cached }
-            if let cached = Self.cachedAllSeries { allSeries = cached }
+            if let cachedHubs = Self.cachedBrandHubs[cacheKey] { brandHubs = cachedHubs }
+            if let cached = Self.cachedSeriesShelves[cacheKey] { seriesShelves = cached }
+            if let cached = Self.cachedLive[cacheKey] { liveItems = cached }
+            if let cached = Self.cachedAllVODs[cacheKey] { allVODs = cached }
+            if let cached = Self.cachedAllSeries[cacheKey] { allSeries = cached }
             isFullyLoaded = true
             return
         }
         hasLoaded = true
         guard let svc = service else { return }
-        loadTask = Task { await performLoad(svc) }
+        loadTask = Task { await performLoad(svc, cacheKey: cacheKey) }
     }
 
     func forceReload(credentials: XstreamCredentials) {
-        hasLoaded = false
+        let cacheKey = Self.accountCacheKey(for: credentials)
         loadTask?.cancel()
         service = nil
-        Self.cachedVODShelves = nil
-        Self.cachedSeriesShelves = nil
-        Self.cachedLive = nil
-        Self.cachedAllVODs = nil
-        Self.cachedAllSeries = nil
-        Self.cachedBrandHubs = nil
-        UserDefaults.standard.removeObject(forKey: Self.cacheKey)
-        UserDefaults.standard.removeObject(forKey: Self.cacheAgeKey)
-        heroBannerItems = []
-        shelves = []
-        seriesShelves = []
-        brandHubs = []
-        liveItems = []
-        allVODs = []
-        allSeries = []
-        isPhase1Loaded = false
-        isFullyLoaded = false
+        activeCacheKey = nil
+        hasLoaded = false
+        Self.cachedVODShelves.removeValue(forKey: cacheKey)
+        Self.cachedSeriesShelves.removeValue(forKey: cacheKey)
+        Self.cachedLive.removeValue(forKey: cacheKey)
+        Self.cachedAllVODs.removeValue(forKey: cacheKey)
+        Self.cachedAllSeries.removeValue(forKey: cacheKey)
+        Self.cachedBrandHubs.removeValue(forKey: cacheKey)
+        UserDefaults.standard.removeObject(forKey: Self.diskCacheKey(for: cacheKey))
+        UserDefaults.standard.removeObject(forKey: Self.diskCacheAgeKey(for: cacheKey))
+        resetLoadedState()
         load(credentials: credentials)
     }
 
-    private func performLoad(_ svc: XstreamService) async {
+    private func performLoad(_ svc: XstreamService, cacheKey: String) async {
         defer {
             if Task.isCancelled { hasLoaded = false }
         }
 
         do {
-            let (allVODShelves, hubToShelves) = try await loadAllVODsGrouped(svc: svc)
+            let (allVODShelves, hubToShelves) = try await loadAllVODsGrouped(svc: svc, cacheKey: cacheKey)
+            guard isActive(cacheKey) else { return }
             
             guard !allVODShelves.isEmpty else {
                 self.errorMessage = "Brak dostępnych filmów."
@@ -141,30 +144,33 @@ final class HomeViewModel: ObservableObject {
             self.brandHubs = grouped.map { (hub: $0.key, shelves: $0.value) }
                 .sorted { $0.hub.rawValue < $1.hub.rawValue }
             self.allVODs = await svc.cachedVods // await required since XstreamService is an actor
+            guard isActive(cacheKey) else { return }
             
-            Self.cachedVODShelves = topVODShelves
-            Self.cachedAllVODs = self.allVODs
-            Self.cachedBrandHubs = self.brandHubs
-            Self.saveToDiskCache(topVODShelves)
+            Self.cachedVODShelves[cacheKey] = topVODShelves
+            Self.cachedAllVODs[cacheKey] = self.allVODs
+            Self.cachedBrandHubs[cacheKey] = self.brandHubs
+            Self.saveToDiskCache(topVODShelves, cacheKey: cacheKey)
             
             isPhase1Loaded = true
             
             // TIER 3: Series + Live in background
-            async let seriesTask: Void = loadSeriesInBackground(svc)
-            async let liveTask: Void = loadLiveInBackground(svc)
+            async let seriesTask: Void = loadSeriesInBackground(svc, cacheKey: cacheKey)
+            async let liveTask: Void = loadLiveInBackground(svc, cacheKey: cacheKey)
             await seriesTask
             await liveTask
+            guard isActive(cacheKey) else { return }
             
             isFullyLoaded = true
             
         } catch {
+            guard isActive(cacheKey) else { return }
             self.error = error
             self.errorMessage = error.localizedDescription
             isPhase1Loaded = true
         }
     }
 
-    private func loadAllVODsGrouped(svc: XstreamService) async throws -> (allShelves: [(title: String, items: [ShelfItem])], hubToShelves: [BrandHub: [String: [String: ShelfItem]]]) {
+    private func loadAllVODsGrouped(svc: XstreamService, cacheKey: String) async throws -> (allShelves: [(title: String, items: [ShelfItem])], hubToShelves: [BrandHub: [String: [String: ShelfItem]]]) {
         // SINGLE REQUEST: one call fetches the entire VOD library.
         // This is orders of magnitude faster than 250 per-category requests and correctly
         // populates svc.cachedVods so the global search works without any extra plumbing.
@@ -218,12 +224,12 @@ final class HomeViewModel: ObservableObject {
         }
 
         // Expose flat list for search — already cached inside the actor via vodStreams(nil)
-        Self.cachedAllVODs = allStreams
+        Self.cachedAllVODs[cacheKey] = allStreams
 
         return (finalShelves, hubToShelves)
     }
 
-    private func loadSeriesInBackground(_ svc: XstreamService) async {
+    private func loadSeriesInBackground(_ svc: XstreamService, cacheKey: String) async {
         let allSeriesCats = (try? await svc.seriesCategories()) ?? []
         let clean = allSeriesCats.filter { !isGarbageCategory($0.name) }.sorted { $0.name < $1.name }
         var results: [(title: String, items: [ShelfItem])] = []
@@ -234,6 +240,7 @@ final class HomeViewModel: ObservableObject {
                 group.addTask { await self.loadSeriesShelf(svc: svc, cat: cat) }
             }
             for await shelf in group {
+                guard isActive(cacheKey) else { return }
                 if let s = shelf {
                     results.append(s)
                     seriesShelves = results
@@ -242,24 +249,26 @@ final class HomeViewModel: ObservableObject {
                 }
             }
         }
-        Self.cachedSeriesShelves = results
-        Self.cachedAllSeries = collected
+        guard isActive(cacheKey) else { return }
+        Self.cachedSeriesShelves[cacheKey] = results
+        Self.cachedAllSeries[cacheKey] = collected
     }
 
-    private func loadLiveInBackground(_ svc: XstreamService) async {
+    private func loadLiveInBackground(_ svc: XstreamService, cacheKey: String) async {
         let streams = (try? await svc.liveStreams()) ?? []
+        guard isActive(cacheKey) else { return }
         let items = streams.prefix(20).map { stream in
             ShelfItem(id: "\(stream.id)", title: stream.name, imageURL: stream.streamIcon, stream: stream, onTap: {})
         }
         liveItems = Array(items)
-        Self.cachedLive = Array(items)
+        Self.cachedLive[cacheKey] = Array(items)
     }
 
     // MARK: - Disk cache
 
-    static func loadFromDiskCache() -> [(title: String, items: [ShelfItem])]? {
-        guard let data = UserDefaults.standard.data(forKey: cacheKey),
-              let age = UserDefaults.standard.object(forKey: cacheAgeKey) as? Date,
+    static func loadFromDiskCache(cacheKey: String) -> [(title: String, items: [ShelfItem])]? {
+        guard let data = UserDefaults.standard.data(forKey: diskCacheKey(for: cacheKey)),
+              let age = UserDefaults.standard.object(forKey: diskCacheAgeKey(for: cacheKey)) as? Date,
               Date().timeIntervalSince(age) < maxCacheAge,
               let decoded = try? JSONDecoder().decode([CachedShelf].self, from: data)
         else { return nil }
@@ -270,16 +279,62 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    static func saveToDiskCache(_ shelves: [(title: String, items: [ShelfItem])]) {
+    static func saveToDiskCache(_ shelves: [(title: String, items: [ShelfItem])], cacheKey: String) {
         let cached = shelves.map { s in
             CachedShelf(title: s.title, items: s.items.map { i in
                 CachedShelfItem(id: i.id, title: i.title, imageURL: i.imageURL)
             })
         }
         if let data = try? JSONEncoder().encode(cached) {
-            UserDefaults.standard.set(data, forKey: cacheKey)
-            UserDefaults.standard.set(Date(), forKey: cacheAgeKey)
+            UserDefaults.standard.set(data, forKey: diskCacheKey(for: cacheKey))
+            UserDefaults.standard.set(Date(), forKey: diskCacheAgeKey(for: cacheKey))
         }
+    }
+
+    private func resetLoadedState() {
+        hasLoaded = false
+        heroBannerItems = []
+        shelves = []
+        seriesShelves = []
+        brandHubs = []
+        liveItems = []
+        allVODs = []
+        allSeries = []
+        isPhase1Loaded = false
+        isFullyLoaded = false
+        errorMessage = nil
+        error = nil
+    }
+
+    private func isActive(_ cacheKey: String) -> Bool {
+        activeCacheKey == cacheKey && !Task.isCancelled
+    }
+
+    private static func accountCacheKey(for credentials: XstreamCredentials) -> String {
+        var components = URLComponents(url: credentials.baseURL, resolvingAgainstBaseURL: false)
+        components?.user = nil
+        components?.password = nil
+        components?.query = nil
+        components?.fragment = nil
+        let base = components?.url?.absoluteString ?? credentials.baseURL.absoluteString
+        return "\(base)|\(credentials.username)"
+    }
+
+    private static func diskCacheKey(for accountKey: String) -> String {
+        "\(baseDiskCacheKey)_\(stableHash(accountKey))"
+    }
+
+    private static func diskCacheAgeKey(for accountKey: String) -> String {
+        "\(baseDiskCacheAgeKey)_\(stableHash(accountKey))"
+    }
+
+    private static func stableHash(_ value: String) -> String {
+        var hash: UInt64 = 14_695_981_039_346_656_037
+        for byte in value.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 1_099_511_628_211
+        }
+        return String(format: "%016llx", hash)
     }
 
     struct CachedShelf: Codable {

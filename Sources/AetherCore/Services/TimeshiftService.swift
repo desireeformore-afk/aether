@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 @preconcurrency import AVFoundation
 
 /// Service for timeshift (pause live TV) functionality.

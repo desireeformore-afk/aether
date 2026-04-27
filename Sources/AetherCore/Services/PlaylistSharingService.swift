@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import CoreImage
 
 /// Service for managing playlist sharing functionality

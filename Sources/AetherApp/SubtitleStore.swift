@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import AetherCore
 import Combine
 

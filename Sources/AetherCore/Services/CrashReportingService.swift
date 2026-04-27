@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import os.log
 
 /// Crash report information.

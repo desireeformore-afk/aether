@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import Combine
 
 /// Service for generating channel recommendations based on viewing history

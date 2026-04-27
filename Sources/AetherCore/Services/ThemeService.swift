@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// Manages the active UI theme and persists selection to UserDefaults.
 @MainActor

@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import CryptoKit
 
 /// Service for managing parental controls and content restrictions.

@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// Observable wrapper around `EPGService` for SwiftUI environment injection.
 /// Also manages per-playlist EPG loading triggered by playlist selection changes.

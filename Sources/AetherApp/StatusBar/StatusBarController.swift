@@ -1,4 +1,5 @@
 import AppKit
+import Observation
 import SwiftUI
 import Combine
 import AetherCore
@@ -14,6 +15,7 @@ final class StatusBarController {
     private var modelContainer: ModelContainer?
     private var favorites: [FavoriteRecord] = []
     private var logoImageCache: [UUID: NSImage] = [:]
+    @ObservationIgnored private var playerObservationTask: Task<Void, Never>?
 
     init(player: PlayerCore) {
         self.player = player
@@ -60,11 +62,14 @@ final class StatusBarController {
             statusItem = nil
         }
         cancellables.removeAll()
+        playerObservationTask?.cancel()
+        playerObservationTask = nil
     }
 
     private func observePlayer() {
         // Observe state changes using withObservationTracking
-        Task { @MainActor in
+        playerObservationTask?.cancel()
+        playerObservationTask = Task { @MainActor in
             while !Task.isCancelled {
                 withObservationTracking {
                     _ = player.currentChannel

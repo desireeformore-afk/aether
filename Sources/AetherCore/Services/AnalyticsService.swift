@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import Combine
 
 /// Service for tracking and analyzing user viewing statistics

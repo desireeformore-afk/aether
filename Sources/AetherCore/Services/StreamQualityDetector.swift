@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 @preconcurrency import AVFoundation
 
 /// Detects available quality variants from HLS manifests and monitors stream quality.
