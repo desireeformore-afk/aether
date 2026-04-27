@@ -15,6 +15,34 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "35BCC85B3BEC0758B2852635"
+               BuildableName = "AetherCore.framework"
+               BlueprintName = "AetherCore"
+               ReferencedContainer = "container:Aether.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "F3BF791DEC33AEB16F1272F3"
+               BuildableName = "AetherUI.framework"
+               BlueprintName = "AetherUI"
+               ReferencedContainer = "container:Aether.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "BB000000000000000000TARG"
                BuildableName = "AetherApp.app"
                BlueprintName = "AetherApp"

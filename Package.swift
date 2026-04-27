@@ -41,7 +41,7 @@ let package = Package(
         // macOS app — @main entry point via SwiftUI App protocol
         .executableTarget(
             name: "AetherApp",
-            dependencies: ["AetherCore", "AetherUI"],
+            dependencies: ["AetherCore", "AetherUI", "VLCKit"],
             path: "Sources/AetherApp",
             resources: [
                 .process("Resources/Assets.xcassets"),
