@@ -15,8 +15,7 @@ final class HomeViewModel: ObservableObject {
     @Published var error: Error? = nil
 
     // Priority-sorted VOD shelves exposed to VODBrowserView
-    @Published var streamingServiceShelves: [(title: String, icon: String, items: [ShelfItem], allItems: [ShelfItem])] = []
-    @Published var genreShelves: [(title: String, items: [ShelfItem])] = []
+    @Published var brandHubs: [(hub: BrandHub, shelves: [(title: String, items: [ShelfItem])])] = []
 
     // Static cache — shared across views, survives navigation
     static var cachedVODShelves: [(title: String, items: [ShelfItem])]? = nil
@@ -24,6 +23,7 @@ final class HomeViewModel: ObservableObject {
     static var cachedLive: [ShelfItem]? = nil
     static var cachedAllVODs: [XstreamVOD]? = nil
     static var cachedAllSeries: [XstreamSeries]? = nil
+    static var cachedBrandHubs: [(hub: BrandHub, shelves: [(title: String, items: [ShelfItem])])]? = nil
 
     // MARK: - Disk cache keys
     private static let cacheKey = "homevm_shelves_v1"
@@ -39,14 +39,9 @@ final class HomeViewModel: ObservableObject {
 
     var sharedService: XstreamService? { service }
 
-    /// Returns all items for a streaming service shelf by title.
-    func allItemsForService(_ title: String) -> [ShelfItem] {
-        streamingServiceShelves.first(where: { $0.title == title })?.allItems ?? []
-    }
-
     /// Re-sorts shelves using current language/country preference.
     func rebuildWithCurrentPreferences() {
-        rebuildPriorityShelves(from: shelves)
+        // Handled via data reload if necessary
     }
 
     func loadIfNeeded() {
@@ -64,7 +59,6 @@ final class HomeViewModel: ObservableObject {
         if shelves.isEmpty, let diskCached = Self.loadFromDiskCache() {
             shelves = diskCached
             heroBannerItems = Self.buildHeroBanner(from: diskCached)
-            rebuildPriorityShelves(from: diskCached)
             isPhase1Loaded = true
         }
 
@@ -74,9 +68,9 @@ final class HomeViewModel: ObservableObject {
             if let cached = Self.cachedVODShelves {
                 shelves = cached
                 heroBannerItems = Self.buildHeroBanner(from: cached)
-                rebuildPriorityShelves(from: cached)
                 isPhase1Loaded = true
             }
+            if let cachedHubs = Self.cachedBrandHubs { brandHubs = cachedHubs }
             if let cached = Self.cachedSeriesShelves { seriesShelves = cached }
             if let cached = Self.cachedLive { liveItems = cached }
             if let cached = Self.cachedAllVODs { allVODs = cached }
@@ -98,13 +92,13 @@ final class HomeViewModel: ObservableObject {
         Self.cachedLive = nil
         Self.cachedAllVODs = nil
         Self.cachedAllSeries = nil
+        Self.cachedBrandHubs = nil
         UserDefaults.standard.removeObject(forKey: Self.cacheKey)
         UserDefaults.standard.removeObject(forKey: Self.cacheAgeKey)
         heroBannerItems = []
         shelves = []
         seriesShelves = []
-        streamingServiceShelves = []
-        genreShelves = []
+        brandHubs = []
         liveItems = []
         allVODs = []
         allSeries = []
@@ -114,132 +108,119 @@ final class HomeViewModel: ObservableObject {
     }
 
     private func performLoad(_ svc: XstreamService) async {
-        // TIER 0: disk cache already shown by load() — skip if already populated
         defer {
-            // If the task was cancelled before completion, allow load() to retry
             if Task.isCancelled { hasLoaded = false }
         }
 
-        // Fetch all categories — propagate to UI on failure
-        let allCats: [XstreamCategory]
         do {
-            allCats = try await svc.vodCategories()
+            let (allVODShelves, hubToShelves) = try await loadAllVODsGrouped(svc: svc)
+            
+            guard !allVODShelves.isEmpty else {
+                self.errorMessage = "Brak dostępnych filmów."
+                isPhase1Loaded = true
+                return
+            }
+            
+            // Limit render to Top 20 Shelves internally to keep UI fast
+            let topVODShelves = Array(allVODShelves.prefix(20))
+            
+            self.shelves = topVODShelves
+            self.heroBannerItems = Self.buildHeroBanner(from: topVODShelves)
+            
+            // Build brandHubs directly from the populated hubToShelves
+            var grouped: [BrandHub: [(title: String, items: [ShelfItem])]] = [:]
+            for hub in BrandHub.allCases {
+                guard let shelvesDict = hubToShelves[hub] else { continue }
+                var sortedHubShelves: [(title: String, items: [ShelfItem])] = []
+                for shelfName in shelvesDict.keys.sorted() {
+                    let items = shelvesDict[shelfName]!.values.sorted { $0.title < $1.title }
+                    if !items.isEmpty { sortedHubShelves.append((title: shelfName, items: items)) }
+                }
+                if !sortedHubShelves.isEmpty { grouped[hub] = sortedHubShelves }
+            }
+            self.brandHubs = grouped.map { (hub: $0.key, shelves: $0.value) }
+                .sorted { $0.hub.rawValue < $1.hub.rawValue }
+            self.allVODs = await svc.cachedVods // await required since XstreamService is an actor
+            
+            Self.cachedVODShelves = topVODShelves
+            Self.cachedAllVODs = self.allVODs
+            Self.cachedBrandHubs = self.brandHubs
+            Self.saveToDiskCache(topVODShelves)
+            
+            isPhase1Loaded = true
+            
+            // TIER 3: Series + Live in background
+            async let seriesTask: Void = loadSeriesInBackground(svc)
+            async let liveTask: Void = loadLiveInBackground(svc)
+            await seriesTask
+            await liveTask
+            
+            isFullyLoaded = true
+            
         } catch {
             self.error = error
             self.errorMessage = error.localizedDescription
             isPhase1Loaded = true
-            return
         }
-        let filtered = allCats.filter { !isGarbageCategory($0.name) }
-
-        // Sort: streaming services first, then alphabetically
-        let sorted = filtered.sorted { a, b in
-            let aIsService = Self.streamingServices.contains { entry in
-                entry.keywords.contains { a.name.lowercased().contains($0) }
-            }
-            let bIsService = Self.streamingServices.contains { entry in
-                entry.keywords.contains { b.name.lowercased().contains($0) }
-            }
-            if aIsService != bIsService { return aIsService }
-            return a.name < b.name
-        }
-
-        let top16 = Array(sorted.prefix(16))
-        guard !top16.isEmpty else { isPhase1Loaded = true; return }
-
-        // TIER 1: First 3 categories IN PARALLEL (async let)
-        let cats3 = Array(top16.prefix(3))
-        async let shelf0 = loadVODShelf(svc: svc, cat: cats3[0])
-        async let shelf1 = cats3.count > 1 ? loadVODShelf(svc: svc, cat: cats3[1]) : nil
-        async let shelf2 = cats3.count > 2 ? loadVODShelf(svc: svc, cat: cats3[2]) : nil
-
-        let (r0, r1, r2) = await (shelf0, shelf1, shelf2)
-        var initialShelves: [(title: String, items: [ShelfItem])] = []
-        if let r = r0 { initialShelves.append(r) }
-        if let r = r1 { initialShelves.append(r) }
-        if let r = r2 { initialShelves.append(r) }
-
-        if !initialShelves.isEmpty {
-            shelves = initialShelves
-            heroBannerItems = Self.buildHeroBanner(from: initialShelves)
-            rebuildPriorityShelves(from: initialShelves)
-            allVODs = initialShelves.flatMap { $0.items.compactMap { $0.vod } }
-            isPhase1Loaded = true
-        } else {
-            isPhase1Loaded = true
-        }
-
-        // TIER 2: Remaining categories with TaskGroup (concurrent)
-        var allShelves = initialShelves
-        var collectedVODs: [XstreamVOD] = allVODs
-
-        await withTaskGroup(of: (title: String, items: [ShelfItem])?.self) { group in
-            for cat in top16.dropFirst(3) {
-                group.addTask { await self.loadVODShelf(svc: svc, cat: cat) }
-            }
-            for await shelf in group {
-                if let s = shelf {
-                    allShelves.append(s)
-                    shelves = allShelves
-                    rebuildPriorityShelves(from: allShelves)
-                    collectedVODs.append(contentsOf: s.items.compactMap { $0.vod })
-                    allVODs = collectedVODs
-                }
-            }
-        }
-
-        Self.cachedVODShelves = allShelves
-        Self.cachedAllVODs = collectedVODs
-        heroBannerItems = Self.buildHeroBanner(from: allShelves)
-
-        // Save to disk cache for next launch
-        Self.saveToDiskCache(allShelves)
-
-        // TIER 3: Series + Live in background (don't block)
-        async let seriesTask: Void = loadSeriesInBackground(svc)
-        async let liveTask: Void = loadLiveInBackground(svc)
-        await seriesTask
-        await liveTask
-
-        // TIER 4: Full search index — loads ALL remaining VOD categories (beyond top 16) into allVODs.
-        // Runs detached so it never blocks UI or series/live loading.
-        // allVODs is already partially filled from Tier 1+2; this appends the rest.
-        let top16IDs = Set(top16.map { $0.id })
-        let remainingCats = allCats.filter { !self.isGarbageCategory($0.name) && !top16IDs.contains($0.id) }
-        Task.detached(priority: .background) { [weak self] in
-            guard let self else { return }
-            var extra: [XstreamVOD] = []
-            let batchSize = 4  // 4 concurrent requests — won't saturate the connection during playback
-            let cats = remainingCats
-            var i = 0
-            while i < cats.count {
-                guard await self.canContinueIndexing() else { break }
-                let batch = Array(cats[i..<min(i + batchSize, cats.count)])
-                await withTaskGroup(of: [XstreamVOD].self) { group in
-                    for cat in batch {
-                        group.addTask { (try? await svc.vodStreams(categoryID: cat.id)) ?? [] }
-                    }
-                    for await vods in group { extra.append(contentsOf: vods) }
-                }
-                i += batchSize
-                // 200ms pause between batches — lets the OS scheduler breathe for active playback
-                try? await Task.sleep(for: .milliseconds(200))
-            }
-            guard !extra.isEmpty else { return }
-            await MainActor.run {
-                self.allVODs.append(contentsOf: extra)
-                Self.cachedAllVODs = self.allVODs
-                print("[HomeVM] Search index complete — \(self.allVODs.count) VODs indexed")
-            }
-        }
-
-        isFullyLoaded = true
     }
 
-    /// Guard for Tier 4 batched indexing. Returns false to abort indexing early (e.g., could
-    /// be extended to pause when user is actively watching a stream).
-    private func canContinueIndexing() async -> Bool {
-        return !Task.isCancelled
+    private func loadAllVODsGrouped(svc: XstreamService) async throws -> (allShelves: [(title: String, items: [ShelfItem])], hubToShelves: [BrandHub: [String: [String: ShelfItem]]]) {
+        // SINGLE REQUEST: one call fetches the entire VOD library.
+        // This is orders of magnitude faster than 250 per-category requests and correctly
+        // populates svc.cachedVods so the global search works without any extra plumbing.
+        let allStreams: [XstreamVOD] = (try? await svc.vodStreams(categoryID: nil)) ?? []
+
+        let allCats = (try? await svc.vodCategories()) ?? []
+        let catDict = Dictionary(uniqueKeysWithValues: allCats.map { ($0.id, $0) })
+
+        // hub -> shelfName -> normalizedTitle -> Item
+        var hubToShelves: [BrandHub: [String: [String: ShelfItem]]] = [:]
+
+        for vod in allStreams {
+            let catName = catDict[vod.categoryID ?? ""]?.name ?? vod.categoryName ?? "Other"
+            // Skip garbage categories (Arabic, Telugu, etc.) at the mapping stage
+            guard !isGarbageCategory(catName) else { continue }
+
+            let hub = VODNormalizer.mapCategoryToHub(categoryName: catName)
+            let shelfName = VODNormalizer.normalizeShelfName(categoryName: catName, hub: hub)
+
+            let (cleanTitle, tags) = VODNormalizer.extractTagsAndClean(vod.name)
+            let lowerTitle = cleanTitle.lowercased()
+
+            var shelfDict = hubToShelves[hub]?[shelfName] ?? [:]
+
+            if var existing = shelfDict[lowerTitle] {
+                existing.tags.formUnion(tags)
+                if !existing.alternateVODs.contains(where: { $0.id == vod.id }) {
+                    existing.alternateVODs.append(vod)
+                }
+                shelfDict[lowerTitle] = existing
+            } else {
+                if shelfDict.count >= 200 { continue }
+                let item = ShelfItem(id: "\(vod.id)", title: cleanTitle, imageURL: vod.streamIcon, vod: vod, tags: tags, alternateVODs: [vod], onTap: {})
+                shelfDict[lowerTitle] = item
+            }
+
+            var shelvesForHub = hubToShelves[hub] ?? [:]
+            shelvesForHub[shelfName] = shelfDict
+            hubToShelves[hub] = shelvesForHub
+        }
+
+        var finalShelves: [(title: String, items: [ShelfItem])] = []
+        for hub in BrandHub.allCases {
+            guard let shelvesDict = hubToShelves[hub] else { continue }
+            for shelfName in shelvesDict.keys.sorted() {
+                let items = shelvesDict[shelfName]!.values.sorted { $0.title < $1.title }
+                if !items.isEmpty {
+                    finalShelves.append((title: shelfName, items: items))
+                }
+            }
+        }
+
+        // Expose flat list for search — already cached inside the actor via vodStreams(nil)
+        Self.cachedAllVODs = allStreams
+
+        return (finalShelves, hubToShelves)
     }
 
     private func loadSeriesInBackground(_ svc: XstreamService) async {
@@ -314,96 +295,16 @@ final class HomeViewModel: ObservableObject {
 
     // MARK: - Priority shelf buckets
 
-    /// Streaming service keyword map: (keywords, display label, SF Symbol icon)
-    private static let streamingServices: [(keywords: [String], label: String, icon: String)] = [
-        (["netflix", " nf ", "nf-", "-nf "], "Netflix", "n.circle.fill"),
-        (["prime", "amazon"], "Prime Video", "p.circle.fill"),
-        (["apple tv", "appletv", "apple+"], "Apple TV+", "apple.logo"),
-        (["hbo"], "HBO Max", "h.circle.fill"),
-        (["disney"], "Disney+", "d.circle.fill"),
-        (["hulu"], "Hulu", "h.square.fill"),
-        (["paramount"], "Paramount+", "p.square.fill"),
-    ]
 
-    /// Genre keyword map: (keywords, display label)
-    private static let genreKeywords: [(keywords: [String], label: String)] = [
-        (["action", "akcja", "thriller"], "Akcja & Thriller"),
-        (["comedy", "komedia"], "Komedia"),
-        (["horror"], "Horror"),
-        (["sci-fi", " sf ", "science fiction"], "Sci-Fi"),
-        (["drama", "dramat"], "Dramat"),
-        (["animation", "animacja", "animated"], "Animacja"),
-        (["documentary", "dokument"], "Dokumentalne"),
-        (["kids", "family", "dla dzieci", "children"], "Dla dzieci"),
-        (["romance", "romans"], "Romans"),
-        (["4k"], "4K Filmy"),
-        (["polish", "polski", " pl "], "🇵🇱 Polskie"),
-        (["turkish", "turecki", " tr "], "🇹🇷 Tureckie"),
-    ]
+    // Rebuild Hubs function removed because it's handled properly inside performLoad using raw category keys
 
-    /// Rebuilds `streamingServiceShelves` and `genreShelves` from the flat shelves list.
-    private func rebuildPriorityShelves(from shelves: [(title: String, items: [ShelfItem])]) {
-        var streaming: [(title: String, icon: String, items: [ShelfItem], allItems: [ShelfItem])] = []
-        var genre: [(title: String, items: [ShelfItem])] = []
-        var used = Set<String>()
 
-        // Country-boost keywords: preferred country content sorts first in genre shelves
-        let countryBoostKeywords: [String]
-        switch preferredCountry.uppercased() {
-        case "PL": countryBoostKeywords = ["pl", "polish", "polski", "poland"]
-        case "TR": countryBoostKeywords = ["tr", "turkish", "turecki"]
-        case "DE": countryBoostKeywords = ["de", "german", "deutsch"]
-        case "FR": countryBoostKeywords = ["fr", "french", "français"]
-        case "ES": countryBoostKeywords = ["es", "spanish", "español"]
-        case "AR": countryBoostKeywords = ["ar", "arabic", "عربي"]
-        default:   countryBoostKeywords = ["en", "english"]
-        }
-
-        // Sort shelves so preferred country genres appear first
-        let sortedShelves = shelves.sorted { a, b in
-            let aLower = a.title.lowercased()
-            let bLower = b.title.lowercased()
-            let aBoost = countryBoostKeywords.contains(where: { aLower.contains($0) })
-            let bBoost = countryBoostKeywords.contains(where: { bLower.contains($0) })
-            if aBoost != bBoost { return aBoost }
-            return false
-        }
-
-        for shelf in sortedShelves {
-            let lower = shelf.title.lowercased()
-            if let svc = Self.streamingServices.first(where: { $0.keywords.contains(where: { lower.contains($0) }) }) {
-                if !used.contains(svc.label) {
-                    let allItems = shelf.items
-                    let displayItems = Array(allItems.prefix(8))
-                    streaming.append((title: svc.label, icon: svc.icon, items: displayItems, allItems: allItems))
-                    used.insert(svc.label)
-                }
-            } else if let g = Self.genreKeywords.first(where: { $0.keywords.contains(where: { lower.contains($0) }) }) {
-                if !used.contains(g.label) {
-                    genre.append((title: g.label, items: Array(shelf.items.prefix(8))))
-                    used.insert(g.label)
-                }
-            }
-        }
-
-        streamingServiceShelves = streaming
-        genreShelves = genre
-    }
-
-    private func loadVODShelf(svc: XstreamService, cat: XstreamCategory) async -> (title: String, items: [ShelfItem])? {
-        guard let streams = try? await svc.vodStreams(categoryID: cat.id), !streams.isEmpty else { return nil }
-        let cleanName = cleanCategoryName(cat.name)
-        let items = streams.prefix(20).map { vod in
-            ShelfItem(id: "\(vod.id)", title: cleanTitle(vod.name), imageURL: vod.streamIcon, vod: vod, onTap: {})
-        }
-        return (cleanName, Array(items))
-    }
 
     private func loadSeriesShelf(svc: XstreamService, cat: XstreamSeriesCategory) async -> (title: String, items: [ShelfItem])? {
         guard let series = try? await svc.seriesList(categoryID: cat.id), !series.isEmpty else { return nil }
-        let cleanName = cleanCategoryName(cat.name)
+        let cleanName = VODNormalizer.cleanVODTitle(cat.name)
         let items = series.prefix(20).map { s in
-            ShelfItem(id: "\(s.id)", title: cleanTitle(s.name), imageURL: s.cover, series: s, onTap: {})
+            ShelfItem(id: "\(s.id)", title: VODNormalizer.cleanVODTitle(s.name), imageURL: s.cover, series: s, onTap: {})
         }
         return (cleanName, Array(items))
     }
@@ -415,57 +316,7 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    func cleanTitle(_ title: String) -> String {
-        let prefixes = ["AMZ - ", "AMZ-", "NF - ", "NF-", "NETFLIX - ", "Netflix - ",
-                        "Netflix 4K Premium - ", "Netflix 4K - ",
-                        "4K - ", "HD - ", "FHD - ", "UHD - "]
-        var result = title
-        for prefix in prefixes {
-            if result.uppercased().hasPrefix(prefix.uppercased()) {
-                result = String(result.dropFirst(prefix.count))
-                break
-            }
-        }
-        return result.trimmingCharacters(in: .whitespaces)
-    }
 
-    func cleanCategoryName(_ name: String) -> String {
-        var clean = name
-
-        // Strip leading prefix patterns: "PL - ", "TR - ", "AR-TR-D - ", "NF - ", "4K-TOP - " etc.
-        let prefixPatterns = ["AR-TR-D - ", "4K-TOP - ", "NF - "]
-        for prefix in prefixPatterns {
-            if clean.hasPrefix(prefix) {
-                clean = String(clean.dropFirst(prefix.count))
-                break
-            }
-        }
-        // Generic "XX - " pattern (short prefixes up to 6 chars)
-        if let range = clean.range(of: " - ") {
-            let prefix = String(clean[..<range.lowerBound])
-            if prefix.count <= 6 {
-                clean = String(clean[range.upperBound...])
-            }
-        }
-
-        clean = clean.trimmingCharacters(in: .whitespaces)
-
-        // Add flag emoji based on origin detected in the raw name
-        let upper = name.uppercased()
-        // Turkish: only if name starts with "TR - " or "TR-" or contains Turkish keywords
-        let isTurkish = upper.hasPrefix("TR - ") || upper.hasPrefix("TR-")
-            || upper.contains("TURK") || upper.contains("TÜRK") || upper.contains("TURKISH")
-        // Polish: only if name starts with "PL - " or "PL-" or contains " PL " (with spaces) or Polish keywords
-        let isPolish = upper.hasPrefix("PL - ") || upper.hasPrefix("PL-")
-            || upper.contains(" PL ") || upper.contains("POLISH") || upper.contains("POLSKI")
-        if isTurkish {
-            clean = "🇹🇷 \(clean)"
-        } else if isPolish {
-            clean = "🇵🇱 \(clean)"
-        }
-
-        return clean
-    }
 
     func isGarbageCategory(_ name: String) -> Bool {
         if name.isEmpty { return true }

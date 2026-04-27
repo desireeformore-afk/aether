@@ -10,7 +10,7 @@ struct SeriesBrowserView: View {
 
     @State private var heroBannerItems: [HeroBannerItem] = []
     @State private var selectedSeries: XstreamSeries?
-    @State private var selectedVOD: XstreamVOD?
+    @State private var selectedVODItem: ShelfItem?
     @State private var selectedGenre: String? = nil
 
     // Unique category names from all series
@@ -67,8 +67,8 @@ struct SeriesBrowserView: View {
         .sheet(item: $selectedSeries) { series in
             SeriesDetailView(series: series, credentials: credentials, player: player)
         }
-        .sheet(item: $selectedVOD) { vod in
-            VODDetailView(vod: vod, credentials: credentials, player: player)
+        .sheet(item: $selectedVODItem) { item in
+            VODDetailView(item: item, credentials: credentials, player: player)
         }
     }
 
@@ -140,7 +140,7 @@ struct SeriesBrowserView: View {
                     title: item.title,
                     imageURL: item.imageURL,
                     vod: vod,
-                    onTap: { selectedVOD = vod }
+                    onTap: { selectedVODItem = item }
                 )
             }
             guard let series = item.series else { return item }

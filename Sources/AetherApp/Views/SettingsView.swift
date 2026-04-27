@@ -20,6 +20,7 @@ struct SettingsView: View {
     @AppStorage("appearanceMode") private var preferredColorScheme: String = AppearanceMode.system.rawValue
     @AppStorage("preferredLanguage") private var preferredLanguage: String = "pl"
     @AppStorage("preferredCountry") private var preferredCountry: String = "PL"
+    @AppStorage("tmdbAPIKey") private var tmdbAPIKey: String = ""
 
     // MARK: - Local UI state
 
@@ -459,6 +460,17 @@ struct SettingsView: View {
 
     private var advancedTab: some View {
         Form {
+            Section("Integracje API (TMDB)") {
+                LabeledContent("TMDB API Key") {
+                    SecureField("Wklej klucz API (v3 Auth)", text: $tmdbAPIKey)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 300)
+                }
+                Text("Klucz The Movie Database jest wymagany do pobierania okładek, ocen oraz rekomendacji ukrytych perełek.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Historia oglądania") {
                 Button("Zresetuj historię oglądania", role: .destructive) {
                     showResetHistoryConfirm = true

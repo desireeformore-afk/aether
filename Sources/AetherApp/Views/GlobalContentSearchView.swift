@@ -13,7 +13,7 @@ struct GlobalContentSearchView: View {
     @State private var seriesResults: [XstreamSeries] = []
     @State private var isSearching = false
     @State private var debounceTask: Task<Void, Never>?
-    @State private var selectedVOD: XstreamVOD?
+    @State private var selectedVODItem: ShelfItem?
     @State private var selectedSeries: XstreamSeries?
     @FocusState private var isSearchFocused: Bool
 
@@ -89,7 +89,10 @@ struct GlobalContentSearchView: View {
                                     year: nil
                                 )
                                 .contentShape(Rectangle())
-                                .onTapGesture { selectedVOD = vod }
+                                .onTapGesture {
+                                    let item = ShelfItem(id: "\(vod.id)", title: vod.name, imageURL: vod.streamIcon, vod: vod, onTap: {})
+                                    selectedVODItem = item
+                                }
                             }
                         }
                     }
@@ -143,8 +146,8 @@ struct GlobalContentSearchView: View {
                 isSearchFocused = true
             }
         }
-        .sheet(item: $selectedVOD) { vod in
-            VODDetailView(vod: vod, credentials: credentials, player: player)
+        .sheet(item: $selectedVODItem) { vod in
+            VODDetailView(item: vod, credentials: credentials, player: player)
         }
         .sheet(item: $selectedSeries) { series in
             SeriesDetailView(series: series, credentials: credentials, player: player)

@@ -4,10 +4,6 @@ import AppKit
 import AetherCore
 
 /// SwiftUI wrapper that provides a Metal-backed NSView for VLC video rendering.
-///
-/// VLC requires a raw NSView to render into — it bypasses SwiftUI's layer system entirely
-/// and draws directly into the view's CALayer via Metal/OpenGL.
-/// This wrapper creates the view, attaches PlayerCore, and keeps the background black.
 public struct VLCVideoView: NSViewRepresentable {
     public let player: PlayerCore
 
@@ -19,9 +15,9 @@ public struct VLCVideoView: NSViewRepresentable {
         let view = NSView()
         view.wantsLayer = true
         view.layer?.backgroundColor = NSColor.black.cgColor
-        // Tell VLC to render into this NSView.
-        // Must happen on the same thread the view was created on (MainActor).
-        player.attachDrawable(view)
+        // Enforce letterbox: video scales to fit while preserving aspect ratio
+        view.layer?.contentsGravity = .resizeAspect
+        self.player.attachDrawable(view)
         return view
     }
 

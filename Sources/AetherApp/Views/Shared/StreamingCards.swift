@@ -17,6 +17,11 @@ struct ShelfItem: Identifiable {
     var vod: XstreamVOD?
     var series: XstreamSeries?
     var stream: XstreamStream?
+    
+    // The Clean Engine properties
+    var tags: Set<VODTag> = []
+    var alternateVODs: [XstreamVOD] = []
+    
     let onTap: () -> Void
 }
 
@@ -25,6 +30,7 @@ struct ShelfItem: Identifiable {
 struct PosterCard: View {
     let title: String
     let imageURL: String?
+    var tags: Set<VODTag> = []
     let onTap: () -> Void
 
     @State private var isHovered = false
@@ -47,6 +53,21 @@ struct PosterCard: View {
                 if isHovered {
                     VStack(alignment: .leading, spacing: 4) {
                         Spacer()
+                        
+                        if !tags.isEmpty {
+                            HStack(spacing: 4) {
+                                ForEach(Array(tags).sorted(by: { $0.rawValue < $1.rawValue })) { tag in
+                                    Text(tag.rawValue)
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundStyle(tag.isResolution ? .black : .white)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 2)
+                                        .background(tag.isResolution ? Color(.sRGB, red: 0.85, green: 0.7, blue: 0.3, opacity: 1) : Color.white.opacity(0.3))
+                                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                                }
+                            }
+                        }
+                        
                         Text(title)
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(.white)
@@ -72,8 +93,8 @@ struct PosterCard: View {
             }
             .frame(width: cardWidth, height: cardHeight)
             .scaleEffect(isHovered ? 1.05 : 1.0)
-            .shadow(color: .black.opacity(isHovered ? 0.5 : 0), radius: 14, y: 8)
-            .animation(.easeInOut(duration: 0.2), value: isHovered)
+            .shadow(color: .black.opacity(isHovered ? 0.6 : 0.15), radius: isHovered ? 20 : 8, y: isHovered ? 12 : 4)
+            .animation(.spring(response: 0.35, dampingFraction: 0.65), value: isHovered)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -122,6 +143,8 @@ struct HeroBanner: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: bannerHeight)
+                    .scaleEffect(index == currentIndex ? 1.08 : 1.0)
+                    .animation(.linear(duration: 7), value: currentIndex)
                     .clipped()
                     .opacity(index == currentIndex ? 1 : 0)
                     .animation(.easeInOut(duration: 0.8), value: currentIndex)
@@ -155,7 +178,7 @@ struct HeroBanner: View {
                 Text(item.title)
                     .font(.system(size: 42, weight: .bold))
                     .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.7), radius: 6, y: 2)
+                    .shadow(color: .black.opacity(0.4), radius: 3)
                     .lineLimit(2)
                     .id("hero-title-\(currentIndex)")
                     .transition(.asymmetric(
@@ -173,7 +196,7 @@ struct HeroBanner: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(HoverScaleButtonStyle())
                 .id("hero-button-\(currentIndex)")
 
                 if items.count > 1 {
@@ -190,6 +213,10 @@ struct HeroBanner: View {
                     }
                 }
             }
+            .padding(.horizontal, 40)
+            .padding(.vertical, 28)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
             .padding(.horizontal, 44)
             .padding(.bottom, 36)
         }
@@ -242,6 +269,7 @@ struct CategoryShelf: View {
                         PosterCard(
                             title: item.title,
                             imageURL: item.imageURL,
+                            tags: item.tags,
                             onTap: item.onTap
                         )
                     }

@@ -5,13 +5,18 @@ import AetherCore
 
 enum SidebarItem: String, CaseIterable, Hashable {
     case home      = "Home"
-    case vod       = "Filmy"
-    case series    = "Seriale"
+    case vod       = "Movies"
+    case series    = "TV Shows"
     case live      = "Live TV"
-    case search    = "Szukaj"
-    case favorites = "Ulubione"
-    case history   = "Historia"
-    case settings  = "Ustawienia"
+    case search    = "Search"
+    case favorites = "Favorites"
+    case history   = "History"
+    case settings  = "Settings"
+    case netflix   = "Netflix"
+    case hbo       = "Max"
+    case disney    = "Disney+"
+    case apple     = "Apple TV+"
+    case amazon    = "Prime Video"
 
     var icon: String {
         switch self {
@@ -23,6 +28,11 @@ enum SidebarItem: String, CaseIterable, Hashable {
         case .favorites: return "star.fill"
         case .history:   return "clock.arrow.circlepath"
         case .settings:  return "gearshape.fill"
+        case .netflix:   return "n.square.fill"
+        case .hbo:       return "popcorn.fill"
+        case .disney:    return "star.circle.fill"
+        case .apple:     return "apple.logo"
+        case .amazon:    return "a.square.fill"
         }
     }
 }
@@ -55,13 +65,14 @@ private struct SidebarRowView: View {
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.45))
                         .shadow(color: isSelected ? accentColor.opacity(0.8) : .clear, radius: 4)
+                        .contentTransition(.symbolEffect(.replace))
                         .animation(.easeInOut(duration: 0.15), value: isSelected)
                 }
                 .frame(width: 28, height: 28)
 
                 // Label
                 Text(item.rawValue)
-                    .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
+                    .font(.system(size: 14, weight: isSelected ? .bold : .semibold, design: .rounded))
                     .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.55))
                     .animation(.easeInOut(duration: 0.15), value: isSelected)
 
@@ -144,6 +155,7 @@ struct SidebarView: View {
     private let accentPurple = Color(red: 0.55, green: 0.35, blue: 1.0)
 
     private let mainItems: [SidebarItem] = [.home, .vod, .series, .live]
+    private let platformItems: [SidebarItem] = [.netflix, .hbo, .disney, .apple, .amazon]
     private let quickItems: [SidebarItem] = [.favorites, .history]
 
     var body: some View {
@@ -160,7 +172,7 @@ struct SidebarView: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.white.opacity(0.55))
-                    Text("🔍 Szukaj")
+                    Text("Search")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.white.opacity(0.55))
                     Spacer()
@@ -190,17 +202,25 @@ struct SidebarView: View {
                         }
                     }
 
-                    // Search as nav item (hidden visually since we have button above, but keeps keyboard nav)
-                    SidebarRowView(item: .search, isSelected: selection == .search) {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            selection = .search
+                    // Search as nav item was here, but removed because it visually duplicated the search button above.
+
+                    SidebarDivider()
+                        .padding(.vertical, 8)
+                        
+                    SidebarSectionHeader(title: "Streaming Platforms")
+                    
+                    ForEach(platformItems, id: \.self) { item in
+                        SidebarRowView(item: item, isSelected: selection == item) {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                selection = item
+                            }
                         }
                     }
 
                     SidebarDivider()
                         .padding(.vertical, 8)
 
-                    SidebarSectionHeader(title: "Biblioteka")
+                    SidebarSectionHeader(title: "Library")
 
                     // Favorites and History as permanent top-level entries
                     ForEach(quickItems, id: \.self) { item in
@@ -241,10 +261,17 @@ struct SidebarView: View {
                     .foregroundStyle(Color.white)
                     .tracking(3)
 
-                Text(playlistName ?? "IPTV")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.white.opacity(0.4))
-                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.white.opacity(0.35))
+                    
+                    Text(playlistName?.uppercased() ?? "USER")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Color.white.opacity(0.35))
+                        .tracking(1)
+                        .lineLimit(1)
+                }
             }
 
             Spacer()

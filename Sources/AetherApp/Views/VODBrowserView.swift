@@ -19,7 +19,7 @@ struct VODBrowserView: View {
     @Bindable var player: PlayerCore
     let credentials: XstreamCredentials
 
-    @State private var selectedVOD: XstreamVOD?
+    @State private var selectedVODItem: ShelfItem?
     @State private var selectedSeries: XstreamSeries?
     @State private var heroBannerItems: [HeroBannerItem] = []
     @State private var selectedServiceTitle: String = ""
@@ -50,26 +50,43 @@ struct VODBrowserView: View {
 
     private var filteredVODItems: [ShelfItem] {
         guard let genre = selectedGenre else { return [] }
-        var items = homeViewModel.allVODs
-            .filter { $0.categoryName == genre }
-            .map { vod in
-                ShelfItem(
-                    id: String(vod.id),
-                    title: vod.name,
-                    imageURL: vod.streamIcon,
-                    vod: vod,
-                    onTap: { selectedVOD = vod }
-                )
+        
+        var dict: [String: ShelfItem] = [:]
+        for vod in homeViewModel.allVODs where vod.categoryName == genre {
+            let (cleanTitle, tags) = VODNormalizer.extractTagsAndClean(vod.name)
+            let lowerTitle = cleanTitle.lowercased()
+            
+            if var existing = dict[lowerTitle] {
+                existing.tags.formUnion(tags)
+                existing.alternateVODs.append(vod)
+                dict[lowerTitle] = existing
+            } else {
+                let id = String(vod.id)
+                var item = ShelfItem(id: id, title: cleanTitle, imageURL: vod.streamIcon, vod: vod, tags: tags, alternateVODs: [vod], onTap: {})
+                // Inject the selection closure
+                item = ShelfItem(id: id, title: cleanTitle, imageURL: vod.streamIcon, vod: vod, tags: tags, alternateVODs: [vod], onTap: { [item] in self.selectedVODItem = item })
+                dict[lowerTitle] = item
             }
+        }
+        
+        var items = Array(dict.values)
 
         switch sortOrder {
         case .default: break
         case .titleAZ: items.sort { $0.title.localizedCompare($1.title) == .orderedAscending }
         case .titleZA: items.sort { $0.title.localizedCompare($1.title) == .orderedDescending }
         case .ratingHigh:
-            items.sort { (Double($0.vod?.rating ?? "") ?? 0) > (Double($1.vod?.rating ?? "") ?? 0) }
+            items.sort {
+                let a = Double($0.vod?.rating ?? "") ?? 0
+                let b = Double($1.vod?.rating ?? "") ?? 0
+                return a > b
+            }
         case .ratingLow:
-            items.sort { (Double($0.vod?.rating ?? "") ?? 0) < (Double($1.vod?.rating ?? "") ?? 0) }
+            items.sort {
+                let a = Double($0.vod?.rating ?? "") ?? 0
+                let b = Double($1.vod?.rating ?? "") ?? 0
+                return a < b
+            }
         }
         return items
     }
@@ -103,8 +120,8 @@ struct VODBrowserView: View {
             homeViewModel.load(credentials: credentials)
             updateHeroBanner()
         }
-        .sheet(item: $selectedVOD) { vod in
-            VODDetailView(vod: vod, credentials: credentials, player: player)
+        .sheet(item: $selectedVODItem) { item in
+            VODDetailView(item: item, credentials: credentials, player: player)
         }
         .sheet(item: $selectedSeries) { series in
             SeriesDetailView(series: series, credentials: credentials, player: player)
@@ -179,42 +196,23 @@ struct VODBrowserView: View {
                         .padding(.bottom, -20)
                 }
 
-                if !homeViewModel.streamingServiceShelves.isEmpty {
-                    sectionHeader("Serwisy streamingowe")
-                    ForEach(Array(homeViewModel.streamingServiceShelves.enumerated()), id: \.offset) { _, shelf in
-                        CategoryShelf(
-                            title: shelf.title,
-                            items: shelfItemsWithTap(shelf.items),
-                            onMore: {
-                                selectedServiceTitle = shelf.title
-                                selectedServiceItems = shelfItemsWithTap(homeViewModel.allItemsForService(shelf.title))
-                                showServiceDetail = true
-                            }
-                        )
+                ForEach(Array(homeViewModel.brandHubs.enumerated()), id: \.offset) { _, hubData in
+                    if !hubData.shelves.isEmpty {
+                        sectionHeader(hubData.hub.rawValue)
+                        ForEach(Array(hubData.shelves.enumerated()), id: \.offset) { _, shelf in
+                            CategoryShelf(
+                                title: shelf.title,
+                                items: shelfItemsWithTap(shelf.items),
+                                onMore: {
+                                    selectedServiceTitle = shelf.title
+                                    selectedServiceItems = shelfItemsWithTap(shelf.items)
+                                    showServiceDetail = true
+                                }
+                            )
+                        }
                     }
                 }
-
-                if !homeViewModel.genreShelves.isEmpty {
-                    sectionHeader("Gatunki")
-                    ForEach(Array(homeViewModel.genreShelves.enumerated()), id: \.offset) { _, shelf in
-                        CategoryShelf(
-                            title: shelf.title,
-                            items: shelfItemsWithTap(shelf.items)
-                        )
-                    }
-                }
-
-                let usedTitles = Set(homeViewModel.streamingServiceShelves.map(\.title) +
-                                    homeViewModel.genreShelves.map(\.title))
-                ForEach(Array(homeViewModel.shelves.enumerated()), id: \.offset) { _, shelf in
-                    if !usedTitles.contains(shelf.title) {
-                        CategoryShelf(
-                            title: shelf.title,
-                            items: shelfItemsWithTap(shelf.items)
-                        )
-                    }
-                }
-
+                
                 Spacer(minLength: 40)
             }
         }
@@ -245,7 +243,7 @@ struct VODBrowserView: View {
                 return ShelfItem(
                     id: item.id, title: item.title, imageURL: item.imageURL,
                     vod: vod, series: nil,
-                    onTap: { selectedVOD = vod }
+                    onTap: { selectedVODItem = item }
                 )
             } else if let series = item.series {
                 return ShelfItem(

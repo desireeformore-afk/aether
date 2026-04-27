@@ -48,6 +48,9 @@ public struct Channel: Identifiable, Sendable, Hashable {
     /// Content type of this channel.
     public var contentType: ContentType
 
+    /// Available alternative stream variants (e.g. for switching language).
+    public var availableVariants: [Channel] = []
+
     /// Creates a new channel.
     ///
     /// - Parameters:
@@ -67,7 +70,8 @@ public struct Channel: Identifiable, Sendable, Hashable {
         groupTitle: String = "Uncategorized",
         epgId: String? = nil,
         ageRating: AgeRating? = nil,
-        contentType: ContentType = .liveTV
+        contentType: ContentType = .liveTV,
+        availableVariants: [Channel] = []
     ) {
         self.id = id
         self.name = name
@@ -77,6 +81,7 @@ public struct Channel: Identifiable, Sendable, Hashable {
         self.epgId = epgId
         self.ageRating = ageRating
         self.contentType = contentType
+        self.availableVariants = availableVariants
     }
 
     /// Returns true if this channel is a series episode.

@@ -107,10 +107,10 @@ struct ContinueWatchingCard: View {
                     VStack(spacing: 0) {
                         Spacer()
                         LinearGradient(
-                            colors: [.clear, .black.opacity(0.8)],
+                            colors: [.clear, .black.opacity(0.6), .black.opacity(0.95)],
                             startPoint: .top, endPoint: .bottom
                         )
-                        .frame(height: 60)
+                        .frame(height: 80)
 
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
@@ -151,8 +151,8 @@ struct ContinueWatchingCard: View {
                 }
             }
 
-            Text(record.channelName)
-                .font(.system(size: 12, weight: .medium))
+            Text(VODNormalizer.extractTagsAndClean(record.channelName).cleanTitle)
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(.white)
                 .lineLimit(2)
                 .frame(width: 160, alignment: .leading)
@@ -168,7 +168,7 @@ struct ContinueWatchingCard: View {
 
     private func resumePlayback() {
         guard let channel = record.toChannel() else { return }
-        player.play(channel)
+        player.play(channel, startPosition: record.watchedSecondsDouble)
     }
 
     private func formatTime(_ seconds: Double) -> String {
@@ -227,8 +227,8 @@ struct RecentlyWatchedCard: View {
                 }
             }
 
-            Text(record.channelName)
-                .font(.system(size: 12, weight: .medium))
+            Text(VODNormalizer.extractTagsAndClean(record.channelName).cleanTitle)
+                .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(.white)
                 .lineLimit(2)
                 .frame(width: 130, alignment: .leading)
@@ -241,7 +241,7 @@ struct RecentlyWatchedCard: View {
 
     private func resumePlayback() {
         guard let channel = record.toChannel() else { return }
-        player.play(channel)
+        player.play(channel, startPosition: record.watchedSecondsDouble)
     }
 }
 
@@ -380,7 +380,7 @@ struct WatchHistoryView: View {
 
     private func playAndDismiss(_ record: WatchHistoryRecord) {
         guard let channel = record.toChannel() else { return }
-        playerCore.play(channel)
+        playerCore.play(channel, startPosition: record.watchedSecondsDouble)
         dismiss()
     }
 

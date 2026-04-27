@@ -40,14 +40,9 @@ struct PlayerView: View {
             VLCVideoView(player: player)
                 .ignoresSafeArea()
                 .onHover { hovering in
-                    if hovering {
-                        showEPGOverlayWithAutoHide()
-                        showControlsWithAutoHide()
-                    }
+                    if hovering { showHUDWithAutoHide() }
                 }
-                .onTapGesture(count: 1) {
-                    showControlsWithAutoHide()
-                }
+                .onTapGesture(count: 1) { showHUDWithAutoHide() }
                 .contextMenu {
                     if let url = player.currentChannel?.streamURL {
                         Button("Copy Stream URL") {
@@ -122,7 +117,17 @@ struct PlayerView: View {
 
             // Top Layer: Badges, Stats & Error Banner
             VStack {
-                HStack(alignment: .top) {
+                HStack(alignment: .top, spacing: 12) {
+                    // Close Player Button
+                    Button(action: { player.stop() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                    .buttonStyle(.plain)
+                    .opacity(showControls ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.3), value: showControls)
+
                     // Top Left Badge
                     if let channel = player.currentChannel {
                         channelInfoBadge(channel: channel)
@@ -335,7 +340,7 @@ struct PlayerView: View {
     @ViewBuilder
     private func channelInfoBadge(channel: Channel) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(channel.name)
+            Text(VODNormalizer.extractTagsAndClean(channel.name).cleanTitle)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white)
                 .lineLimit(1)
@@ -366,34 +371,23 @@ struct PlayerView: View {
     }
 
     @MainActor
-    private func showControlsWithAutoHide() {
+    private func showHUDWithAutoHide() {
         controlsHideTask?.cancel()
-        withAnimation(.easeInOut(duration: 0.2)) { showControls = true }
-        controlsHideTask = Task {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: 0.3)) { showControls = false }
-        }
-    }
-
-    @MainActor
-    private func showEPGOverlayWithAutoHide() {
-        // Cancel any existing hide task
         overlayHideTask?.cancel()
-
-        // Show overlay
-        withAnimation(.easeInOut(duration: 0.25)) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showControls = true
             showEPGOverlay = true
         }
-
-        // Schedule auto-hide after 3 seconds
-        overlayHideTask = Task {
+        let task = Task {
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: 0.25)) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showControls = false
                 showEPGOverlay = false
             }
         }
+        controlsHideTask = task
+        overlayHideTask = task
     }
 }
 

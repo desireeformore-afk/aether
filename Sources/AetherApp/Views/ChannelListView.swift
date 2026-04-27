@@ -424,7 +424,8 @@ struct ChannelListView: View {
                         ChannelRowView(
                             channel: channel,
                             isSelected: player.currentChannel == channel,
-                            epgTitle: nowPlaying[channel.epgId ?? channel.name]?.title
+                            epgTitle: nowPlaying[channel.epgId ?? channel.name]?.title,
+                            epgProgress: nowPlaying[channel.epgId ?? channel.name]?.progress()
                         )
                         .onTapGesture { play(channel) }
                         Divider()
@@ -691,13 +692,15 @@ struct ChannelListView: View {
         let isBlocked = parentalService.settings.isEnabled && !parentalService.isChannelAllowed(ch)
         let isFavorite = isFavoriteChannel(ch)
         let isActive = player.currentChannel == ch
+        let entry = nowPlaying[epgKey]
 
         return ChannelRowContainer(
             channel: ch,
             isActive: isActive,
             isBlocked: isBlocked,
             isFavorite: isFavorite,
-            epgTitle: nowPlaying[epgKey]?.title,
+            epgTitle: entry?.title,
+            epgProgress: entry?.progress(),
             onTap: {
                 if isBlocked {
                     blockedChannel = ch
@@ -769,7 +772,7 @@ private struct FilterChip: View {
     var body: some View {
         Button(action: action) {
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 11, weight: isSelected ? .bold : .semibold, design: .rounded))
                 .foregroundStyle(isSelected ? .white : Color.aetherText)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
@@ -793,6 +796,7 @@ private struct ChannelRowContainer: View {
     let isBlocked: Bool
     let isFavorite: Bool
     let epgTitle: String?
+    let epgProgress: Double?
     let onTap: () -> Void
     let onFavoriteTap: () -> Void
 
@@ -803,7 +807,8 @@ private struct ChannelRowContainer: View {
             ChannelRowView(
                 channel: channel,
                 isSelected: isActive,
-                epgTitle: epgTitle
+                epgTitle: epgTitle,
+                epgProgress: epgProgress
             )
 
             if isBlocked {
@@ -829,15 +834,26 @@ private struct ChannelRowContainer: View {
         .background(
             Group {
                 if isActive {
-                    Color.accentColor
+                    // Glassy ultraThin active state
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .background(Color.accentColor.opacity(0.3))
                 } else if isHovered {
-                    Color.white.opacity(0.08)
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
                 } else {
                     Color.clear
                 }
             }
         )
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(
+                    isActive ? Color.white.opacity(0.3) : (isHovered ? Color.white.opacity(0.1) : Color.clear),
+                    lineWidth: 1
+                )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
         .animation(.easeInOut(duration: 0.12), value: isHovered)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }

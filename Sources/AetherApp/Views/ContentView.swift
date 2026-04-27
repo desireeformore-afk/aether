@@ -71,7 +71,6 @@ struct ContentView: View {
                 }
             } else if isFullscreenPlayer {
                 PlayerView(player: playerCore)
-                    .ignoresSafeArea()
                     .overlay {
                         if playerCore.state == .loading {
                             ZStack {
@@ -90,16 +89,6 @@ struct ContentView: View {
                                 }
                             }
                         }
-                    }
-                    .overlay(alignment: .topLeading) {
-                        Button(action: { playerCore.stop() }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 28))
-                                .foregroundStyle(.white.opacity(0.8))
-                                .padding(20)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.top, 24)
                     }
             } else {
                 mainLayout
@@ -261,9 +250,9 @@ struct ContentView: View {
     private var detailContent: some View {
         Group {
             switch sidebarSelection {
-            case .home:
+            case .home, .netflix, .hbo, .disney, .apple, .amazon:
                 if let creds = activeCredentials {
-                    HomeView(viewModel: homeViewModel, player: playerCore, credentials: creds)
+                    HomeView(viewModel: homeViewModel, player: playerCore, credentials: creds, sidebarSelection: $sidebarSelection)
                         .onAppear { homeViewModel.load(credentials: creds) }
                 } else {
                     noPlaylistPrompt

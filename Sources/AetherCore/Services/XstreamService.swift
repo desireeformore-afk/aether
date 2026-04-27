@@ -101,7 +101,7 @@ public struct XstreamStream: Decodable, Sendable, Identifiable {
 }
 
 /// A VOD stream entry from Xtream Codes.
-public struct XstreamVOD: Decodable, Sendable, Identifiable {
+public struct XstreamVOD: Decodable, Sendable, Identifiable, Hashable {
     public let id: Int
     public let name: String
     public let streamIcon: String?

@@ -7,11 +7,13 @@ public struct ChannelRowView: View {
     public let channel: Channel
     public let isSelected: Bool
     public var epgTitle: String? = nil
+    public var epgProgress: Double? = nil
 
-    public init(channel: Channel, isSelected: Bool, epgTitle: String? = nil) {
+    public init(channel: Channel, isSelected: Bool, epgTitle: String? = nil, epgProgress: Double? = nil) {
         self.channel = channel
         self.isSelected = isSelected
         self.epgTitle = epgTitle
+        self.epgProgress = epgProgress
     }
 
     public var body: some View {
@@ -20,17 +22,35 @@ public struct ChannelRowView: View {
                 .clipShape(Circle())
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(channel.name)
-                    .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
+                    .font(.system(size: 14, weight: isSelected ? .semibold : .medium, design: .rounded))
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
 
                 if let title = epgTitle {
-                    Text(title)
-                        .font(.caption)
-                        .foregroundStyle(isSelected ? .white.opacity(0.75) : .secondary)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(title)
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundStyle(isSelected ? .white.opacity(0.85) : .secondary)
+                            .lineLimit(1)
+                            
+                        if let progress = epgProgress, progress >= 0 {
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Capsule()
+                                        .fill(isSelected ? Color.white.opacity(0.2) : Color.secondary.opacity(0.2))
+                                        .frame(height: 3)
+                                    
+                                    Capsule()
+                                        .fill(isSelected ? Color.white : Color.accentColor)
+                                        .frame(width: max(0, min(1.0, CGFloat(progress))) * geo.size.width, height: 3)
+                                }
+                            }
+                            .frame(height: 3)
+                            .padding(.trailing, 20)
+                        }
+                    }
                 }
             }
 

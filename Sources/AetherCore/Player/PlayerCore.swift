@@ -80,11 +80,15 @@ public final class PlayerCore {
     /// Whether the current stream is live (not seekable) or VOD.
     public private(set) var isLiveStream: Bool = true
 
-    /// Current playback position in seconds.
-    public var currentTime: TimeInterval {
-        let ms = vlcPlayer.time.intValue
-        return Double(max(0, ms)) / 1000.0
-    }
+    /// Current playback position in seconds — stored so @Observable notifies SwiftUI.
+    /// Updated every 0.5s by the UI timer when playing.
+    public private(set) var currentTimeValue: TimeInterval = 0
+
+    public private(set) var playbackRate: Float = 1.0
+    private var pendingSeekPosition: Double? = nil
+
+    /// Convenience alias (same value, keeps external call sites working).
+    public var currentTime: TimeInterval { currentTimeValue }
 
     /// Total duration in seconds. Returns 0 if unknown / live.
     public var duration: TimeInterval {
@@ -115,7 +119,7 @@ public final class PlayerCore {
     // MARK: - Internal
 
     /// The underlying VLC media player.
-    private let vlcPlayer: VLCMediaPlayer = VLCMediaPlayer()
+    private let vlcPlayer: VLCMediaPlayer = VLCMediaPlayer(options: ["-q", "--quiet"])
 
     /// Accessor for StreamStatsView — exposes VLC player for stats reading only.
     /// Do NOT use for playback control outside PlayerCore.
@@ -126,9 +130,17 @@ public final class PlayerCore {
 
     private let lastChannelStore = LastChannelStore()
     private var watchStartTime: Date?
+    /// Kept as nil — actual UI refresh uses _uiDispatchSource (DispatchSourceTimer on .main).
+    private var uiRefreshTimer: Timer?
+    /// DispatchSourceTimer on .main — fires every 0.5s to update currentTimeValue.
+    private var _uiDispatchSource: DispatchSourceTimer?
+    /// 15s timer — reports progress to watch history.
     private var progressTimer: Timer?
     private var retryTask: Task<Void, Never>?
     private var bannerDismissTask: Task<Void, Never>?
+    /// True once VLC fires .playing at least once for the current media.
+    /// Prevents later .buffering events from hiding the video with a spinner.
+    private var hasEverPlayed: Bool = false
 
     // MARK: - Init
 
@@ -152,14 +164,14 @@ public final class PlayerCore {
     // MARK: - Public playback API
 
     /// Starts playback of `channel`. Debounced — rapid calls within 500ms are ignored.
-    public func play(_ channel: Channel) {
+    public func play(_ channel: Channel, startPosition: Double? = nil) {
         // Same channel already playing — skip
         if currentChannel?.id == channel.id, state == .playing { return }
 
-        playInternal(channel)
+        playInternal(channel, startPosition: startPosition)
     }
 
-    private func playInternal(_ channel: Channel) {
+    private func playInternal(_ channel: Channel, startPosition: Double?) {
         lastChannelStore.save(channel)
         stopProgressTracking()
         endWatchSession()
@@ -175,6 +187,9 @@ public final class PlayerCore {
         watchStartTime = .now
         state = .loading
         retryCount = 0
+        hasEverPlayed = false
+        currentTimeValue = 0
+        pendingSeekPosition = startPosition
         availableAudioTracks = []
         availableSubtitleTracks = []
         selectedAudioTrackID = -1
@@ -209,6 +224,40 @@ public final class PlayerCore {
         vlcPlayer.play()
     }
 
+    // MARK: - Hot-Swapping Variants
+
+    /// Seamlessly switches the underlying video URL without tearing down the player state (preserves watch session, etc).
+    public func hotSwapVariant(to newChannel: Channel) {
+        guard !isLiveStream else { return } // cannot reliably hot-swap live TV
+        if newChannel.streamURL == currentChannel?.streamURL { return }
+        
+        let targetTime = currentTime
+        print("[PlayerCore] Hot-swapping stream variant at \(targetTime)s to: \(newChannel.streamURL)")
+        
+        state = .loading
+        hasEverPlayed = false
+        pendingSeekPosition = targetTime
+        
+        // Retain previous variants if possible, just update the currently active stream
+        var updatedChannel = newChannel
+        if updatedChannel.availableVariants.isEmpty, let oldVariants = currentChannel?.availableVariants {
+            updatedChannel.availableVariants = oldVariants
+        }
+        currentChannel = updatedChannel
+        
+        if vlcPlayer.isPlaying {
+            vlcPlayer.stop()
+        }
+        
+        let media = VLCMedia(url: newChannel.streamURL)
+        media?.addOption("--network-caching=800")
+        media?.addOption("--http-user-agent=VLC/3.0.20 LibVLC/3.0.20")
+        media?.addOption("--videotoolbox-hw-decoder-use")
+        
+        vlcPlayer.media = media
+        vlcPlayer.play()
+    }
+
     public func resume() {
         guard case .paused = state else { return }
         vlcPlayer.play()
@@ -239,6 +288,8 @@ public final class PlayerCore {
         vlcPlayer.stop()
         currentChannel = nil
         retryCount = 0
+        hasEverPlayed = false
+        currentTimeValue = 0
         availableAudioTracks = []
         availableSubtitleTracks = []
         selectedAudioTrackID = -1
@@ -256,6 +307,11 @@ public final class PlayerCore {
         volume = max(0, min(1, value))
         // VLC audio volume: 0-200 (100 = unity gain, 200 = +6dB amplification)
         vlcPlayer.audio?.volume = Int32(volume * 100)
+    }
+
+    public func setPlaybackRate(_ rate: Float) {
+        playbackRate = rate
+        vlcPlayer.rate = rate
     }
 
     public func adjustVolume(delta: Float) {
@@ -304,7 +360,7 @@ public final class PlayerCore {
               let idx = channelList.firstIndex(of: current),
               idx + 1 < channelList.count else { return }
         retryCount = 0
-        playInternal(channelList[idx + 1])
+        playInternal(channelList[idx + 1], startPosition: nil)
     }
 
     public func playPrevious() {
@@ -312,7 +368,7 @@ public final class PlayerCore {
               let idx = channelList.firstIndex(of: current),
               idx > 0 else { return }
         retryCount = 0
-        playInternal(channelList[idx - 1])
+        playInternal(channelList[idx - 1], startPosition: nil)
     }
 
     // MARK: - Last channel persistence
@@ -353,15 +409,30 @@ public final class PlayerCore {
     // MARK: - VLC delegate callbacks (called by VLCDelegateBridge)
 
     func vlcStateChanged(_ vlcState: VLCMediaPlayerState) {
+        // print("[PlayerCore] vlcStateChanged: \(vlcState.rawValue) — hasEverPlayed=\(hasEverPlayed)")
         switch vlcState {
-        case .opening, .buffering:
-            state = .loading
+        case .opening:
+            if !hasEverPlayed { state = .loading }
+        case .buffering:
+            // Only show loading overlay before first frame — afterwards keep .playing
+            // so the video surface stays visible during mid-stream rebuffering.
+            if !hasEverPlayed { state = .loading }
         case .playing:
+            hasEverPlayed = true
             if state != .playing {
                 state = .playing
                 retryCount = 0
                 startProgressTracking()
                 updateNowPlayingInfo()
+                
+                if let seekPos = pendingSeekPosition {
+                    pendingSeekPosition = nil
+                    // Execute seek after a small delay to ensure buffer is ready
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                        self?.userSeek(to: seekPos)
+                    }
+                }
+                
                 // Populate track lists once media is actually playing
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     self?.refreshTrackLists()
@@ -380,7 +451,7 @@ public final class PlayerCore {
             print("[PlayerCore] VLC error — scheduling retry")
             scheduleRetry(message: "Stream error — check your connection")
         @unknown default:
-            break
+            print("[PlayerCore] Unknown VLC state: \(vlcState.rawValue)")
         }
     }
 
@@ -394,16 +465,16 @@ public final class PlayerCore {
 
     private func refreshTrackLists() {
         // VLCKit 4: audioTracks / textTracks return [VLCMediaPlayerTrack]
+        // trackName is non-optional in VLCKit 4 — no ?? needed.
         availableAudioTracks = vlcPlayer.audioTracks.enumerated().map { idx, t in
-            VLCTrack(id: idx, name: t.trackName ?? "Track \(idx)")
+            VLCTrack(id: idx, name: t.trackName)
         }
-        // Find currently selected audio index
         if let selIdx = vlcPlayer.audioTracks.firstIndex(where: { $0.isSelected }) {
             selectedAudioTrackID = selIdx
         }
 
         availableSubtitleTracks = vlcPlayer.textTracks.enumerated().map { idx, t in
-            VLCTrack(id: idx, name: t.trackName ?? "Sub \(idx)")
+            VLCTrack(id: idx, name: t.trackName)
         }
         if let selIdx = vlcPlayer.textTracks.firstIndex(where: { $0.isSelected }) {
             selectedSubtitleTrackID = selIdx
@@ -426,23 +497,62 @@ public final class PlayerCore {
         retryTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(delay))
             guard let self, self.currentChannel?.id == channel.id else { return }
-            self.playInternal(channel)
+            self.playInternal(channel, startPosition: self.pendingSeekPosition)
         }
     }
 
     // MARK: - Watch session / progress
 
     private func startProgressTracking() {
+        // UI source timer: 0.5s on DispatchQueue.main so the closure runs on the
+        // main thread and can access @MainActor-isolated properties directly.
+        uiRefreshTimer?.invalidate()
+        uiRefreshTimer = nil
+        let src = DispatchSource.makeTimerSource(queue: .main)
+        src.schedule(deadline: .now() + 0.5, repeating: 0.5)
+        src.setEventHandler { [weak self] in
+            guard let self else { return }
+            MainActor.assumeIsolated {
+                let ms = self.vlcPlayer.time.intValue
+                let t = Double(max(0, ms)) / 1000.0
+                if abs(t - self.currentTimeValue) > 0.1 {
+                    self.currentTimeValue = t
+
+                    // VLC 4 sometimes never re-emits .playing after buffering ends.
+                    // If time is advancing but UI is stuck on .loading, force .playing.
+                    if self.state == .loading {
+                        print("[PlayerCore] Time advancing during .loading — forcing .playing")
+                        self.state = .playing
+                        self.hasEverPlayed = true
+                        self.retryCount = 0
+                        self.updateNowPlayingInfo()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                            self?.refreshTrackLists()
+                        }
+                    }
+                }
+            }
+        }
+        src.resume()
+        // Wrap DispatchSourceTimer in a bridge so we keep one uiRefreshTimer variable
+        _uiDispatchSource = src
+
+        // Progress timer: every 15s — reports to watch history
         progressTimer?.invalidate()
         progressTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self, let channel = self.currentChannel else { return }
-                self.onProgressUpdate?(channel.id, self.currentTime, self.duration)
+                self.onProgressUpdate?(channel.id, self.currentTimeValue, self.duration)
             }
         }
     }
 
+
     private func stopProgressTracking() {
+        _uiDispatchSource?.cancel()
+        _uiDispatchSource = nil
+        uiRefreshTimer?.invalidate()
+        uiRefreshTimer = nil
         progressTimer?.invalidate()
         progressTimer = nil
     }
@@ -511,26 +621,33 @@ public final class PlayerCore {
 // MARK: - VLCDelegateBridge
 
 /// Non-isolated NSObject that conforms to VLCMediaPlayerDelegate.
-/// VLC calls delegate methods on an arbitrary thread — this bridge dispatches them
+/// VLC calls delegate methods on a background thread — this bridge dispatches them
 /// to MainActor so PlayerCore (which is @MainActor) can handle them safely.
-final class VLCDelegateBridge: NSObject, VLCMediaPlayerDelegate, Sendable {
-    private weak var owner: PlayerCore?
+final class VLCDelegateBridge: NSObject, VLCMediaPlayerDelegate, @unchecked Sendable {
+    // nonisolated(unsafe): we only ever access this inside Task { @MainActor }, which IS safe.
+    nonisolated(unsafe) private weak var owner: PlayerCore?
 
     init(owner: PlayerCore) {
         self.owner = owner
     }
 
-    func mediaPlayerStateChanged(_ aNotification: Notification) {
-        guard let player = aNotification.object as? VLCMediaPlayer else { return }
-        let newState = player.state
+    // MARK: - VLCMediaPlayerDelegate (exact Obj-C signatures from VLCMediaPlayer.h)
+
+    /// `- (void)mediaPlayerStateChanged:(VLCMediaPlayerState)newState;`
+    func mediaPlayerStateChanged(_ newState: VLCMediaPlayerState) {
         Task { @MainActor [weak owner] in
             owner?.vlcStateChanged(newState)
         }
     }
 
-    func mediaPlayerMediaChanged(_ aNotification: Notification) {
-        Task { @MainActor [weak owner] in
-            owner?.vlcMediaChanged()
-        }
+    /// `- (void)mediaPlayerLengthChanged:(int64_t)length;`
+    func mediaPlayerLengthChanged(_ length: Int64) {
+        // Duration is read lazily from vlcPlayer.length in PlayerCore — no action needed.
+    }
+
+    /// `- (void)mediaPlayerTimeChanged:(NSNotification *)aNotification;`
+    func mediaPlayerTimeChanged(_ aNotification: Notification) {
+        // UI timer handles currentTimeValue updates every 0.5s — no extra action needed.
     }
 }
+

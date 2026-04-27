@@ -84,7 +84,7 @@ final class StatusBarController {
         guard let button = statusItem?.button else { return }
 
         if let channel = player.currentChannel, player.state == .playing {
-            button.title = " \(channel.name)"
+            button.title = " \(VODNormalizer.extractTagsAndClean(channel.name).cleanTitle)"
 
             // Load and display channel logo if available
             if let logoURL = channel.logoURL {
@@ -145,7 +145,7 @@ final class StatusBarController {
         // Now Playing section
         if let channel = player.currentChannel {
             let nowPlayingItem = NSMenuItem(
-                title: "▶︎ \(channel.name)",
+                title: "▶︎ \(VODNormalizer.extractTagsAndClean(channel.name).cleanTitle)",
                 action: nil,
                 keyEquivalent: ""
             )
@@ -233,7 +233,7 @@ final class StatusBarController {
                     let isCurrentlyPlaying = player.currentChannel?.id == channel.id
                     let prefix = isCurrentlyPlaying ? "▶︎ " : "   "
                     let favItem = NSMenuItem(
-                        title: "\(prefix)\(channel.name)",
+                        title: "\(prefix)\(VODNormalizer.extractTagsAndClean(channel.name).cleanTitle)",
                         action: #selector(playFavoriteChannel(_:)),
                         keyEquivalent: ""
                     )

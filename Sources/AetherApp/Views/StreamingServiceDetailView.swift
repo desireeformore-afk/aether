@@ -8,7 +8,7 @@ struct StreamingServiceDetailView: View {
     let credentials: XstreamCredentials
     @Environment(\.dismiss) private var dismiss
 
-    @State private var selectedVOD: XstreamVOD?
+    @State private var selectedVODItem: ShelfItem?
 
     let columns = [GridItem(.adaptive(minimum: 160, maximum: 200), spacing: 14)]
 
@@ -45,9 +45,10 @@ struct StreamingServiceDetailView: View {
                             PosterCard(
                                 title: item.title,
                                 imageURL: item.imageURL,
+                                tags: item.tags,
                                 onTap: {
-                                    if let vod = item.vod {
-                                        selectedVOD = vod
+                                    if item.vod != nil {
+                                        selectedVODItem = item
                                     }
                                 }
                             )
@@ -58,8 +59,8 @@ struct StreamingServiceDetailView: View {
             }
         }
         .frame(minWidth: 600, minHeight: 500)
-        .sheet(item: $selectedVOD) { vod in
-            VODDetailView(vod: vod, credentials: credentials, player: player)
+        .sheet(item: $selectedVODItem) { vod in
+            VODDetailView(item: vod, credentials: credentials, player: player)
         }
     }
 }

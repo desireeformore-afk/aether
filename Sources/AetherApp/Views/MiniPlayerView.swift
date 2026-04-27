@@ -1,5 +1,6 @@
 import SwiftUI
 import AetherCore
+import AetherUI
 
 /// Mini player window - compact always-on-top player.
 public struct MiniPlayerView: View {
@@ -120,6 +121,14 @@ public struct MiniPlayerView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(.ultraThinMaterial)
+
+                // SeekBar — only visible for VOD (not live streams)
+                if !player.isLiveStream {
+                    SeekBarView(player: player)
+                        .padding(.horizontal, 10)
+                        .padding(.bottom, 6)
+                        .background(.ultraThinMaterial)
+                }
             }
             .opacity(isHovering || player.state != .playing ? 1 : 0)
             .animation(.easeInOut(duration: 0.2), value: isHovering)

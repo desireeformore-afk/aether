@@ -8,9 +8,10 @@ struct HomeView: View {
     @Bindable var player: PlayerCore
     let credentials: XstreamCredentials
 
-    @State private var selectedVOD: XstreamVOD?
+    @State private var selectedVODItem: ShelfItem?
     @State private var selectedSeries: XstreamSeries?
     @State private var heroBannerItems: [HeroBannerItem] = []
+    @Binding var sidebarSelection: SidebarItem
 
     var body: some View {
         ZStack {
@@ -18,6 +19,15 @@ struct HomeView: View {
 
             if !viewModel.isPhase1Loaded {
                 loadingSkeleton
+            } else if let hub = sidebarSelection.brandHub {
+                HubDetailView(
+                    hub: hub,
+                    shelves: viewModel.brandHubs.first(where: { $0.hub == hub })?.shelves ?? [],
+                    credentials: credentials,
+                    onBack: { withAnimation(.easeInOut) { sidebarSelection = .home } },
+                    onSelectVODItem: { selectedVODItem = $0 },
+                    onSelectSeries: { selectedSeries = $0 }
+                )
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
@@ -27,28 +37,24 @@ struct HomeView: View {
                         }
 
                         WatchHistoryShelf(player: player)
+                        
+                        brandHubsGrid
+                            .padding(.vertical, 16)
+                            .padding(.bottom, 20)
 
                         if !recommendedItems.isEmpty {
                             CategoryShelf(
-                                title: "Polecane dla Ciebie",
+                                title: "Recommended for You",
                                 items: shelfItemsWithTap(recommendedItems, credentials: credentials)
                             )
                         }
 
-                        ForEach(Array(viewModel.shelves.enumerated()), id: \.offset) { _, shelf in
+                        // Show a top selection of unstructured shelves for discovery on Home
+                        ForEach(Array(viewModel.shelves.prefix(4).enumerated()), id: \.offset) { _, shelf in
                             CategoryShelf(
                                 title: shelf.title,
                                 items: shelfItemsWithTap(shelf.items, credentials: credentials)
                             )
-                        }
-
-                        if !viewModel.seriesShelves.isEmpty {
-                            ForEach(Array(viewModel.seriesShelves.enumerated()), id: \.offset) { _, shelf in
-                                CategoryShelf(
-                                    title: shelf.title,
-                                    items: shelfItemsWithTap(shelf.items, credentials: credentials)
-                                )
-                            }
                         }
 
                         if !viewModel.liveItems.isEmpty {
@@ -90,11 +96,34 @@ struct HomeView: View {
         }
         .onChange(of: viewModel.shelves.count) { _, _ in updateHeroBanner() }
         .onChange(of: viewModel.liveItems.count) { _, _ in updateHeroBanner() }
-        .sheet(item: $selectedVOD) { vod in
-            VODDetailView(vod: vod, credentials: credentials, player: player)
+        .sheet(item: $selectedVODItem) { vod in
+            VODDetailView(item: vod, credentials: credentials, player: player)
         }
         .sheet(item: $selectedSeries) { series in
             SeriesDetailView(series: series, credentials: credentials, player: player)
+        }
+    }
+
+    private var brandHubsGrid: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Choose Platform")
+                .font(.title2.bold())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 40)
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 4), spacing: 16) {
+                ForEach(viewModel.brandHubs, id: \.hub) { hubData in
+                    Button {
+                        withAnimation {
+                            sidebarSelection = itemFor(hub: hubData.hub)
+                        }
+                    } label: {
+                        BrandHubCard(hub: hubData.hub)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 40)
         }
     }
 
@@ -138,7 +167,9 @@ struct HomeView: View {
                     imageURL: item.imageURL,
                     vod: vod,
                     series: nil,
-                    onTap: { selectedVOD = vod }
+                    tags: item.tags,
+                    alternateVODs: item.alternateVODs,
+                    onTap: { selectedVODItem = item }
                 )
             } else if let series = item.series {
                 return ShelfItem(
@@ -324,5 +355,30 @@ struct WelcomeView: View {
 
     private func startGradientAnimation() {
         gradientOffset = 1
+    }
+
+}
+
+extension SidebarItem {
+    var brandHub: BrandHub? {
+        switch self {
+        case .netflix: return .netflix
+        case .hbo: return .hbo
+        case .disney: return .disney
+        case .apple: return .apple
+        case .amazon: return .amazon
+        default: return nil
+        }
+    }
+}
+
+private func itemFor(hub: BrandHub) -> SidebarItem {
+    switch hub {
+    case .netflix: return .netflix
+    case .hbo: return .hbo
+    case .disney: return .disney
+    case .apple: return .apple
+    case .amazon: return .amazon
+    default: return .home
     }
 }
