@@ -14,7 +14,6 @@
 		/* Views */
 		AA0001000000000000000010 /* AddPlaylistSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000010 /* AddPlaylistSheet.swift */; };
 		AA0001000000000000000011 /* ChannelListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000011 /* ChannelListView.swift */; };
-		AA0001000000000000000012 /* ChannelLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000012 /* ChannelLogoView.swift */; };
 		AA0001000000000000000013 /* CommandPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000013 /* CommandPaletteView.swift */; };
 		AA0001000000000000000014 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000014 /* ContentView.swift */; };
 		AA0001000000000000000015 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000015 /* PlayerView.swift */; };
@@ -72,6 +71,7 @@
 		AA0003000000000000000001 /* AetherUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000001 /* AetherUI.swift */; };
 		AA0003000000000000000010 /* AppearancePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000010 /* AppearancePickerView.swift */; };
 		AA0003000000000000000011 /* ChannelRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000011 /* ChannelRowView.swift */; };
+		AA0003000000000000000017 /* ChannelLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000017 /* ChannelLogoView.swift */; };
 		AA0003000000000000000012 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000012 /* EmptyStateView.swift */; };
 		AA0003000000000000000013 /* EPGTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000013 /* EPGTimelineView.swift */; };
 		AA0003000000000000000014 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000014 /* OnboardingView.swift */; };
@@ -87,7 +87,6 @@
 		/* Views */
 		FA0001000000000000000010 /* AddPlaylistSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AddPlaylistSheet.swift; path = Sources/AetherApp/Views/AddPlaylistSheet.swift; sourceTree = "<group>"; };
 		FA0001000000000000000011 /* ChannelListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelListView.swift; path = Sources/AetherApp/Views/ChannelListView.swift; sourceTree = "<group>"; };
-		FA0001000000000000000012 /* ChannelLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelLogoView.swift; path = Sources/AetherApp/Views/ChannelLogoView.swift; sourceTree = "<group>"; };
 		FA0001000000000000000013 /* CommandPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CommandPaletteView.swift; path = Sources/AetherApp/Views/CommandPaletteView.swift; sourceTree = "<group>"; };
 		FA0001000000000000000014 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = Sources/AetherApp/Views/ContentView.swift; sourceTree = "<group>"; };
 		FA0001000000000000000015 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlayerView.swift; path = Sources/AetherApp/Views/PlayerView.swift; sourceTree = "<group>"; };
@@ -141,6 +140,7 @@
 		FA0003000000000000000001 /* AetherUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AetherUI.swift; path = Sources/AetherUI/AetherUI.swift; sourceTree = "<group>"; };
 		FA0003000000000000000010 /* AppearancePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppearancePickerView.swift; path = Sources/AetherUI/Views/AppearancePickerView.swift; sourceTree = "<group>"; };
 		FA0003000000000000000011 /* ChannelRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelRowView.swift; path = Sources/AetherUI/Views/ChannelRowView.swift; sourceTree = "<group>"; };
+		FA0003000000000000000017 /* ChannelLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChannelLogoView.swift; path = Sources/AetherUI/Views/ChannelLogoView.swift; sourceTree = "<group>"; };
 		FA0003000000000000000012 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EmptyStateView.swift; path = Sources/AetherUI/Views/EmptyStateView.swift; sourceTree = "<group>"; };
 		FA0003000000000000000013 /* EPGTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EPGTimelineView.swift; path = Sources/AetherUI/Views/EPGTimelineView.swift; sourceTree = "<group>"; };
 		FA0003000000000000000014 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OnboardingView.swift; path = Sources/AetherUI/Views/OnboardingView.swift; sourceTree = "<group>"; };
@@ -203,7 +203,6 @@
 			children = (
 				FA0001000000000000000010 /* AddPlaylistSheet.swift */,
 				FA0001000000000000000011 /* ChannelListView.swift */,
-				FA0001000000000000000012 /* ChannelLogoView.swift */,
 				FA0001000000000000000013 /* CommandPaletteView.swift */,
 				FA0001000000000000000014 /* ContentView.swift */,
 				FA0001000000000000000015 /* PlayerView.swift */,
@@ -341,6 +340,7 @@
 			children = (
 				FA0003000000000000000010 /* AppearancePickerView.swift */,
 				FA0003000000000000000011 /* ChannelRowView.swift */,
+				FA0003000000000000000017 /* ChannelLogoView.swift */,
 				FA0003000000000000000012 /* EmptyStateView.swift */,
 				FA0003000000000000000013 /* EPGTimelineView.swift */,
 				FA0003000000000000000014 /* OnboardingView.swift */,
@@ -425,7 +425,6 @@
 				AA0001000000000000000004 /* KeyboardShortcutHandler.swift in Sources */,
 				AA0001000000000000000010 /* AddPlaylistSheet.swift in Sources */,
 				AA0001000000000000000011 /* ChannelListView.swift in Sources */,
-				AA0001000000000000000012 /* ChannelLogoView.swift in Sources */,
 				AA0001000000000000000013 /* CommandPaletteView.swift in Sources */,
 				AA0001000000000000000014 /* ContentView.swift in Sources */,
 				AA0001000000000000000015 /* PlayerView.swift in Sources */,
@@ -473,6 +472,7 @@
 				AA0003000000000000000001 /* AetherUI.swift in Sources */,
 				AA0003000000000000000010 /* AppearancePickerView.swift in Sources */,
 				AA0003000000000000000011 /* ChannelRowView.swift in Sources */,
+				AA0003000000000000000017 /* ChannelLogoView.swift in Sources */,
 				AA0003000000000000000012 /* EmptyStateView.swift in Sources */,
 				AA0003000000000000000013 /* EPGTimelineView.swift in Sources */,
 				AA0003000000000000000014 /* OnboardingView.swift in Sources */,
