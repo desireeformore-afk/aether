@@ -5,8 +5,8 @@ import XCTest
 final class PlayerCoreTests: XCTestCase {
 
     @MainActor
-    func testInitialState() {
-        let core = PlayerCore()
+    func testInitialState() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         XCTAssertEqual(core.state, .idle)
         XCTAssertNil(core.currentChannel)
         XCTAssertFalse(core.isMuted)
@@ -17,8 +17,8 @@ final class PlayerCoreTests: XCTestCase {
     }
 
     @MainActor
-    func testSetVolumeClamping() {
-        let core = PlayerCore()
+    func testSetVolumeClamping() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
 
         // Test upper bound
         core.setVolume(1.5)
@@ -34,8 +34,8 @@ final class PlayerCoreTests: XCTestCase {
     }
 
     @MainActor
-    func testToggleMute() {
-        let core = PlayerCore()
+    func testToggleMute() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         XCTAssertFalse(core.isMuted)
 
         core.toggleMute()
@@ -46,8 +46,8 @@ final class PlayerCoreTests: XCTestCase {
     }
 
     @MainActor
-    func testSetPiPActive() {
-        let core = PlayerCore()
+    func testSetPiPActive() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         XCTAssertFalse(core.isPiPActive)
 
         core.setPiPActive(true)
@@ -58,8 +58,8 @@ final class PlayerCoreTests: XCTestCase {
     }
 
     @MainActor
-    func testChannelNavigation() {
-        let core = PlayerCore()
+    func testChannelNavigation() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         let channels = [
             Channel(name: "Channel 1", streamURL: URL(string: "http://example.com/1")!),
             Channel(name: "Channel 2", streamURL: URL(string: "http://example.com/2")!),
@@ -81,8 +81,8 @@ final class PlayerCoreTests: XCTestCase {
     }
 
     @MainActor
-    func testChannelNavigationBounds() {
-        let core = PlayerCore()
+    func testChannelNavigationBounds() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         let channels = [
             Channel(name: "Channel 1", streamURL: URL(string: "http://example.com/1")!),
             Channel(name: "Channel 2", streamURL: URL(string: "http://example.com/2")!)
@@ -105,8 +105,8 @@ final class PlayerCoreTests: XCTestCase {
     }
 
     @MainActor
-    func testStop() {
-        let core = PlayerCore()
+    func testStop() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         let channel = Channel(name: "Test", streamURL: URL(string: "http://example.com/test")!)
 
         core.play(channel)
@@ -118,15 +118,15 @@ final class PlayerCoreTests: XCTestCase {
     }
 
     @MainActor
-    func testQualityPresets() {
-        let core = PlayerCore()
+    func testQualityPresets() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         XCTAssertFalse(core.qualityPresets.isEmpty)
         XCTAssertTrue(core.qualityPresets.contains { $0.id == "auto" })
     }
 
     @MainActor
-    func testSelectedQuality() {
-        let core = PlayerCore()
+    func testSelectedQuality() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         XCTAssertEqual(core.selectedQuality.id, "auto")
 
         let highQuality = StreamQuality(id: "high", label: "High", peakBitRate: 4_000_000)

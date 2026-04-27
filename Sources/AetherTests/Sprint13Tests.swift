@@ -9,8 +9,8 @@ final class Sprint13Tests: XCTestCase {
     // MARK: - PlayerCore cross-platform API
 
     @MainActor
-    func testPlayerCoreInitialState() {
-        let core = PlayerCore()
+    func testPlayerCoreInitialState() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         XCTAssertEqual(core.state, .idle)
         XCTAssertNil(core.currentChannel)
         XCTAssertFalse(core.isMuted)
@@ -20,8 +20,8 @@ final class Sprint13Tests: XCTestCase {
     }
 
     @MainActor
-    func testSetPiPActive() {
-        let core = PlayerCore()
+    func testSetPiPActive() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         XCTAssertFalse(core.isPiPActive)
         core.setPiPActive(true)
         XCTAssertTrue(core.isPiPActive)
@@ -30,8 +30,8 @@ final class Sprint13Tests: XCTestCase {
     }
 
     @MainActor
-    func testSetVolumeClamping() {
-        let core = PlayerCore()
+    func testSetVolumeClamping() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         core.setVolume(1.5)
         XCTAssertEqual(core.volume, 1.0, accuracy: 0.001)
         core.setVolume(-0.5)
@@ -41,8 +41,8 @@ final class Sprint13Tests: XCTestCase {
     }
 
     @MainActor
-    func testToggleMute() {
-        let core = PlayerCore()
+    func testToggleMute() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         XCTAssertFalse(core.isMuted)
         core.toggleMute()
         XCTAssertTrue(core.isMuted)
@@ -51,8 +51,8 @@ final class Sprint13Tests: XCTestCase {
     }
 
     @MainActor
-    func testPlayNextAndPrevious_withChannelList() {
-        let core = PlayerCore()
+    func testPlayNextAndPrevious_withChannelList() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         let channels = [
             makeChannel(name: "CH1"),
             makeChannel(name: "CH2"),
@@ -81,8 +81,8 @@ final class Sprint13Tests: XCTestCase {
     }
 
     @MainActor
-    func testStopClearsState() {
-        let core = PlayerCore()
+    func testStopClearsState() throws {
+        let core = try PlayerCoreTestSupport.makePlayerCore()
         let channel = makeChannel(name: "Test")
         core.channelList = [channel]
         core.play(channel)
