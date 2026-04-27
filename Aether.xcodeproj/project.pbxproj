@@ -29,8 +29,16 @@
 		AA000100000000000000001F /* WatchHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA000100000000000000001F /* WatchHistoryView.swift */; };
 		/* Resources */
 		AA0001000000000000000030 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000030 /* Assets.xcassets */; };
+		D8B9F6413B6B44CBB00A0004 /* AetherCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 35BCC85B3BEC0758B2852636 /* AetherCore.framework */; };
+		D8B9F6413B6B44CBB00A0005 /* AetherUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F3BF791DEC33AEB16F1272F4 /* AetherUI.framework */; };
+		D8B9F6413B6B44CBB00A0006 /* VLCKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8B9F6413B6B44CBB00A0001 /* VLCKit.xcframework */; };
+		D8B9F6413B6B44CBB00A0008 /* AetherCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 35BCC85B3BEC0758B2852636 /* AetherCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		D8B9F6413B6B44CBB00A0009 /* AetherUI.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F3BF791DEC33AEB16F1272F4 /* AetherUI.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		D8B9F6413B6B44CBB00A000A /* VLCKit.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = D8B9F6413B6B44CBB00A0001 /* VLCKit.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 
 		/* ---- AetherCore sources ---- */
+		D8B9F6413B6B44CBB00A000B /* VLCKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8B9F6413B6B44CBB00A0001 /* VLCKit.xcframework */; };
+		D8B9F6413B6B44CBB00A000C /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8B9F6413B6B44CBB00A0002 /* Security.framework */; };
 		/* Design */
 		AA0002000000000000000001 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000001 /* Colors.swift */; };
 		AA0002000000000000000002 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000002 /* Typography.swift */; };
@@ -68,6 +76,7 @@
 		AA0002000000000000000054 /* WatchHistoryRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0002000000000000000054 /* WatchHistoryRecord.swift */; };
 
 		/* ---- AetherUI sources ---- */
+		D8B9F6413B6B44CBB00A000D /* AetherCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 35BCC85B3BEC0758B2852636 /* AetherCore.framework */; };
 		AA0003000000000000000001 /* AetherUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000001 /* AetherUI.swift */; };
 		AA0003000000000000000010 /* AppearancePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000010 /* AppearancePickerView.swift */; };
 		AA0003000000000000000011 /* ChannelRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000011 /* ChannelRowView.swift */; };
@@ -77,7 +86,133 @@
 		AA0003000000000000000014 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000014 /* OnboardingView.swift */; };
 		AA0003000000000000000015 /* PlayerControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000015 /* PlayerControlsView.swift */; };
 		AA0003000000000000000016 /* ThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0003000000000000000016 /* ThemePickerView.swift */; };
+
+		/* Additional source build files */
+		C0D363918C46275B962A34D4 /* AetherMigrationPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3F1BC478FA3A76741E0FC /* AetherMigrationPlan.swift */; };
+		C0D3DA2B8C6E05ECA4997F10 /* View+ScrollWheel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D395F5C700A37A71360ADB /* View+ScrollWheel.swift */; };
+		C0D3A26B8554E10C8B018346 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D31AFC4C5577E706795425 /* StatusBarController.swift */; };
+		C0D38D80E66ADCA4BF277FED /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D38E51EB56F357332022A4 /* HomeViewModel.swift */; };
+		C0D305E83BAB67C0C2998144 /* MetaSyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3A5B91AD0880F240BAB80 /* MetaSyncEngine.swift */; };
+		C0D3BDDDEF12B1DCD8BF02AE /* VODNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3D0AACA8FB8464F699189 /* VODNormalizer.swift */; };
+		C0D3CEEDF6DA6CF310AC4AD2 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3E30186DB1D37017DA97A /* AnalyticsView.swift */; };
+		C0D38692B10961699E666B84 /* BrandHubCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D38E714F4BC4C5086CF1AA /* BrandHubCard.swift */; };
+		C0D3A19761FFD1B7906646EC /* ChannelGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D38476C8986D942D437B00 /* ChannelGridView.swift */; };
+		C0D3743AF9A6E8FA47C62338 /* ChannelListView_ContentCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3FD198BDE26D179AEE5B5 /* ChannelListView_ContentCategory.swift */; };
+		C0D38446B74272BE907E3DF5 /* CloudSyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3D8A7E3688B89216E685A /* CloudSyncView.swift */; };
+		C0D3EFC68EF9AC3E29612F35 /* CrashReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3D8830BAC8A6ACD660A8F /* CrashReportsView.swift */; };
+		C0D38F71319E7C6E479B2167 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3BCCE0736BC7B6A29EBB2 /* FavoritesView.swift */; };
+		C0D33184C64962F044232064 /* FloatingChannelPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D391E5A72F97E655190F12 /* FloatingChannelPanel.swift */; };
+		C0D3E2E171EE2A0EFBF46016 /* GlobalContentSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D315CF18158E7D31DF17EB /* GlobalContentSearchView.swift */; };
+		C0D332E63AA8F30524CE1639 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D32CD062197FCC738F27A2 /* HomeView.swift */; };
+		C0D33E6B340ECB78609D671E /* HubDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3264E1843B071C9A3822C /* HubDetailView.swift */; };
+		C0D3A3B32C869ED67B4C0D51 /* LanguagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3F7EBB459789CC370C038 /* LanguagePickerView.swift */; };
+		C0D37918D7FB0CB37BCBBEFF /* MemoryMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D374F2AE96070432B5DF1F /* MemoryMonitorView.swift */; };
+		C0D3AFF161FC322B6F9ACC3A /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D376A9A56D9347838BF696 /* MiniPlayerView.swift */; };
+		C0D30EB459B9F58A9E9839EC /* NetworkStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3B91E52C534CA39DEED79 /* NetworkStatusBanner.swift */; };
+		C0D35FBFDFF0D2ABC10D8F5B /* PINLockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D398D359D75C6A30D1E0C2 /* PINLockView.swift */; };
+		C0D396A497243E8ECA701827 /* ParentalControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D30E2903756145364035EB /* ParentalControlsView.swift */; };
+		C0D36E9D088C81D8082DD556 /* PlaylistSharingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D313D70DFF8A7CEC818351 /* PlaylistSharingView.swift */; };
+		C0D3825EE7654BAC98066017 /* RecommendationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3E90E0E07803C5CA6476D /* RecommendationsView.swift */; };
+		C0D30F96B01C187334362BC5 /* RecordingControlsButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D375B7C8F7ACE98948E6AD /* RecordingControlsButton.swift */; };
+		C0D3EDD717FEDBC77CD69016 /* RecordingManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D33507B7766C08294B4ABD /* RecordingManagerView.swift */; };
+		C0D3257E5A9B51AB1C57B4D1 /* RemoteControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D36FE2F5C847BBE43A2645 /* RemoteControlView.swift */; };
+		C0D347FD2D864F36FA2FA4D5 /* StreamingCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D36638538E5289DF6A0AA7 /* StreamingCards.swift */; };
+		C0D36728CA90FC867FEAC291 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3BA16764800C0525C49D9 /* SidebarView.swift */; };
+		C0D33CF1B203FB70D0B9C080 /* StreamingServiceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D348AE21DBB91396F87A53 /* StreamingServiceDetailView.swift */; };
+		C0D33063B159D9138BF3DD45 /* SubtitleStylingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3591D74CD541A9FF59D87 /* SubtitleStylingView.swift */; };
+		C0D3176C9C6003C110E22D7A /* TrackPickerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D370F3736F47FE2C6528D9 /* TrackPickerButton.swift */; };
+		C0D39B4E22219EABA8ACD56E /* TrackPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D31283256405671253BCC9 /* TrackPickerView.swift */; };
+		C0D3B31C1E2F95A0EEA58709 /* VLCVideoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3C47BF3AC044FA1F9D1FE /* VLCVideoView.swift */; };
+		C0D3A679BCD93A4F1352E007 /* VODDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D39D083280AA0EBE34B8F8 /* VODDetailView.swift */; };
+		C0D39C437DF9AE1758193117 /* WatchPartyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3D806AA9909089E26E398 /* WatchPartyView.swift */; };
+		C0D385B96DC013853B8F1709 /* iCloudSyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D37189633798EE3B499164 /* iCloudSyncView.swift */; };
+		C0D357D636BDE11322B61FC5 /* AgeRating.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D37C5865002B534489A3B0 /* AgeRating.swift */; };
+		C0D365867D3C876666FD7C8E /* AudioTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3A11D53BBB423892CFEE5 /* AudioTrack.swift */; };
+		C0D3C71AAAEE4E0B7C21BC56 /* Episode.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D30CE93F279EEF2AC04B61 /* Episode.swift */; };
+		C0D3A531760B0D1101E4E906 /* Movie.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D35895C7EC38027373E7B5 /* Movie.swift */; };
+		C0D34E35A3B9D2A37134CB72 /* ParentalControlError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3852BAB5E08FC64445176 /* ParentalControlError.swift */; };
+		C0D3EE16695F8B31D0442717 /* ParentalSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3910431AAF40F2DD5BB0D /* ParentalSettings.swift */; };
+		C0D30822CDC9B7F3E776E03F /* Recording.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D30BE651756DA8465D95C7 /* Recording.swift */; };
+		C0D378E2D29DE4E6089E897E /* RecordingError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D38449AF8826F50D820C54 /* RecordingError.swift */; };
+		C0D3C46084539F141B226FBF /* Series.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3BA765D5D5948E65EA64A /* Series.swift */; };
+		C0D3E884206861524D4CA4DB /* ShareablePlaylist.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D30E216DFB61D59DE381E5 /* ShareablePlaylist.swift */; };
+		C0D3C88324E71BC5F193F2A3 /* SyncableItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D30E80167AAD53B0529054 /* SyncableItem.swift */; };
+		C0D3E79AAA45FED7D1BF9F11 /* VODNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D31D064566F04437B64719 /* VODNormalizer.swift */; };
+		C0D33A28A040822226083E24 /* AirPlayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D37B2C4A9031EBD0753831 /* AirPlayService.swift */; };
+		C0D303AD58C19437171D4F98 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3880C95DD70AA4F22AA1D /* AnalyticsService.swift */; };
+		C0D3005AA5F5D745BB163290 /* BackgroundEPGRefreshService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3664DF06BDC69B34660E2 /* BackgroundEPGRefreshService.swift */; };
+		C0D3B3EA51C2D280A6902A50 /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D342621F6467A598E4C794 /* CloudKitManager.swift */; };
+		C0D33F651FF9FF07D7D821DC /* CrashReportingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3456B74D5BEF4EB60D49B /* CrashReportingService.swift */; };
+		C0D30FC2D8048EA0CF66BCD2 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3D6A820648DBA0AE71E2E /* KeychainService.swift */; };
+		C0D3E4CDDA91409DAF9774E9 /* MemoryMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D306E77EE69848123E239A /* MemoryMonitorService.swift */; };
+		C0D36C29741EA29067485F8E /* MovieManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3CC992881100496A61D84 /* MovieManager.swift */; };
+		C0D3B5C7D4BCFC5E6FB238E5 /* NetworkMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3A777BC8C91505AA79A56 /* NetworkMonitorService.swift */; };
+		C0D34FD7966133B981367A08 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3CBF6E1C0AD94D936FFE0 /* NotificationManager.swift */; };
+		C0D306AC78965C32699D2998 /* ParentalControlService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D32456F4E7BCB32FF79997 /* ParentalControlService.swift */; };
+		C0D3A8DBD491A6CB0F8E2D05 /* PlaylistExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3F0EDFC5F74CD4E89F0EC /* PlaylistExporter.swift */; };
+		C0D30F08579813810C7778B5 /* PlaylistImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D322B70CDC2E29AE02DF53 /* PlaylistImporter.swift */; };
+		C0D3BFA96F768511BE2084AF /* PlaylistSharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3E242A75D64CC0ED297DD /* PlaylistSharingService.swift */; };
+		C0D3D80625CABDD2032B7390 /* RecommendationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3883B8EF0E486A9E9E9B6 /* RecommendationService.swift */; };
+		C0D3396FB0FA325F1743D806 /* RecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D32F1D70519E23B8C02F47 /* RecordingService.swift */; };
+		C0D3E46F24C9CA49B90FF41F /* RemoteControlService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D348F0081708B4BD154B29 /* RemoteControlService.swift */; };
+		C0D3A980719488200F8139CE /* SeriesGrouper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D32C6FE0043D6AB8E11A33 /* SeriesGrouper.swift */; };
+		C0D3364D42DF173F0590E278 /* SeriesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3040C608162B789428839 /* SeriesManager.swift */; };
+		C0D3A2157DB83F701B14D558 /* ShortcutsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3778C1DEA147BACF7B206 /* ShortcutsService.swift */; };
+		C0D358EEF226DD01D5E8739B /* StreamQualityDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D334DD55204A4D658B670C /* StreamQualityDetector.swift */; };
+		C0D35C625C5B885FE8E592FF /* TMDBClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3064DAFDE023032AAF26C /* TMDBClient.swift */; };
+		C0D38E5B86521058F932941A /* TimeshiftService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D34F3351BBEA81689176A6 /* TimeshiftService.swift */; };
+		C0D3A8743A324A541BB52EF6 /* TrackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D372C376921524B950A782 /* TrackService.swift */; };
+		C0D30D65DE209FE7F4743172 /* VoiceCommandService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D35CC31491B3B5BFB1ED5B /* VoiceCommandService.swift */; };
+		C0D30238D01A9C3706C7C7BC /* WatchPartyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D38800E7ABDF75F25C9811 /* WatchPartyService.swift */; };
+		C0D33D7BE33594425BBFEA02 /* iCloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D34918D1A4F93F2AE28010 /* iCloudSyncService.swift */; };
+		C0D314BDF74C3421DFDBD7DC /* ChannelCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3659F74402C52BE6B4C6A /* ChannelCache.swift */; };
+		C0D39364610669318BD7897D /* MovieRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3E45684CAE34775115C0C /* MovieRecord.swift */; };
+		C0D3381618984373340F5F00 /* SeriesRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D37FBD135AE5776AD64E5A /* SeriesRecord.swift */; };
+		C0D3F4F4BFCD37D69F591B7B /* WatchProgressRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3721FF24E3E17EFB55E37 /* WatchProgressRecord.swift */; };
+		C0D34D6437B882576314766D /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D39C0BB0841857376BE4B4 /* ImageCache.swift */; };
+		C0D366E1507283869D169B8C /* SeekBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D30FAD1EF654C5A53911B6 /* SeekBarView.swift */; };
+		C0D39AC70FEE1C621616D65E /* ShimmerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D336CE7DCC9576412F578D /* ShimmerView.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D8B9F6413B6B44CBB00A0010 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BB000000000000000000PROJ /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 35BCC85B3BEC0758B2852635;
+			remoteInfo = AetherCore;
+		};
+		D8B9F6413B6B44CBB00A0012 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BB000000000000000000PROJ /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F3BF791DEC33AEB16F1272F3;
+			remoteInfo = AetherUI;
+		};
+		D8B9F6413B6B44CBB00A0014 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BB000000000000000000PROJ /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 35BCC85B3BEC0758B2852635;
+			remoteInfo = AetherCore;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D8B9F6413B6B44CBB00A0007 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				D8B9F6413B6B44CBB00A0008 /* AetherCore.framework in Embed Frameworks */,
+				D8B9F6413B6B44CBB00A0009 /* AetherUI.framework in Embed Frameworks */,
+				D8B9F6413B6B44CBB00A000A /* VLCKit.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		/* AetherApp */
@@ -147,8 +282,100 @@
 		FA0003000000000000000015 /* PlayerControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PlayerControlsView.swift; path = Sources/AetherUI/Views/PlayerControlsView.swift; sourceTree = "<group>"; };
 		FA0003000000000000000016 /* ThemePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ThemePickerView.swift; path = Sources/AetherUI/Views/ThemePickerView.swift; sourceTree = "<group>"; };
 
+		/* Additional source references */
+		C0D3F1BC478FA3A76741E0FC /* AetherMigrationPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AetherMigrationPlan.swift"; path = "Sources/AetherApp/AetherMigrationPlan.swift"; sourceTree = "<group>"; };
+		C0D395F5C700A37A71360ADB /* View+ScrollWheel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "View+ScrollWheel.swift"; path = "Sources/AetherApp/Extensions/View+ScrollWheel.swift"; sourceTree = "<group>"; };
+		C0D31AFC4C5577E706795425 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "StatusBarController.swift"; path = "Sources/AetherApp/StatusBar/StatusBarController.swift"; sourceTree = "<group>"; };
+		C0D38E51EB56F357332022A4 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "HomeViewModel.swift"; path = "Sources/AetherApp/ViewModels/HomeViewModel.swift"; sourceTree = "<group>"; };
+		C0D3A5B91AD0880F240BAB80 /* MetaSyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MetaSyncEngine.swift"; path = "Sources/AetherApp/ViewModels/MetaSyncEngine.swift"; sourceTree = "<group>"; };
+		C0D3D0AACA8FB8464F699189 /* VODNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "VODNormalizer.swift"; path = "Sources/AetherApp/ViewModels/VODNormalizer.swift"; sourceTree = "<group>"; };
+		C0D3E30186DB1D37017DA97A /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AnalyticsView.swift"; path = "Sources/AetherApp/Views/AnalyticsView.swift"; sourceTree = "<group>"; };
+		C0D38E714F4BC4C5086CF1AA /* BrandHubCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BrandHubCard.swift"; path = "Sources/AetherApp/Views/BrandHubCard.swift"; sourceTree = "<group>"; };
+		C0D38476C8986D942D437B00 /* ChannelGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ChannelGridView.swift"; path = "Sources/AetherApp/Views/ChannelGridView.swift"; sourceTree = "<group>"; };
+		C0D3FD198BDE26D179AEE5B5 /* ChannelListView_ContentCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ChannelListView_ContentCategory.swift"; path = "Sources/AetherApp/Views/ChannelListView_ContentCategory.swift"; sourceTree = "<group>"; };
+		C0D3D8A7E3688B89216E685A /* CloudSyncView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CloudSyncView.swift"; path = "Sources/AetherApp/Views/CloudSyncView.swift"; sourceTree = "<group>"; };
+		C0D3D8830BAC8A6ACD660A8F /* CrashReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CrashReportsView.swift"; path = "Sources/AetherApp/Views/CrashReportsView.swift"; sourceTree = "<group>"; };
+		C0D3BCCE0736BC7B6A29EBB2 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "FavoritesView.swift"; path = "Sources/AetherApp/Views/FavoritesView.swift"; sourceTree = "<group>"; };
+		C0D391E5A72F97E655190F12 /* FloatingChannelPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "FloatingChannelPanel.swift"; path = "Sources/AetherApp/Views/FloatingChannelPanel.swift"; sourceTree = "<group>"; };
+		C0D315CF18158E7D31DF17EB /* GlobalContentSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "GlobalContentSearchView.swift"; path = "Sources/AetherApp/Views/GlobalContentSearchView.swift"; sourceTree = "<group>"; };
+		C0D32CD062197FCC738F27A2 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "HomeView.swift"; path = "Sources/AetherApp/Views/HomeView.swift"; sourceTree = "<group>"; };
+		C0D3264E1843B071C9A3822C /* HubDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "HubDetailView.swift"; path = "Sources/AetherApp/Views/HubDetailView.swift"; sourceTree = "<group>"; };
+		C0D3F7EBB459789CC370C038 /* LanguagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "LanguagePickerView.swift"; path = "Sources/AetherApp/Views/LanguagePickerView.swift"; sourceTree = "<group>"; };
+		C0D374F2AE96070432B5DF1F /* MemoryMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MemoryMonitorView.swift"; path = "Sources/AetherApp/Views/MemoryMonitorView.swift"; sourceTree = "<group>"; };
+		C0D376A9A56D9347838BF696 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MiniPlayerView.swift"; path = "Sources/AetherApp/Views/MiniPlayerView.swift"; sourceTree = "<group>"; };
+		C0D3B91E52C534CA39DEED79 /* NetworkStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "NetworkStatusBanner.swift"; path = "Sources/AetherApp/Views/NetworkStatusBanner.swift"; sourceTree = "<group>"; };
+		C0D398D359D75C6A30D1E0C2 /* PINLockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PINLockView.swift"; path = "Sources/AetherApp/Views/PINLockView.swift"; sourceTree = "<group>"; };
+		C0D30E2903756145364035EB /* ParentalControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ParentalControlsView.swift"; path = "Sources/AetherApp/Views/ParentalControlsView.swift"; sourceTree = "<group>"; };
+		C0D313D70DFF8A7CEC818351 /* PlaylistSharingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PlaylistSharingView.swift"; path = "Sources/AetherApp/Views/PlaylistSharingView.swift"; sourceTree = "<group>"; };
+		C0D3E90E0E07803C5CA6476D /* RecommendationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RecommendationsView.swift"; path = "Sources/AetherApp/Views/RecommendationsView.swift"; sourceTree = "<group>"; };
+		C0D375B7C8F7ACE98948E6AD /* RecordingControlsButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RecordingControlsButton.swift"; path = "Sources/AetherApp/Views/RecordingControlsButton.swift"; sourceTree = "<group>"; };
+		C0D33507B7766C08294B4ABD /* RecordingManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RecordingManagerView.swift"; path = "Sources/AetherApp/Views/RecordingManagerView.swift"; sourceTree = "<group>"; };
+		C0D36FE2F5C847BBE43A2645 /* RemoteControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RemoteControlView.swift"; path = "Sources/AetherApp/Views/RemoteControlView.swift"; sourceTree = "<group>"; };
+		C0D36638538E5289DF6A0AA7 /* StreamingCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "StreamingCards.swift"; path = "Sources/AetherApp/Views/Shared/StreamingCards.swift"; sourceTree = "<group>"; };
+		C0D3BA16764800C0525C49D9 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SidebarView.swift"; path = "Sources/AetherApp/Views/SidebarView.swift"; sourceTree = "<group>"; };
+		C0D348AE21DBB91396F87A53 /* StreamingServiceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "StreamingServiceDetailView.swift"; path = "Sources/AetherApp/Views/StreamingServiceDetailView.swift"; sourceTree = "<group>"; };
+		C0D3591D74CD541A9FF59D87 /* SubtitleStylingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SubtitleStylingView.swift"; path = "Sources/AetherApp/Views/SubtitleStylingView.swift"; sourceTree = "<group>"; };
+		C0D370F3736F47FE2C6528D9 /* TrackPickerButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TrackPickerButton.swift"; path = "Sources/AetherApp/Views/TrackPickerButton.swift"; sourceTree = "<group>"; };
+		C0D31283256405671253BCC9 /* TrackPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TrackPickerView.swift"; path = "Sources/AetherApp/Views/TrackPickerView.swift"; sourceTree = "<group>"; };
+		C0D3C47BF3AC044FA1F9D1FE /* VLCVideoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "VLCVideoView.swift"; path = "Sources/AetherApp/Views/VLCVideoView.swift"; sourceTree = "<group>"; };
+		C0D39D083280AA0EBE34B8F8 /* VODDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "VODDetailView.swift"; path = "Sources/AetherApp/Views/VODDetailView.swift"; sourceTree = "<group>"; };
+		C0D3D806AA9909089E26E398 /* WatchPartyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WatchPartyView.swift"; path = "Sources/AetherApp/Views/WatchPartyView.swift"; sourceTree = "<group>"; };
+		C0D37189633798EE3B499164 /* iCloudSyncView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "iCloudSyncView.swift"; path = "Sources/AetherApp/Views/iCloudSyncView.swift"; sourceTree = "<group>"; };
+		C0D37C5865002B534489A3B0 /* AgeRating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgeRating.swift"; path = "Sources/AetherCore/Models/AgeRating.swift"; sourceTree = "<group>"; };
+		C0D3A11D53BBB423892CFEE5 /* AudioTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AudioTrack.swift"; path = "Sources/AetherCore/Models/AudioTrack.swift"; sourceTree = "<group>"; };
+		C0D30CE93F279EEF2AC04B61 /* Episode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Episode.swift"; path = "Sources/AetherCore/Models/Episode.swift"; sourceTree = "<group>"; };
+		C0D35895C7EC38027373E7B5 /* Movie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Movie.swift"; path = "Sources/AetherCore/Models/Movie.swift"; sourceTree = "<group>"; };
+		C0D3852BAB5E08FC64445176 /* ParentalControlError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ParentalControlError.swift"; path = "Sources/AetherCore/Models/ParentalControlError.swift"; sourceTree = "<group>"; };
+		C0D3910431AAF40F2DD5BB0D /* ParentalSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ParentalSettings.swift"; path = "Sources/AetherCore/Models/ParentalSettings.swift"; sourceTree = "<group>"; };
+		C0D30BE651756DA8465D95C7 /* Recording.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Recording.swift"; path = "Sources/AetherCore/Models/Recording.swift"; sourceTree = "<group>"; };
+		C0D38449AF8826F50D820C54 /* RecordingError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RecordingError.swift"; path = "Sources/AetherCore/Models/RecordingError.swift"; sourceTree = "<group>"; };
+		C0D3BA765D5D5948E65EA64A /* Series.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Series.swift"; path = "Sources/AetherCore/Models/Series.swift"; sourceTree = "<group>"; };
+		C0D30E216DFB61D59DE381E5 /* ShareablePlaylist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ShareablePlaylist.swift"; path = "Sources/AetherCore/Models/ShareablePlaylist.swift"; sourceTree = "<group>"; };
+		C0D30E80167AAD53B0529054 /* SyncableItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SyncableItem.swift"; path = "Sources/AetherCore/Models/SyncableItem.swift"; sourceTree = "<group>"; };
+		C0D31D064566F04437B64719 /* VODNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "VODNormalizer.swift"; path = "Sources/AetherCore/Models/VODNormalizer.swift"; sourceTree = "<group>"; };
+		C0D37B2C4A9031EBD0753831 /* AirPlayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AirPlayService.swift"; path = "Sources/AetherCore/Services/AirPlayService.swift"; sourceTree = "<group>"; };
+		C0D3880C95DD70AA4F22AA1D /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AnalyticsService.swift"; path = "Sources/AetherCore/Services/AnalyticsService.swift"; sourceTree = "<group>"; };
+		C0D3664DF06BDC69B34660E2 /* BackgroundEPGRefreshService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BackgroundEPGRefreshService.swift"; path = "Sources/AetherCore/Services/BackgroundEPGRefreshService.swift"; sourceTree = "<group>"; };
+		C0D342621F6467A598E4C794 /* CloudKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CloudKitManager.swift"; path = "Sources/AetherCore/Services/CloudKitManager.swift"; sourceTree = "<group>"; };
+		C0D3456B74D5BEF4EB60D49B /* CrashReportingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CrashReportingService.swift"; path = "Sources/AetherCore/Services/CrashReportingService.swift"; sourceTree = "<group>"; };
+		C0D3D6A820648DBA0AE71E2E /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "KeychainService.swift"; path = "Sources/AetherCore/Services/KeychainService.swift"; sourceTree = "<group>"; };
+		C0D306E77EE69848123E239A /* MemoryMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MemoryMonitorService.swift"; path = "Sources/AetherCore/Services/MemoryMonitorService.swift"; sourceTree = "<group>"; };
+		C0D3CC992881100496A61D84 /* MovieManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MovieManager.swift"; path = "Sources/AetherCore/Services/MovieManager.swift"; sourceTree = "<group>"; };
+		C0D3A777BC8C91505AA79A56 /* NetworkMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "NetworkMonitorService.swift"; path = "Sources/AetherCore/Services/NetworkMonitorService.swift"; sourceTree = "<group>"; };
+		C0D3CBF6E1C0AD94D936FFE0 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "NotificationManager.swift"; path = "Sources/AetherCore/Services/NotificationManager.swift"; sourceTree = "<group>"; };
+		C0D32456F4E7BCB32FF79997 /* ParentalControlService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ParentalControlService.swift"; path = "Sources/AetherCore/Services/ParentalControlService.swift"; sourceTree = "<group>"; };
+		C0D3F0EDFC5F74CD4E89F0EC /* PlaylistExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PlaylistExporter.swift"; path = "Sources/AetherCore/Services/PlaylistExporter.swift"; sourceTree = "<group>"; };
+		C0D322B70CDC2E29AE02DF53 /* PlaylistImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PlaylistImporter.swift"; path = "Sources/AetherCore/Services/PlaylistImporter.swift"; sourceTree = "<group>"; };
+		C0D3E242A75D64CC0ED297DD /* PlaylistSharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PlaylistSharingService.swift"; path = "Sources/AetherCore/Services/PlaylistSharingService.swift"; sourceTree = "<group>"; };
+		C0D3883B8EF0E486A9E9E9B6 /* RecommendationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RecommendationService.swift"; path = "Sources/AetherCore/Services/RecommendationService.swift"; sourceTree = "<group>"; };
+		C0D32F1D70519E23B8C02F47 /* RecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RecordingService.swift"; path = "Sources/AetherCore/Services/RecordingService.swift"; sourceTree = "<group>"; };
+		C0D348F0081708B4BD154B29 /* RemoteControlService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "RemoteControlService.swift"; path = "Sources/AetherCore/Services/RemoteControlService.swift"; sourceTree = "<group>"; };
+		C0D32C6FE0043D6AB8E11A33 /* SeriesGrouper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SeriesGrouper.swift"; path = "Sources/AetherCore/Services/SeriesGrouper.swift"; sourceTree = "<group>"; };
+		C0D3040C608162B789428839 /* SeriesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SeriesManager.swift"; path = "Sources/AetherCore/Services/SeriesManager.swift"; sourceTree = "<group>"; };
+		C0D3778C1DEA147BACF7B206 /* ShortcutsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ShortcutsService.swift"; path = "Sources/AetherCore/Services/ShortcutsService.swift"; sourceTree = "<group>"; };
+		C0D334DD55204A4D658B670C /* StreamQualityDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "StreamQualityDetector.swift"; path = "Sources/AetherCore/Services/StreamQualityDetector.swift"; sourceTree = "<group>"; };
+		C0D3064DAFDE023032AAF26C /* TMDBClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TMDBClient.swift"; path = "Sources/AetherCore/Services/TMDBClient.swift"; sourceTree = "<group>"; };
+		C0D34F3351BBEA81689176A6 /* TimeshiftService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TimeshiftService.swift"; path = "Sources/AetherCore/Services/TimeshiftService.swift"; sourceTree = "<group>"; };
+		C0D372C376921524B950A782 /* TrackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TrackService.swift"; path = "Sources/AetherCore/Services/TrackService.swift"; sourceTree = "<group>"; };
+		C0D35CC31491B3B5BFB1ED5B /* VoiceCommandService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "VoiceCommandService.swift"; path = "Sources/AetherCore/Services/VoiceCommandService.swift"; sourceTree = "<group>"; };
+		C0D38800E7ABDF75F25C9811 /* WatchPartyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WatchPartyService.swift"; path = "Sources/AetherCore/Services/WatchPartyService.swift"; sourceTree = "<group>"; };
+		C0D34918D1A4F93F2AE28010 /* iCloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "iCloudSyncService.swift"; path = "Sources/AetherCore/Services/iCloudSyncService.swift"; sourceTree = "<group>"; };
+		C0D3659F74402C52BE6B4C6A /* ChannelCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ChannelCache.swift"; path = "Sources/AetherCore/Storage/ChannelCache.swift"; sourceTree = "<group>"; };
+		C0D3E45684CAE34775115C0C /* MovieRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MovieRecord.swift"; path = "Sources/AetherCore/Storage/MovieRecord.swift"; sourceTree = "<group>"; };
+		C0D37FBD135AE5776AD64E5A /* SeriesRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SeriesRecord.swift"; path = "Sources/AetherCore/Storage/SeriesRecord.swift"; sourceTree = "<group>"; };
+		C0D3721FF24E3E17EFB55E37 /* WatchProgressRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "WatchProgressRecord.swift"; path = "Sources/AetherCore/Storage/WatchProgressRecord.swift"; sourceTree = "<group>"; };
+		C0D39C0BB0841857376BE4B4 /* ImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ImageCache.swift"; path = "Sources/AetherUI/Services/ImageCache.swift"; sourceTree = "<group>"; };
+		C0D30FAD1EF654C5A53911B6 /* SeekBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SeekBarView.swift"; path = "Sources/AetherUI/Views/SeekBarView.swift"; sourceTree = "<group>"; };
+		C0D336CE7DCC9576412F578D /* ShimmerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ShimmerView.swift"; path = "Sources/AetherUI/Views/ShimmerView.swift"; sourceTree = "<group>"; };
+
+		/* Frameworks */
+		D8B9F6413B6B44CBB00A0001 /* VLCKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = VLCKit.xcframework; path = .vlckit/VLCKit.xcframework; sourceTree = "<group>"; };
+		D8B9F6413B6B44CBB00A0002 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+
 		/* Product */
 		BB000000000000000000PROD /* AetherApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AetherApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		35BCC85B3BEC0758B2852636 /* AetherCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = AetherCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F3BF791DEC33AEB16F1272F4 /* AetherUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = AetherUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +383,26 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D8B9F6413B6B44CBB00A0004 /* AetherCore.framework in Frameworks */,
+				D8B9F6413B6B44CBB00A0005 /* AetherUI.framework in Frameworks */,
+				D8B9F6413B6B44CBB00A0006 /* VLCKit.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		35BCC85B3BEC0758B2852638 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D8B9F6413B6B44CBB00A000B /* VLCKit.xcframework in Frameworks */,
+				D8B9F6413B6B44CBB00A000C /* Security.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F3BF791DEC33AEB16F1272F6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D8B9F6413B6B44CBB00A000D /* AetherCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -169,6 +416,7 @@
 				BB000000000000000000GRP1 /* AetherApp */,
 				BB000000000000000000GRP2 /* AetherCore */,
 				BB000000000000000000GRP3 /* AetherUI */,
+				D8B9F6413B6B44CBB00A0003 /* Frameworks */,
 				BB000000000000000000GRPP /* Products */,
 			);
 			name = Aether;
@@ -179,8 +427,20 @@
 			isa = PBXGroup;
 			children = (
 				BB000000000000000000PROD /* AetherApp.app */,
+				35BCC85B3BEC0758B2852636 /* AetherCore.framework */,
+				F3BF791DEC33AEB16F1272F4 /* AetherUI.framework */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+
+		D8B9F6413B6B44CBB00A0003 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D8B9F6413B6B44CBB00A0001 /* VLCKit.xcframework */,
+				D8B9F6413B6B44CBB00A0002 /* Security.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 
@@ -188,6 +448,7 @@
 		BB000000000000000000GRP1 /* AetherApp */ = {
 			isa = PBXGroup;
 			children = (
+				C0D3616CA6513A8EE618B180 /* Additional Sources */,
 				FA0001000000000000000001 /* AetherApp.swift */,
 				FA0001000000000000000003 /* SubtitleStore.swift */,
 				FA0001000000000000000004 /* KeyboardShortcutHandler.swift */,
@@ -236,6 +497,7 @@
 		BB000000000000000000GRP2 /* AetherCore */ = {
 			isa = PBXGroup;
 			children = (
+				C0D30D663CDCEA1EA71D42D9 /* Additional Sources */,
 				BB000000000000000000GRP2D /* Design */,
 				BB000000000000000000GRP2M /* Models */,
 				BB000000000000000000GRP2P /* Parsers */,
@@ -328,6 +590,7 @@
 		BB000000000000000000GRP3 /* AetherUI */ = {
 			isa = PBXGroup;
 			children = (
+				C0D3B402E3FA4E6C2D0AFA62 /* Additional Sources */,
 				FA0003000000000000000001 /* AetherUI.swift */,
 				BB000000000000000000GRP3V /* Views */,
 			);
@@ -350,9 +613,150 @@
 			name = Views;
 			sourceTree = "<group>";
 		};
+
+		C0D3616CA6513A8EE618B180 /* Additional Sources */ = {
+			isa = PBXGroup;
+			children = (
+				C0D3F1BC478FA3A76741E0FC /* AetherMigrationPlan.swift */,
+				C0D395F5C700A37A71360ADB /* View+ScrollWheel.swift */,
+				C0D31AFC4C5577E706795425 /* StatusBarController.swift */,
+				C0D38E51EB56F357332022A4 /* HomeViewModel.swift */,
+				C0D3A5B91AD0880F240BAB80 /* MetaSyncEngine.swift */,
+				C0D3D0AACA8FB8464F699189 /* VODNormalizer.swift */,
+				C0D3E30186DB1D37017DA97A /* AnalyticsView.swift */,
+				C0D38E714F4BC4C5086CF1AA /* BrandHubCard.swift */,
+				C0D38476C8986D942D437B00 /* ChannelGridView.swift */,
+				C0D3FD198BDE26D179AEE5B5 /* ChannelListView_ContentCategory.swift */,
+				C0D3D8A7E3688B89216E685A /* CloudSyncView.swift */,
+				C0D3D8830BAC8A6ACD660A8F /* CrashReportsView.swift */,
+				C0D3BCCE0736BC7B6A29EBB2 /* FavoritesView.swift */,
+				C0D391E5A72F97E655190F12 /* FloatingChannelPanel.swift */,
+				C0D315CF18158E7D31DF17EB /* GlobalContentSearchView.swift */,
+				C0D32CD062197FCC738F27A2 /* HomeView.swift */,
+				C0D3264E1843B071C9A3822C /* HubDetailView.swift */,
+				C0D3F7EBB459789CC370C038 /* LanguagePickerView.swift */,
+				C0D374F2AE96070432B5DF1F /* MemoryMonitorView.swift */,
+				C0D376A9A56D9347838BF696 /* MiniPlayerView.swift */,
+				C0D3B91E52C534CA39DEED79 /* NetworkStatusBanner.swift */,
+				C0D398D359D75C6A30D1E0C2 /* PINLockView.swift */,
+				C0D30E2903756145364035EB /* ParentalControlsView.swift */,
+				C0D313D70DFF8A7CEC818351 /* PlaylistSharingView.swift */,
+				C0D3E90E0E07803C5CA6476D /* RecommendationsView.swift */,
+				C0D375B7C8F7ACE98948E6AD /* RecordingControlsButton.swift */,
+				C0D33507B7766C08294B4ABD /* RecordingManagerView.swift */,
+				C0D36FE2F5C847BBE43A2645 /* RemoteControlView.swift */,
+				C0D36638538E5289DF6A0AA7 /* StreamingCards.swift */,
+				C0D3BA16764800C0525C49D9 /* SidebarView.swift */,
+				C0D348AE21DBB91396F87A53 /* StreamingServiceDetailView.swift */,
+				C0D3591D74CD541A9FF59D87 /* SubtitleStylingView.swift */,
+				C0D370F3736F47FE2C6528D9 /* TrackPickerButton.swift */,
+				C0D31283256405671253BCC9 /* TrackPickerView.swift */,
+				C0D3C47BF3AC044FA1F9D1FE /* VLCVideoView.swift */,
+				C0D39D083280AA0EBE34B8F8 /* VODDetailView.swift */,
+				C0D3D806AA9909089E26E398 /* WatchPartyView.swift */,
+				C0D37189633798EE3B499164 /* iCloudSyncView.swift */,
+			);
+			name = "Additional Sources";
+			sourceTree = "<group>";
+		};
+
+		C0D30D663CDCEA1EA71D42D9 /* Additional Sources */ = {
+			isa = PBXGroup;
+			children = (
+				C0D37C5865002B534489A3B0 /* AgeRating.swift */,
+				C0D3A11D53BBB423892CFEE5 /* AudioTrack.swift */,
+				C0D30CE93F279EEF2AC04B61 /* Episode.swift */,
+				C0D35895C7EC38027373E7B5 /* Movie.swift */,
+				C0D3852BAB5E08FC64445176 /* ParentalControlError.swift */,
+				C0D3910431AAF40F2DD5BB0D /* ParentalSettings.swift */,
+				C0D30BE651756DA8465D95C7 /* Recording.swift */,
+				C0D38449AF8826F50D820C54 /* RecordingError.swift */,
+				C0D3BA765D5D5948E65EA64A /* Series.swift */,
+				C0D30E216DFB61D59DE381E5 /* ShareablePlaylist.swift */,
+				C0D30E80167AAD53B0529054 /* SyncableItem.swift */,
+				C0D31D064566F04437B64719 /* VODNormalizer.swift */,
+				C0D37B2C4A9031EBD0753831 /* AirPlayService.swift */,
+				C0D3880C95DD70AA4F22AA1D /* AnalyticsService.swift */,
+				C0D3664DF06BDC69B34660E2 /* BackgroundEPGRefreshService.swift */,
+				C0D342621F6467A598E4C794 /* CloudKitManager.swift */,
+				C0D3456B74D5BEF4EB60D49B /* CrashReportingService.swift */,
+				C0D3D6A820648DBA0AE71E2E /* KeychainService.swift */,
+				C0D306E77EE69848123E239A /* MemoryMonitorService.swift */,
+				C0D3CC992881100496A61D84 /* MovieManager.swift */,
+				C0D3A777BC8C91505AA79A56 /* NetworkMonitorService.swift */,
+				C0D3CBF6E1C0AD94D936FFE0 /* NotificationManager.swift */,
+				C0D32456F4E7BCB32FF79997 /* ParentalControlService.swift */,
+				C0D3F0EDFC5F74CD4E89F0EC /* PlaylistExporter.swift */,
+				C0D322B70CDC2E29AE02DF53 /* PlaylistImporter.swift */,
+				C0D3E242A75D64CC0ED297DD /* PlaylistSharingService.swift */,
+				C0D3883B8EF0E486A9E9E9B6 /* RecommendationService.swift */,
+				C0D32F1D70519E23B8C02F47 /* RecordingService.swift */,
+				C0D348F0081708B4BD154B29 /* RemoteControlService.swift */,
+				C0D32C6FE0043D6AB8E11A33 /* SeriesGrouper.swift */,
+				C0D3040C608162B789428839 /* SeriesManager.swift */,
+				C0D3778C1DEA147BACF7B206 /* ShortcutsService.swift */,
+				C0D334DD55204A4D658B670C /* StreamQualityDetector.swift */,
+				C0D3064DAFDE023032AAF26C /* TMDBClient.swift */,
+				C0D34F3351BBEA81689176A6 /* TimeshiftService.swift */,
+				C0D372C376921524B950A782 /* TrackService.swift */,
+				C0D35CC31491B3B5BFB1ED5B /* VoiceCommandService.swift */,
+				C0D38800E7ABDF75F25C9811 /* WatchPartyService.swift */,
+				C0D34918D1A4F93F2AE28010 /* iCloudSyncService.swift */,
+				C0D3659F74402C52BE6B4C6A /* ChannelCache.swift */,
+				C0D3E45684CAE34775115C0C /* MovieRecord.swift */,
+				C0D37FBD135AE5776AD64E5A /* SeriesRecord.swift */,
+				C0D3721FF24E3E17EFB55E37 /* WatchProgressRecord.swift */,
+			);
+			name = "Additional Sources";
+			sourceTree = "<group>";
+		};
+
+		C0D3B402E3FA4E6C2D0AFA62 /* Additional Sources */ = {
+			isa = PBXGroup;
+			children = (
+				C0D39C0BB0841857376BE4B4 /* ImageCache.swift */,
+				C0D30FAD1EF654C5A53911B6 /* SeekBarView.swift */,
+				C0D336CE7DCC9576412F578D /* ShimmerView.swift */,
+			);
+			name = "Additional Sources";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		35BCC85B3BEC0758B2852635 /* AetherCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 35BCC85B3BEC0758B2852639 /* Build configuration list for PBXNativeTarget "AetherCore" */;
+			buildPhases = (
+				35BCC85B3BEC0758B2852637 /* Sources */,
+				35BCC85B3BEC0758B2852638 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AetherCore;
+			productName = AetherCore;
+			productReference = 35BCC85B3BEC0758B2852636 /* AetherCore.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		F3BF791DEC33AEB16F1272F3 /* AetherUI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F3BF791DEC33AEB16F1272F7 /* Build configuration list for PBXNativeTarget "AetherUI" */;
+			buildPhases = (
+				F3BF791DEC33AEB16F1272F5 /* Sources */,
+				F3BF791DEC33AEB16F1272F6 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D8B9F6413B6B44CBB00A0015 /* PBXTargetDependency */,
+			);
+			name = AetherUI;
+			productName = AetherUI;
+			productReference = F3BF791DEC33AEB16F1272F4 /* AetherUI.framework */;
+			productType = "com.apple.product-type.framework";
+		};
 		BB000000000000000000TARG /* AetherApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = BB000000000000000000CFGL /* Build configuration list for PBXNativeTarget "AetherApp" */;
@@ -360,10 +764,13 @@
 				BB000000000000000000SRCBP /* Sources */,
 				BB000000000000000000FWBP /* Frameworks */,
 				BB000000000000000000RESBP /* Resources */,
+				D8B9F6413B6B44CBB00A0007 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D8B9F6413B6B44CBB00A0011 /* PBXTargetDependency */,
+				D8B9F6413B6B44CBB00A0013 /* PBXTargetDependency */,
 			);
 			name = AetherApp;
 			productName = AetherApp;
@@ -380,7 +787,13 @@
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
+					35BCC85B3BEC0758B2852635 = {
+						CreatedOnToolsVersion = 15.0;
+					};
 					BB000000000000000000TARG = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					F3BF791DEC33AEB16F1272F3 = {
 						CreatedOnToolsVersion = 15.0;
 					};
 				};
@@ -398,6 +811,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				35BCC85B3BEC0758B2852635 /* AetherCore */,
+				F3BF791DEC33AEB16F1272F3 /* AetherUI */,
 				BB000000000000000000TARG /* AetherApp */,
 			);
 		};
@@ -438,6 +853,51 @@
 				AA000100000000000000001D /* SubtitleSettingsView.swift in Sources */,
 				AA000100000000000000001E /* VODBrowserView.swift in Sources */,
 				AA000100000000000000001F /* WatchHistoryView.swift in Sources */,
+				C0D363918C46275B962A34D4 /* AetherMigrationPlan.swift in Sources */,
+				C0D3DA2B8C6E05ECA4997F10 /* View+ScrollWheel.swift in Sources */,
+				C0D3A26B8554E10C8B018346 /* StatusBarController.swift in Sources */,
+				C0D38D80E66ADCA4BF277FED /* HomeViewModel.swift in Sources */,
+				C0D305E83BAB67C0C2998144 /* MetaSyncEngine.swift in Sources */,
+				C0D3BDDDEF12B1DCD8BF02AE /* VODNormalizer.swift in Sources */,
+				C0D3CEEDF6DA6CF310AC4AD2 /* AnalyticsView.swift in Sources */,
+				C0D38692B10961699E666B84 /* BrandHubCard.swift in Sources */,
+				C0D3A19761FFD1B7906646EC /* ChannelGridView.swift in Sources */,
+				C0D3743AF9A6E8FA47C62338 /* ChannelListView_ContentCategory.swift in Sources */,
+				C0D38446B74272BE907E3DF5 /* CloudSyncView.swift in Sources */,
+				C0D3EFC68EF9AC3E29612F35 /* CrashReportsView.swift in Sources */,
+				C0D38F71319E7C6E479B2167 /* FavoritesView.swift in Sources */,
+				C0D33184C64962F044232064 /* FloatingChannelPanel.swift in Sources */,
+				C0D3E2E171EE2A0EFBF46016 /* GlobalContentSearchView.swift in Sources */,
+				C0D332E63AA8F30524CE1639 /* HomeView.swift in Sources */,
+				C0D33E6B340ECB78609D671E /* HubDetailView.swift in Sources */,
+				C0D3A3B32C869ED67B4C0D51 /* LanguagePickerView.swift in Sources */,
+				C0D37918D7FB0CB37BCBBEFF /* MemoryMonitorView.swift in Sources */,
+				C0D3AFF161FC322B6F9ACC3A /* MiniPlayerView.swift in Sources */,
+				C0D30EB459B9F58A9E9839EC /* NetworkStatusBanner.swift in Sources */,
+				C0D35FBFDFF0D2ABC10D8F5B /* PINLockView.swift in Sources */,
+				C0D396A497243E8ECA701827 /* ParentalControlsView.swift in Sources */,
+				C0D36E9D088C81D8082DD556 /* PlaylistSharingView.swift in Sources */,
+				C0D3825EE7654BAC98066017 /* RecommendationsView.swift in Sources */,
+				C0D30F96B01C187334362BC5 /* RecordingControlsButton.swift in Sources */,
+				C0D3EDD717FEDBC77CD69016 /* RecordingManagerView.swift in Sources */,
+				C0D3257E5A9B51AB1C57B4D1 /* RemoteControlView.swift in Sources */,
+				C0D347FD2D864F36FA2FA4D5 /* StreamingCards.swift in Sources */,
+				C0D36728CA90FC867FEAC291 /* SidebarView.swift in Sources */,
+				C0D33CF1B203FB70D0B9C080 /* StreamingServiceDetailView.swift in Sources */,
+				C0D33063B159D9138BF3DD45 /* SubtitleStylingView.swift in Sources */,
+				C0D3176C9C6003C110E22D7A /* TrackPickerButton.swift in Sources */,
+				C0D39B4E22219EABA8ACD56E /* TrackPickerView.swift in Sources */,
+				C0D3B31C1E2F95A0EEA58709 /* VLCVideoView.swift in Sources */,
+				C0D3A679BCD93A4F1352E007 /* VODDetailView.swift in Sources */,
+				C0D39C437DF9AE1758193117 /* WatchPartyView.swift in Sources */,
+				C0D385B96DC013853B8F1709 /* iCloudSyncView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		35BCC85B3BEC0758B2852637 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 				/* AetherCore */
 				AA0002000000000000000001 /* Colors.swift in Sources */,
 				AA0002000000000000000002 /* Typography.swift in Sources */,
@@ -468,6 +928,56 @@
 				AA0002000000000000000052 /* LastChannelStore.swift in Sources */,
 				AA0002000000000000000053 /* PlaylistRecord.swift in Sources */,
 				AA0002000000000000000054 /* WatchHistoryRecord.swift in Sources */,
+				C0D357D636BDE11322B61FC5 /* AgeRating.swift in Sources */,
+				C0D365867D3C876666FD7C8E /* AudioTrack.swift in Sources */,
+				C0D3C71AAAEE4E0B7C21BC56 /* Episode.swift in Sources */,
+				C0D3A531760B0D1101E4E906 /* Movie.swift in Sources */,
+				C0D34E35A3B9D2A37134CB72 /* ParentalControlError.swift in Sources */,
+				C0D3EE16695F8B31D0442717 /* ParentalSettings.swift in Sources */,
+				C0D30822CDC9B7F3E776E03F /* Recording.swift in Sources */,
+				C0D378E2D29DE4E6089E897E /* RecordingError.swift in Sources */,
+				C0D3C46084539F141B226FBF /* Series.swift in Sources */,
+				C0D3E884206861524D4CA4DB /* ShareablePlaylist.swift in Sources */,
+				C0D3C88324E71BC5F193F2A3 /* SyncableItem.swift in Sources */,
+				C0D3E79AAA45FED7D1BF9F11 /* VODNormalizer.swift in Sources */,
+				C0D33A28A040822226083E24 /* AirPlayService.swift in Sources */,
+				C0D303AD58C19437171D4F98 /* AnalyticsService.swift in Sources */,
+				C0D3005AA5F5D745BB163290 /* BackgroundEPGRefreshService.swift in Sources */,
+				C0D3B3EA51C2D280A6902A50 /* CloudKitManager.swift in Sources */,
+				C0D33F651FF9FF07D7D821DC /* CrashReportingService.swift in Sources */,
+				C0D30FC2D8048EA0CF66BCD2 /* KeychainService.swift in Sources */,
+				C0D3E4CDDA91409DAF9774E9 /* MemoryMonitorService.swift in Sources */,
+				C0D36C29741EA29067485F8E /* MovieManager.swift in Sources */,
+				C0D3B5C7D4BCFC5E6FB238E5 /* NetworkMonitorService.swift in Sources */,
+				C0D34FD7966133B981367A08 /* NotificationManager.swift in Sources */,
+				C0D306AC78965C32699D2998 /* ParentalControlService.swift in Sources */,
+				C0D3A8DBD491A6CB0F8E2D05 /* PlaylistExporter.swift in Sources */,
+				C0D30F08579813810C7778B5 /* PlaylistImporter.swift in Sources */,
+				C0D3BFA96F768511BE2084AF /* PlaylistSharingService.swift in Sources */,
+				C0D3D80625CABDD2032B7390 /* RecommendationService.swift in Sources */,
+				C0D3396FB0FA325F1743D806 /* RecordingService.swift in Sources */,
+				C0D3E46F24C9CA49B90FF41F /* RemoteControlService.swift in Sources */,
+				C0D3A980719488200F8139CE /* SeriesGrouper.swift in Sources */,
+				C0D3364D42DF173F0590E278 /* SeriesManager.swift in Sources */,
+				C0D3A2157DB83F701B14D558 /* ShortcutsService.swift in Sources */,
+				C0D358EEF226DD01D5E8739B /* StreamQualityDetector.swift in Sources */,
+				C0D35C625C5B885FE8E592FF /* TMDBClient.swift in Sources */,
+				C0D38E5B86521058F932941A /* TimeshiftService.swift in Sources */,
+				C0D3A8743A324A541BB52EF6 /* TrackService.swift in Sources */,
+				C0D30D65DE209FE7F4743172 /* VoiceCommandService.swift in Sources */,
+				C0D30238D01A9C3706C7C7BC /* WatchPartyService.swift in Sources */,
+				C0D33D7BE33594425BBFEA02 /* iCloudSyncService.swift in Sources */,
+				C0D314BDF74C3421DFDBD7DC /* ChannelCache.swift in Sources */,
+				C0D39364610669318BD7897D /* MovieRecord.swift in Sources */,
+				C0D3381618984373340F5F00 /* SeriesRecord.swift in Sources */,
+				C0D3F4F4BFCD37D69F591B7B /* WatchProgressRecord.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F3BF791DEC33AEB16F1272F5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 				/* AetherUI */
 				AA0003000000000000000001 /* AetherUI.swift in Sources */,
 				AA0003000000000000000010 /* AppearancePickerView.swift in Sources */,
@@ -478,10 +988,31 @@
 				AA0003000000000000000014 /* OnboardingView.swift in Sources */,
 				AA0003000000000000000015 /* PlayerControlsView.swift in Sources */,
 				AA0003000000000000000016 /* ThemePickerView.swift in Sources */,
+				C0D34D6437B882576314766D /* ImageCache.swift in Sources */,
+				C0D366E1507283869D169B8C /* SeekBarView.swift in Sources */,
+				C0D39AC70FEE1C621616D65E /* ShimmerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D8B9F6413B6B44CBB00A0011 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 35BCC85B3BEC0758B2852635 /* AetherCore */;
+			targetProxy = D8B9F6413B6B44CBB00A0010 /* PBXContainerItemProxy */;
+		};
+		D8B9F6413B6B44CBB00A0013 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F3BF791DEC33AEB16F1272F3 /* AetherUI */;
+			targetProxy = D8B9F6413B6B44CBB00A0012 /* PBXContainerItemProxy */;
+		};
+		D8B9F6413B6B44CBB00A0015 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 35BCC85B3BEC0758B2852635 /* AetherCore */;
+			targetProxy = D8B9F6413B6B44CBB00A0014 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		/* Project-level Debug */
@@ -601,7 +1132,131 @@
 			name = Release;
 		};
 
-		/* Target-level Debug */
+		/* AetherCore Debug */
+		35BCC85B3BEC0758B2852640 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/.vlckit",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "@rpath";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = mh_dylib;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aether.AetherCore;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+
+		/* AetherCore Release */
+		35BCC85B3BEC0758B2852641 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/.vlckit",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "@rpath";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = mh_dylib;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aether.AetherCore;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+
+		/* AetherUI Debug */
+		F3BF791DEC33AEB16F1272F8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "@rpath";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = mh_dylib;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aether.AetherUI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+
+		/* AetherUI Release */
+		F3BF791DEC33AEB16F1272F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "@rpath";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = mh_dylib;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aether.AetherUI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+
+		/* AetherApp Debug */
 		BB000000000000000000TCFD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -613,6 +1268,11 @@
 				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/.vlckit",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/AetherApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -630,7 +1290,7 @@
 			name = Debug;
 		};
 
-		/* Target-level Release */
+		/* AetherApp Release */
 		BB000000000000000000TCFR /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -642,6 +1302,11 @@
 				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/.vlckit",
+				);
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Sources/AetherApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -666,6 +1331,24 @@
 			buildConfigurations = (
 				BB000000000000000000CFGD /* Debug */,
 				BB000000000000000000CFGR /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		35BCC85B3BEC0758B2852639 /* Build configuration list for PBXNativeTarget "AetherCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				35BCC85B3BEC0758B2852640 /* Debug */,
+				35BCC85B3BEC0758B2852641 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F3BF791DEC33AEB16F1272F7 /* Build configuration list for PBXNativeTarget "AetherUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F3BF791DEC33AEB16F1272F8 /* Debug */,
+				F3BF791DEC33AEB16F1272F9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

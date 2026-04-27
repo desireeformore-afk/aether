@@ -65,17 +65,6 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "22792331FFB2AF084F3BCB73"
-               BuildableName = "AetherTests.xctest"
-               BlueprintName = "AetherTests"
-               ReferencedContainer = "container:Aether.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
