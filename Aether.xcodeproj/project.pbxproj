@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		/* ---- AetherApp sources ---- */
 		AA0001000000000000000001 /* AetherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000001 /* AetherApp.swift */; };
-		AA0001000000000000000002 /* EPGStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000002 /* EPGStore.swift */; };
 		AA0001000000000000000003 /* SubtitleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000003 /* SubtitleStore.swift */; };
 		AA0001000000000000000004 /* KeyboardShortcutHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0001000000000000000004 /* KeyboardShortcutHandler.swift */; };
 		/* Views */
@@ -83,7 +82,6 @@
 /* Begin PBXFileReference section */
 		/* AetherApp */
 		FA0001000000000000000001 /* AetherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AetherApp.swift; path = Sources/AetherApp/AetherApp.swift; sourceTree = "<group>"; };
-		FA0001000000000000000002 /* EPGStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = EPGStore.swift; path = Sources/AetherApp/EPGStore.swift; sourceTree = "<group>"; };
 		FA0001000000000000000003 /* SubtitleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SubtitleStore.swift; path = Sources/AetherApp/SubtitleStore.swift; sourceTree = "<group>"; };
 		FA0001000000000000000004 /* KeyboardShortcutHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KeyboardShortcutHandler.swift; path = Sources/AetherApp/KeyboardShortcutHandler.swift; sourceTree = "<group>"; };
 		/* Views */
@@ -191,7 +189,6 @@
 			isa = PBXGroup;
 			children = (
 				FA0001000000000000000001 /* AetherApp.swift */,
-				FA0001000000000000000002 /* EPGStore.swift */,
 				FA0001000000000000000003 /* SubtitleStore.swift */,
 				FA0001000000000000000004 /* KeyboardShortcutHandler.swift */,
 				BB000000000000000000GRP1V /* Views */,
@@ -424,7 +421,6 @@
 			files = (
 				/* AetherApp */
 				AA0001000000000000000001 /* AetherApp.swift in Sources */,
-				AA0001000000000000000002 /* EPGStore.swift in Sources */,
 				AA0001000000000000000003 /* SubtitleStore.swift in Sources */,
 				AA0001000000000000000004 /* KeyboardShortcutHandler.swift in Sources */,
 				AA0001000000000000000010 /* AddPlaylistSheet.swift in Sources */,
