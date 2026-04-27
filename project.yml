@@ -24,7 +24,7 @@ targets:
       - path: Sources/AetherCore
       - path: Sources/AetherUI
     info:
-      path: Aether/Info.plist
+      path: Sources/AetherApp/Info.plist
       properties:
         CFBundleIdentifier: com.aether.iptv
         CFBundleName: Aether
@@ -34,7 +34,7 @@ targets:
       base:
         PRODUCT_NAME: Aether
         PRODUCT_BUNDLE_IDENTIFIER: com.aether.iptv
-        INFOPLIST_FILE: Aether/Info.plist
+        INFOPLIST_FILE: Sources/AetherApp/Info.plist
         SWIFT_VERSION: "6.0"
         MACOSX_DEPLOYMENT_TARGET: "14.0"
     dependencies:

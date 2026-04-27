@@ -103,7 +103,7 @@
 		FA000100000000000000001F /* WatchHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WatchHistoryView.swift; path = Sources/AetherApp/Views/WatchHistoryView.swift; sourceTree = "<group>"; };
 		/* Resources */
 		FA0001000000000000000030 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Sources/AetherApp/Resources/Assets.xcassets; sourceTree = "<group>"; };
-		FA0001000000000000000031 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Sources/AetherApp/Resources/Info.plist; sourceTree = "<group>"; };
+		FA0001000000000000000031 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Sources/AetherApp/Info.plist; sourceTree = "<group>"; };
 		FA0001000000000000000032 /* AetherApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AetherApp.entitlements; path = Sources/AetherApp/Resources/AetherApp.entitlements; sourceTree = "<group>"; };
 
 		/* AetherCore */
@@ -613,7 +613,7 @@
 				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = Sources/AetherApp/Resources/Info.plist;
+				INFOPLIST_FILE = Sources/AetherApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -642,7 +642,7 @@
 				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_FILE = Sources/AetherApp/Resources/Info.plist;
+				INFOPLIST_FILE = Sources/AetherApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
