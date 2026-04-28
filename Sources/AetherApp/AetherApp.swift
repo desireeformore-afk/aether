@@ -217,6 +217,7 @@ struct AetherApp: App {
 }
 
 #if os(macOS)
+@MainActor
 private struct AetherWindowConfigurator: NSViewRepresentable {
     func makeNSView(context: Context) -> WindowProbeView {
         let view = WindowProbeView(frame: .zero)
@@ -241,8 +242,9 @@ private struct AetherWindowConfigurator: NSViewRepresentable {
         Coordinator()
     }
 
+    @MainActor
     final class WindowProbeView: NSView {
-        var onWindowAvailable: ((NSWindow) -> Void)?
+        var onWindowAvailable: (@MainActor (NSWindow) -> Void)?
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
@@ -252,6 +254,7 @@ private struct AetherWindowConfigurator: NSViewRepresentable {
         }
     }
 
+    @MainActor
     final class Coordinator {
         private weak var configuredWindow: NSWindow?
 

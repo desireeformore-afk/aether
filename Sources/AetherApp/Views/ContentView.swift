@@ -16,9 +16,7 @@ extension Notification.Name {
 }
 
 private enum ContentLayoutMetrics {
-    static let sidebarMinWidth: CGFloat = 220
-    static let sidebarIdealWidth: CGFloat = 248
-    static let sidebarMaxWidth: CGFloat = 280
+    static let sidebarWidth: CGFloat = SidebarLayoutMetrics.visualWidth
 }
 
 // MARK: - ContentView
@@ -194,10 +192,12 @@ struct ContentView: View {
         ZStack {
             NavigationSplitView(columnVisibility: $sidebarVisibility) {
                 SidebarView(selection: $sidebarSelection, playlistName: activePlaylistName)
+                    .frame(width: ContentLayoutMetrics.sidebarWidth)
+                    .fixedSize(horizontal: true, vertical: false)
                     .navigationSplitViewColumnWidth(
-                        min: ContentLayoutMetrics.sidebarMinWidth,
-                        ideal: ContentLayoutMetrics.sidebarIdealWidth,
-                        max: ContentLayoutMetrics.sidebarMaxWidth
+                        min: ContentLayoutMetrics.sidebarWidth,
+                        ideal: ContentLayoutMetrics.sidebarWidth,
+                        max: ContentLayoutMetrics.sidebarWidth
                     )
                     .toolbar(removing: .sidebarToggle)
             } detail: {

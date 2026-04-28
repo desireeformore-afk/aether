@@ -29,6 +29,8 @@ public enum PlayerState: Sendable, Equatable {
 enum PlayerPlaybackConfig {
     static let liveNetworkCachingMilliseconds = 1500
     static let vodNetworkCachingMilliseconds = 800
+    static let startupPlaybackTimeoutSeconds = 30.0
+    static let startupWatchdogMaxRetries = 1
     static let httpUserAgent = "VLC/3.0.20 LibVLC/3.0.20"
     private static let vodExtensions: Set<String> = ["mkv", "mp4", "avi", "mov", "wmv", "flv", "m4v"]
 
@@ -177,7 +179,10 @@ public final class PlayerCore {
     /// 15s timer — reports progress to watch history.
     private var progressTimer: Timer?
     private var retryTask: Task<Void, Never>?
+    private var loadingWatchdogTask: Task<Void, Never>?
     private var bannerDismissTask: Task<Void, Never>?
+    private var startupWatchdogRetryCount: Int = 0
+    private var startupTimedOutSessionID: UInt64?
     /// True once VLC fires .playing at least once for the current media.
     /// Prevents later .buffering events from hiding the video with a spinner.
     private var hasEverPlayed: Bool = false
@@ -274,9 +279,10 @@ public final class PlayerCore {
         }
         retryTask?.cancel()
         retryTask = nil
+        cancelLoadingWatchdog()
 
         let shouldStopExistingMedia = vlcPlayer.isPlaying || vlcPlayer.media != nil
-        advancePlaybackSession()
+        let sessionID = advancePlaybackSession()
 
         // Stop any ongoing VLC playback cleanly
         if shouldStopExistingMedia {
@@ -291,6 +297,7 @@ public final class PlayerCore {
         state = .loading
         if resetRetryCount {
             retryCount = 0
+            startupWatchdogRetryCount = 0
         }
         hasEverPlayed = false
         currentTimeValue = 0
@@ -309,6 +316,9 @@ public final class PlayerCore {
 
         // VOD = movies/series or seekable file containers. Live = indefinite TS/m3u8 streams.
         isLiveStream = PlayerPlaybackConfig.isLiveStream(channel: channel)
+        let networkCachingMilliseconds = PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: isLiveStream)
+        print("[PlayerCore]   Type: \(isLiveStream ? "Live" : "VOD")")
+        print("[PlayerCore]   Network caching: \(networkCachingMilliseconds)ms")
 
         guard let media = makeMedia(for: channel, isLiveStream: isLiveStream) else {
             showStreamErrorBanner("Unable to load stream")
@@ -318,6 +328,7 @@ public final class PlayerCore {
 
         vlcPlayer.media = media
         vlcPlayer.play()
+        startLoadingWatchdog(sessionID: sessionID, channel: channel)
     }
 
     // MARK: - Hot-Swapping Variants
@@ -340,12 +351,14 @@ public final class PlayerCore {
         let targetTime = currentTime
         retryTask?.cancel()
         retryTask = nil
+        cancelLoadingWatchdog()
         let shouldStopExistingMedia = vlcPlayer.isPlaying || vlcPlayer.media != nil
-        advancePlaybackSession()
+        let sessionID = advancePlaybackSession()
         print("[PlayerCore] Hot-swapping stream variant at \(targetTime)s to: \(newChannel.streamURL.aetherMaskedForLog)")
 
         state = .loading
         hasEverPlayed = false
+        startupWatchdogRetryCount = 0
         pendingSeekPosition = targetTime
 
         currentChannel = updatedChannel
@@ -357,6 +370,7 @@ public final class PlayerCore {
 
         vlcPlayer.media = media
         vlcPlayer.play()
+        startLoadingWatchdog(sessionID: sessionID, channel: updatedChannel)
     }
 
     public func resume() {
@@ -384,6 +398,7 @@ public final class PlayerCore {
     public func stop() {
         retryTask?.cancel()
         retryTask = nil
+        cancelLoadingWatchdog()
         pendingTransitionStopEvents = 0
         advancePlaybackSession()
         stopProgressTracking()
@@ -391,6 +406,8 @@ public final class PlayerCore {
         vlcPlayer.stop()
         currentChannel = nil
         retryCount = 0
+        startupWatchdogRetryCount = 0
+        startupTimedOutSessionID = nil
         hasEverPlayed = false
         currentTimeValue = 0
         availableAudioTracks = []
@@ -517,12 +534,14 @@ public final class PlayerCore {
         // print("[PlayerCore] vlcStateChanged: \(vlcState.rawValue) — hasEverPlayed=\(hasEverPlayed)")
         switch vlcState {
         case .opening:
-            if !hasEverPlayed { state = .loading }
+            if startupTimedOutSessionID != sessionID, !hasEverPlayed { state = .loading }
         case .buffering:
             // Only show loading overlay before first frame — afterwards keep .playing
             // so the video surface stays visible during mid-stream rebuffering.
-            if !hasEverPlayed { state = .loading }
+            if startupTimedOutSessionID != sessionID, !hasEverPlayed { state = .loading }
         case .playing:
+            cancelLoadingWatchdog()
+            startupTimedOutSessionID = nil
             hasEverPlayed = true
             if state != .playing {
                 state = .playing
@@ -558,13 +577,20 @@ public final class PlayerCore {
                 pendingTransitionStopEvents -= 1
                 return
             }
+            if startupTimedOutSessionID == sessionID { return }
             if currentChannel != nil {
+                cancelLoadingWatchdog()
                 stopProgressTracking()
                 endWatchSession()
                 state = .idle
             }
         case .error:
             guard currentChannel != nil else { return }
+            if startupTimedOutSessionID == sessionID {
+                print("[PlayerCore] VLC error after startup timeout — keeping timeout error")
+                return
+            }
+            cancelLoadingWatchdog()
             stopProgressTracking()
             print("[PlayerCore] VLC error — scheduling retry")
             scheduleRetry(message: "Stream error — check your connection", sessionID: sessionID)
@@ -601,6 +627,47 @@ public final class PlayerCore {
     }
 
     // MARK: - Auto-retry
+
+    private func startLoadingWatchdog(sessionID: UInt64, channel: Channel) {
+        cancelLoadingWatchdog()
+        let timeout = PlayerPlaybackConfig.startupPlaybackTimeoutSeconds
+
+        loadingWatchdogTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(timeout))
+            guard !Task.isCancelled else { return }
+            guard let self,
+                  self.isCurrentPlaybackSession(sessionID),
+                  self.currentChannel?.id == channel.id,
+                  !self.hasEverPlayed,
+                  self.state == .loading else { return }
+
+            self.loadingWatchdogTask = nil
+            let streamKind = self.isLiveStream ? "live" : "VOD"
+            print("[PlayerCore] Startup watchdog fired after \(Int(timeout))s for \(streamKind): \(channel.streamURL.aetherMaskedForLog)")
+
+            if self.startupWatchdogRetryCount < PlayerPlaybackConfig.startupWatchdogMaxRetries {
+                self.startupWatchdogRetryCount += 1
+                self.showStreamErrorBanner("Still buffering — retrying stream")
+                print("[PlayerCore] Startup watchdog retry \(self.startupWatchdogRetryCount)/\(PlayerPlaybackConfig.startupWatchdogMaxRetries)")
+                self.playInternal(
+                    channel,
+                    startPosition: self.pendingSeekPosition,
+                    resetRetryCount: false,
+                    endCurrentSession: false
+                )
+                return
+            }
+
+            self.showStreamErrorBanner("Stream timed out while buffering")
+            self.startupTimedOutSessionID = sessionID
+            self.state = .error("Stream timed out while buffering")
+        }
+    }
+
+    private func cancelLoadingWatchdog() {
+        loadingWatchdogTask?.cancel()
+        loadingWatchdogTask = nil
+    }
 
     private func scheduleRetry(message: String, sessionID: UInt64) {
         guard isCurrentPlaybackSession(sessionID) else { return }
@@ -652,6 +719,8 @@ public final class PlayerCore {
                     // If time is advancing but UI is stuck on .loading, force .playing.
                     if self.state == .loading {
                         print("[PlayerCore] Time advancing during .loading — forcing .playing")
+                        self.cancelLoadingWatchdog()
+                        self.startupTimedOutSessionID = nil
                         self.state = .playing
                         self.hasEverPlayed = true
                         self.retryCount = 0
@@ -705,6 +774,7 @@ public final class PlayerCore {
     @discardableResult
     private func advancePlaybackSession() -> UInt64 {
         playbackSessionID &+= 1
+        startupTimedOutSessionID = nil
         bridge?.playbackSessionID = playbackSessionID
         return playbackSessionID
     }

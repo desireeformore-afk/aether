@@ -1,6 +1,10 @@
 import SwiftUI
 import AetherCore
 
+enum SidebarLayoutMetrics {
+    static let visualWidth: CGFloat = 248
+}
+
 // MARK: - SidebarItem
 
 enum SidebarItem: String, CaseIterable, Hashable {
@@ -74,9 +78,12 @@ private struct SidebarRowView: View {
                 Text(item.rawValue)
                     .font(.system(size: 14, weight: isSelected ? .bold : .semibold, design: .rounded))
                     .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.55))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .layoutPriority(1)
                     .animation(.easeInOut(duration: 0.15), value: isSelected)
 
-                Spacer()
+                Spacer(minLength: 0)
             }
             .padding(.leading, 0)
             .padding(.trailing, 12)
@@ -125,8 +132,10 @@ private struct SidebarSectionHeader: View {
                 .foregroundStyle(Color.white.opacity(0.25))
                 .tracking(2)
                 .textCase(.uppercase)
+                .lineLimit(1)
+                .truncationMode(.tail)
                 .padding(.leading, 15)
-            Spacer()
+            Spacer(minLength: 0)
         }
         .padding(.top, 8)
         .padding(.bottom, 4)
@@ -175,10 +184,15 @@ struct SidebarView: View {
                     Text("Search")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.white.opacity(0.55))
-                    Spacer()
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
+                    Spacer(minLength: 0)
                     Text("⌘F")
                         .font(.system(size: 10))
                         .foregroundStyle(.white.opacity(0.22))
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -245,7 +259,8 @@ struct SidebarView: View {
 
             Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(width: SidebarLayoutMetrics.visualWidth, maxHeight: .infinity)
+        .fixedSize(horizontal: true, vertical: false)
         .background(sidebarBg)
     }
 
@@ -260,6 +275,8 @@ struct SidebarView: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Color.white)
                     .tracking(3)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
 
                 HStack(spacing: 4) {
                     Image(systemName: "person.crop.circle.fill")
@@ -271,10 +288,13 @@ struct SidebarView: View {
                         .foregroundStyle(Color.white.opacity(0.35))
                         .tracking(1)
                         .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
                 }
             }
+            .layoutPriority(1)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 15)
         .padding(.top, 20)
