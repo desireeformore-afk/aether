@@ -5,9 +5,17 @@ import SwiftData
 import AetherCore
 import AetherUI
 
+#if os(macOS)
+private enum AetherWindowLayout {
+    static let minimumContentSize = CGSize(width: 960, height: 640)
+    static let preferredContentSize = CGSize(width: 1280, height: 800)
+    static let screenMargin: CGFloat = 64
+}
+#endif
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_ notification: Notification) {
-        // Must be called before any windows are created — sets app as regular GUI app
+        // Must be called before any windows are created - sets app as regular GUI app
         NSApp.setActivationPolicy(.regular)
     }
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -101,7 +109,7 @@ struct AetherApp: App {
                     miniPlayerController.epgStore = epgStore
                     // Wire watch history once the view (and its modelContext) are ready
                     historyCoordinator.bind(playerCore: playerCore)
-                    // Wire sleep timer → stop
+                    // Wire sleep timer -> stop
                     sleepTimer.onExpired = { [weak playerCore] in
                         playerCore?.stop()
                     }
@@ -119,7 +127,11 @@ struct AetherApp: App {
                     .interactiveDismissDisabled()
                 }
                 #if os(macOS)
-                .frame(minWidth: 960, minHeight: 640)
+                .frame(
+                    minWidth: AetherWindowLayout.minimumContentSize.width,
+                    minHeight: AetherWindowLayout.minimumContentSize.height
+                )
+                .background(AetherWindowConfigurator())
                 #endif
         }
         .modelContainer(AetherApp.sharedModelContainer)
@@ -203,6 +215,79 @@ struct AetherApp: App {
         #endif
     }
 }
+
+#if os(macOS)
+private struct AetherWindowConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> WindowProbeView {
+        let view = WindowProbeView(frame: .zero)
+        let coordinator = context.coordinator
+        view.onWindowAvailable = { window in
+            coordinator.configure(window)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: WindowProbeView, context: Context) {
+        let coordinator = context.coordinator
+        nsView.onWindowAvailable = { window in
+            coordinator.configure(window)
+        }
+        if let window = nsView.window {
+            coordinator.configure(window)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    final class WindowProbeView: NSView {
+        var onWindowAvailable: ((NSWindow) -> Void)?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if let window {
+                onWindowAvailable?(window)
+            }
+        }
+    }
+
+    final class Coordinator {
+        private weak var configuredWindow: NSWindow?
+
+        func configure(_ window: NSWindow) {
+            guard configuredWindow !== window else { return }
+            configuredWindow = window
+
+            window.contentMinSize = AetherWindowLayout.minimumContentSize
+
+            guard !window.styleMask.contains(.fullScreen) else { return }
+            let currentSize = window.contentLayoutRect.size
+            let minimumSize = AetherWindowLayout.minimumContentSize
+            guard currentSize.width < minimumSize.width || currentSize.height < minimumSize.height else { return }
+
+            window.setContentSize(Self.clampedPreferredContentSize(for: window))
+            window.center()
+        }
+
+        private static func clampedPreferredContentSize(for window: NSWindow) -> NSSize {
+            let preferredSize = AetherWindowLayout.preferredContentSize
+            let minimumSize = AetherWindowLayout.minimumContentSize
+            guard let visibleFrame = (window.screen ?? NSScreen.main)?.visibleFrame else {
+                return preferredSize
+            }
+
+            let availableWidth = max(minimumSize.width, visibleFrame.width - AetherWindowLayout.screenMargin)
+            let availableHeight = max(minimumSize.height, visibleFrame.height - AetherWindowLayout.screenMargin)
+
+            return NSSize(
+                width: min(preferredSize.width, availableWidth),
+                height: min(preferredSize.height, availableHeight)
+            )
+        }
+    }
+}
+#endif
 
 // MARK: - Shared SwiftData Container
 

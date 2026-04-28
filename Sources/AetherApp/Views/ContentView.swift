@@ -15,6 +15,12 @@ extension Notification.Name {
     static let aetherRefreshPlaylist    = Notification.Name("aetherRefreshPlaylist")
 }
 
+private enum ContentLayoutMetrics {
+    static let sidebarMinWidth: CGFloat = 220
+    static let sidebarIdealWidth: CGFloat = 248
+    static let sidebarMaxWidth: CGFloat = 280
+}
+
 // MARK: - ContentView
 
 struct ContentView: View {
@@ -68,6 +74,7 @@ struct ContentView: View {
                 WelcomeView { playlist in
                     selectedPlaylist = playlist
                     playerCore.currentXstreamCredentials = playlist.xstreamCredentials
+                    sidebarVisibility = .all
                 }
             } else if isFullscreenPlayer {
                 PlayerView(player: playerCore)
@@ -117,6 +124,14 @@ struct ContentView: View {
                 break
             }
         }
+        .onChange(of: isFullscreenPlayer) { _, isFullscreen in
+            guard !isFullscreen else { return }
+            restoreSidebarForCatalog(animated: true)
+        }
+        .onChange(of: allPlaylists.count) { _, playlistCount in
+            guard playlistCount > 0 else { return }
+            restoreSidebarForCatalog(animated: true)
+        }
         .onChange(of: selectedPlaylist) { _, newPlaylist in
             guard let playlist = newPlaylist else {
                 playerCore.currentXstreamCredentials = nil
@@ -129,6 +144,7 @@ struct ContentView: View {
             Task { await epgStore.loadGuide(for: playlist) }
         }
         .onAppear {
+            restoreSidebarForCatalog()
             #if os(macOS)
             setupKeyboardHandlerCallbacks()
             keyboardHandler.startMonitoring()
@@ -178,10 +194,15 @@ struct ContentView: View {
         ZStack {
             NavigationSplitView(columnVisibility: $sidebarVisibility) {
                 SidebarView(selection: $sidebarSelection, playlistName: activePlaylistName)
-                    .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 240)
+                    .navigationSplitViewColumnWidth(
+                        min: ContentLayoutMetrics.sidebarMinWidth,
+                        ideal: ContentLayoutMetrics.sidebarIdealWidth,
+                        max: ContentLayoutMetrics.sidebarMaxWidth
+                    )
                     .toolbar(removing: .sidebarToggle)
             } detail: {
                 detailContent
+                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
             }
             .navigationSplitViewStyle(.balanced)
             .toolbarBackground(Color(red: 0.05, green: 0.05, blue: 0.07), for: .windowToolbar)
@@ -244,6 +265,9 @@ struct ContentView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .animation(.easeInOut(duration: 0.3), value: playerCore.streamErrorBanner)
             }
+        }
+        .onAppear {
+            restoreSidebarForCatalog()
         }
     }
 
@@ -332,6 +356,18 @@ struct ContentView: View {
             systemImage: "tv.slash",
             description: Text("Add a playlist in Settings")
         )
+    }
+
+    private func restoreSidebarForCatalog(animated: Bool = false) {
+        guard !allPlaylists.isEmpty, sidebarVisibility != .all else { return }
+
+        if animated {
+            withAnimation(.easeInOut(duration: 0.16)) {
+                sidebarVisibility = .all
+            }
+        } else {
+            sidebarVisibility = .all
+        }
     }
 
     // MARK: - Keyboard handler (macOS)
