@@ -113,9 +113,3 @@ targets:
         embed: true
       - framework: .vlckit/VLCKit.xcframework
         embed: true
-      - framework: SwiftUI.framework
-        implicit: true
-      - framework: AVKit.framework
-        implicit: true
-      - framework: AVFoundation.framework
-        implicit: true
