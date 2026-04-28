@@ -1,3 +1,4 @@
+@preconcurrency import ObjectiveC
 import SwiftUI
 import Observation
 import AetherCore
@@ -192,6 +193,25 @@ private struct MiniPlayerVideoBackdrop: View {
     }
 }
 
+private final class CloseObserverToken {
+    private var observer: NSObjectProtocol?
+
+    init(_ observer: NSObjectProtocol) {
+        self.observer = observer
+    }
+
+    func invalidate() {
+        if let observer {
+            NotificationCenter.default.removeObserver(observer)
+            self.observer = nil
+        }
+    }
+
+    deinit {
+        invalidate()
+    }
+}
+
 /// Mini player window controller.
 @MainActor
 @Observable
@@ -200,7 +220,7 @@ public final class MiniPlayerWindowController {
 
     private var window: NSWindow?
     private let player: PlayerCore
-    @ObservationIgnored private var closeObserver: NSObjectProtocol?
+    @ObservationIgnored private var closeObserver: CloseObserverToken?
     public var epgStore: EPGStore = EPGStore()
 
     public init(player: PlayerCore) {
@@ -248,7 +268,7 @@ public final class MiniPlayerWindowController {
         self.isShowing = true
 
         // Handle window close
-        closeObserver = NotificationCenter.default.addObserver(
+        let observer = NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification,
             object: window,
             queue: .main
@@ -259,6 +279,7 @@ public final class MiniPlayerWindowController {
                 self?.window = nil
             }
         }
+        closeObserver = CloseObserverToken(observer)
     }
 
     public func hide() {
@@ -276,16 +297,8 @@ public final class MiniPlayerWindowController {
         }
     }
 
-    deinit {
-        if let closeObserver {
-            NotificationCenter.default.removeObserver(closeObserver)
-        }
-    }
-
     private func removeCloseObserver() {
-        if let closeObserver {
-            NotificationCenter.default.removeObserver(closeObserver)
-            self.closeObserver = nil
-        }
+        closeObserver?.invalidate()
+        closeObserver = nil
     }
 }
