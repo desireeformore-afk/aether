@@ -7,6 +7,9 @@ on:
       - 'project.yml'
       - '**/Info.plist'
 
+permissions:
+  contents: write
+
 jobs:
   generate-xcode:
     runs-on: macos-15
