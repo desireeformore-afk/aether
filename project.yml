@@ -38,6 +38,18 @@ targets:
         SWIFT_VERSION: "6.0"
         SWIFT_STRICT_CONCURRENCY: complete
         MACOSX_DEPLOYMENT_TARGET: "14.0"
+        ENABLE_MODULE_VERIFIER: NO
+        CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: NO
+        OTHER_CFLAGS:
+          - "$(inherited)"
+          - "-Wno-incomplete-umbrella"
+          - "-Wno-ignored-attributes"
+        OTHER_SWIFT_FLAGS:
+          - "$(inherited)"
+          - "-Xcc"
+          - "-Wno-incomplete-umbrella"
+          - "-Xcc"
+          - "-Wno-ignored-attributes"
     dependencies:
       - framework: .vlckit/VLCKit.xcframework
       - framework: Security.framework
@@ -82,6 +94,18 @@ targets:
         SWIFT_VERSION: "6.0"
         SWIFT_STRICT_CONCURRENCY: complete
         MACOSX_DEPLOYMENT_TARGET: "14.0"
+        ENABLE_MODULE_VERIFIER: NO
+        CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: NO
+        OTHER_CFLAGS:
+          - "$(inherited)"
+          - "-Wno-incomplete-umbrella"
+          - "-Wno-ignored-attributes"
+        OTHER_SWIFT_FLAGS:
+          - "$(inherited)"
+          - "-Xcc"
+          - "-Wno-incomplete-umbrella"
+          - "-Xcc"
+          - "-Wno-ignored-attributes"
     dependencies:
       - target: AetherCore
         embed: true

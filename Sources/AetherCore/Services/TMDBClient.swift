@@ -31,7 +31,7 @@ public actor TMDBClient {
     // MARK: - API Methods
     
     /// Resolves official Media from TMDB using the raw title string
-    public func search(title: String, year: Int? = nil, type: MediaType) async throws -> TMDBMedia? {
+    private func searchMedia(title: String, year: Int? = nil, type: MediaType) async throws -> TMDBMedia? {
         if apiKey.isEmpty {
             print("[TMDBClient] API Key missing. Skipping TMDB fetch.")
             return nil
@@ -79,7 +79,7 @@ public actor TMDBClient {
     }
 
     public func mediaDetails(title: String, year: Int? = nil, type: MediaType) async throws -> TMDBMediaDetails? {
-        guard let media = try await search(title: title, year: year, type: type) else { return nil }
+        guard let media = try await searchMedia(title: title, year: year, type: type) else { return nil }
         return TMDBMediaDetails(
             yearString: media.yearString,
             voteAverage: media.voteAverage,
@@ -137,7 +137,7 @@ public struct TMDBMedia: Decodable, Hashable, Sendable {
     public let releaseDate: String?
     public let firstAirDate: String?
     
-    enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey, Sendable {
         case id, title, name, overview
         case posterPath = "poster_path"
         case backdropPath = "backdrop_path"

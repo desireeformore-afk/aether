@@ -11,9 +11,7 @@ enum AetherMigrationPlan: SchemaMigrationPlan {
 }
 
 enum AetherSchemaV1: VersionedSchema {
-    static var versionIdentifier: Schema.Version {
-        Schema.Version(1, 0, 0)
-    }
+    static let versionIdentifier: Schema.Version = Schema.Version(1, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [PlaylistRecord.self, FavoriteRecord.self, WatchHistoryRecord.self]

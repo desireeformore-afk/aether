@@ -1162,11 +1162,13 @@
 		35BCC85B3BEC0758B2852640 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
+				ENABLE_MODULE_VERIFIER = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/.vlckit",
@@ -1180,6 +1182,18 @@
 				);
 				MACH_O_TYPE = mh_dylib;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				OTHER_CFLAGS = (
+					"$(inherited)",
+					"-Wno-incomplete-umbrella",
+					"-Wno-ignored-attributes",
+				);
+				OTHER_SWIFT_FLAGS = (
+					"$(inherited)",
+					"-Xcc",
+					"-Wno-incomplete-umbrella",
+					"-Xcc",
+					"-Wno-ignored-attributes",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.aether.AetherCore;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1195,11 +1209,13 @@
 		35BCC85B3BEC0758B2852641 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
+				ENABLE_MODULE_VERIFIER = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/.vlckit",
@@ -1213,6 +1229,18 @@
 				);
 				MACH_O_TYPE = mh_dylib;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				OTHER_CFLAGS = (
+					"$(inherited)",
+					"-Wno-incomplete-umbrella",
+					"-Wno-ignored-attributes",
+				);
+				OTHER_SWIFT_FLAGS = (
+					"$(inherited)",
+					"-Xcc",
+					"-Wno-incomplete-umbrella",
+					"-Xcc",
+					"-Wno-ignored-attributes",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.aether.AetherCore;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1288,11 +1316,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
 				CODE_SIGN_ENTITLEMENTS = Sources/AetherApp/Resources/AetherApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_MODULE_VERIFIER = NO;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1306,6 +1336,18 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.7.0;
+				OTHER_CFLAGS = (
+					"$(inherited)",
+					"-Wno-incomplete-umbrella",
+					"-Wno-ignored-attributes",
+				);
+				OTHER_SWIFT_FLAGS = (
+					"$(inherited)",
+					"-Xcc",
+					"-Wno-incomplete-umbrella",
+					"-Xcc",
+					"-Wno-ignored-attributes",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.aether.iptv";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1322,11 +1364,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
 				CODE_SIGN_ENTITLEMENTS = Sources/AetherApp/Resources/AetherApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 7;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_MODULE_VERIFIER = NO;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1340,6 +1384,18 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.7.0;
+				OTHER_CFLAGS = (
+					"$(inherited)",
+					"-Wno-incomplete-umbrella",
+					"-Wno-ignored-attributes",
+				);
+				OTHER_SWIFT_FLAGS = (
+					"$(inherited)",
+					"-Xcc",
+					"-Wno-incomplete-umbrella",
+					"-Xcc",
+					"-Wno-ignored-attributes",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.aether.iptv";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

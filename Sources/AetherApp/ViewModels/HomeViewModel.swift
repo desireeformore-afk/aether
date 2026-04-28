@@ -248,28 +248,37 @@ final class HomeViewModel: ObservableObject {
                 )
             }
             .sorted { $0.name < $1.name }
-        var results: [(title: String, items: [ShelfItem])] = []
-        var collected: [XstreamSeries] = []
-
-        await withTaskGroup(of: SeriesShelfPayload?.self) { group in
+        let payloads = await withTaskGroup(
+            of: SeriesShelfPayload?.self,
+            returning: [SeriesShelfPayload].self
+        ) { group in
             for cat in clean.prefix(8) {
                 group.addTask { await Self.loadSeriesShelfPayload(svc: svc, cat: cat) }
             }
+
+            var payloads: [SeriesShelfPayload] = []
             for await payload in group {
-                guard isActive(cacheKey) else { return }
                 if let payload {
-                    let items = payload.series.map { series in
-                        ShelfItem(id: "\(series.id)", title: VODNormalizer.cleanVODTitle(series.name), imageURL: series.cover, series: series, onTap: {})
-                    }
-                    let shelf = (title: payload.title, items: items)
-                    results.append(shelf)
-                    seriesShelves = results
-                    collected.append(contentsOf: payload.series)
-                    allSeries = collected
+                    payloads.append(payload)
                 }
             }
+            return payloads
         }
+
         guard isActive(cacheKey) else { return }
+
+        var results: [(title: String, items: [ShelfItem])] = []
+        var collected: [XstreamSeries] = []
+        for payload in payloads {
+            let items = payload.series.map { series in
+                ShelfItem(id: "\(series.id)", title: VODNormalizer.cleanVODTitle(series.name), imageURL: series.cover, series: series, onTap: {})
+            }
+            results.append((title: payload.title, items: items))
+            collected.append(contentsOf: payload.series)
+        }
+
+        seriesShelves = results
+        allSeries = collected
         Self.cachedSeriesShelves[cacheKey] = results
         Self.cachedAllSeries[cacheKey] = collected
     }
