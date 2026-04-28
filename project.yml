@@ -11,6 +11,18 @@ settings:
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     ENABLE_USER_SCRIPT_SANDBOXING: NO
+    ENABLE_MODULE_VERIFIER: NO
+    CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: NO
+    OTHER_CFLAGS:
+      - "$(inherited)"
+      - "-Wno-incomplete-umbrella"
+      - "-Wno-ignored-attributes"
+    OTHER_SWIFT_FLAGS:
+      - "$(inherited)"
+      - "-Xcc"
+      - "-Wno-incomplete-umbrella"
+      - "-Xcc"
+      - "-Wno-ignored-attributes"
 
 targets:
   AetherCore:

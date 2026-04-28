@@ -77,6 +77,16 @@ public actor TMDBClient {
             return nil
         }
     }
+
+    public func mediaDetails(title: String, year: Int? = nil, type: MediaType) async throws -> TMDBMediaDetails? {
+        guard let media = try await search(title: title, year: year, type: type) else { return nil }
+        return TMDBMediaDetails(
+            yearString: media.yearString,
+            voteAverage: media.voteAverage,
+            posterURLString: posterURL(for: media.posterPath)?.absoluteString,
+            backdropURLString: backdropURL(for: media.backdropPath)?.absoluteString
+        )
+    }
     
     /// Generates the absolute URL for fetching the poster
     public func posterURL(for path: String?, width: Int = 500) -> URL? {
@@ -95,6 +105,25 @@ public actor TMDBClient {
 
 public struct TMDBSearchResponse: Decodable, Sendable {
     public let results: [TMDBMedia]
+}
+
+public struct TMDBMediaDetails: Hashable, Sendable {
+    public let yearString: String?
+    public let voteAverage: Double?
+    public let posterURLString: String?
+    public let backdropURLString: String?
+
+    public init(
+        yearString: String?,
+        voteAverage: Double?,
+        posterURLString: String?,
+        backdropURLString: String?
+    ) {
+        self.yearString = yearString
+        self.voteAverage = voteAverage
+        self.posterURLString = posterURLString
+        self.backdropURLString = backdropURLString
+    }
 }
 
 public struct TMDBMedia: Decodable, Hashable, Sendable {

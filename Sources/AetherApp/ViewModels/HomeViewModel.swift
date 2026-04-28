@@ -1,6 +1,11 @@
 import SwiftUI
 import AetherCore
 
+private struct SeriesShelfPayload: Sendable {
+    let title: String
+    let series: [XstreamSeries]
+}
+
 @MainActor
 final class HomeViewModel: ObservableObject {
     @Published var isPhase1Loaded = false
@@ -24,11 +29,6 @@ final class HomeViewModel: ObservableObject {
     static var cachedAllVODs: [String: [XstreamVOD]] = [:]
     static var cachedAllSeries: [String: [XstreamSeries]] = [:]
     static var cachedBrandHubs: [String: [(hub: BrandHub, shelves: [(title: String, items: [ShelfItem])])]] = [:]
-
-    private struct SeriesShelfPayload: Sendable {
-        let title: String
-        let series: [XstreamSeries]
-    }
 
     // MARK: - Disk cache keys
     private static let baseDiskCacheKey = "homevm_shelves_v1"

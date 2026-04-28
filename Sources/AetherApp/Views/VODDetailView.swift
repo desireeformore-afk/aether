@@ -13,7 +13,7 @@ struct VODDetailView: View {
     @Environment(SubtitleStore.self) private var subtitleStore
 
     @State private var selectedVOD: XstreamVOD?
-    @State private var tmdbMedia: TMDBMedia? = nil
+    @State private var tmdbDetails: TMDBMediaDetails? = nil
     @State private var backdropURL: URL? = nil
     @State private var posterURL: URL? = nil
     @State private var isHoveringPoster = false
@@ -71,11 +71,11 @@ struct VODDetailView: View {
         .shadow(color: .black.opacity(0.6), radius: 30, x: 0, y: 15)
         .task(id: item.title) {
             do {
-                if let media = try await TMDBClient.shared.search(title: item.title, type: .movie) {
-                    let bURL = await TMDBClient.shared.backdropURL(for: media.backdropPath)
-                    let pURL = await TMDBClient.shared.posterURL(for: media.posterPath)
+                if let details = try await TMDBClient.shared.mediaDetails(title: item.title, type: .movie) {
+                    let bURL = details.backdropURLString.flatMap(URL.init(string:))
+                    let pURL = details.posterURLString.flatMap(URL.init(string:))
                     await MainActor.run {
-                        self.tmdbMedia = media
+                        self.tmdbDetails = details
                         self.backdropURL = bURL
                         self.posterURL = pURL
                     }
@@ -177,14 +177,14 @@ struct VODDetailView: View {
     @ViewBuilder
     private var metadataRow: some View {
         HStack(spacing: 12) {
-            if let year = tmdbMedia?.yearString {
+            if let year = tmdbDetails?.yearString {
                 Text(year)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
             
             if let cat = selectedVOD?.categoryName, !cat.isEmpty {
-                if tmdbMedia?.yearString != nil {
+                if tmdbDetails?.yearString != nil {
                     Circle()
                         .fill(Color.secondary.opacity(0.4))
                         .frame(width: 4, height: 4)
@@ -197,7 +197,7 @@ struct VODDetailView: View {
             }
 
             // Fallback to Xtream rating if TMDB hasn't provided one
-            let finalRating = tmdbMedia?.voteAverage ?? (selectedVOD?.rating.flatMap { Double($0) } ?? 0)
+            let finalRating = tmdbDetails?.voteAverage ?? (selectedVOD?.rating.flatMap { Double($0) } ?? 0)
             
             if finalRating > 0 {
                 Circle()
@@ -213,7 +213,7 @@ struct VODDetailView: View {
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.white)
                     
-                    if tmdbMedia != nil {
+                    if tmdbDetails != nil {
                         Text("TMDB")
                             .font(.system(size: 9, weight: .bold))
                             .padding(.horizontal, 4)
