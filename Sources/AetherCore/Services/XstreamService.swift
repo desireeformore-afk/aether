@@ -559,6 +559,13 @@ public actor XstreamService {
     private let credentials: XstreamCredentials
     private let session: URLSession
 
+    private static let apiRequestTimeout: TimeInterval = 18
+    private static let apiResourceTimeout: TimeInterval = 60
+    private static let apiMaximumConnectionsPerHost = 4
+    private static let fastVODCategoryLimit = 3
+    private static let fastVODStreamsPerCategoryLimit = 120
+    private static let fastVODTotalLimit = 300
+
     public var cachedVods: [XstreamVOD] = []
     public var cachedSeries: [XstreamSeries] = []
 
@@ -566,9 +573,19 @@ public actor XstreamService {
     private var cachedVODCategoryMap: [String: NormalizedContentCategory]?
     private var cachedSeriesCategoryMap: [String: NormalizedContentCategory]?
 
-    public init(credentials: XstreamCredentials, session: URLSession = .shared) {
+    public init(credentials: XstreamCredentials, session: URLSession? = nil) {
         self.credentials = credentials
-        self.session = session
+        self.session = session ?? URLSession(configuration: Self.defaultSessionConfiguration())
+    }
+
+    public static func defaultSessionConfiguration() -> URLSessionConfiguration {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = apiRequestTimeout
+        config.timeoutIntervalForResource = apiResourceTimeout
+        config.httpMaximumConnectionsPerHost = apiMaximumConnectionsPerHost
+        config.waitsForConnectivity = false
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        return config
     }
 
     // MARK: - Account
@@ -657,17 +674,19 @@ public actor XstreamService {
                 contentType: .movie
             )
         }
-        let topCats = Array(cleanCats.prefix(3))
+        let topCats = Array(cleanCats.prefix(Self.fastVODCategoryLimit))
         guard !topCats.isEmpty else {
             if let first = cats.first {
-                return (try? await vodStreams(categoryID: first.id)) ?? []
+                let fallback = (try? await vodStreams(categoryID: first.id)) ?? []
+                return Array(fallback.prefix(Self.fastVODStreamsPerCategoryLimit))
             }
             return []
         }
-        async let r0 = (try? vodStreams(categoryID: topCats[0].id)) ?? []
-        async let r1 = topCats.count > 1 ? ((try? vodStreams(categoryID: topCats[1].id)) ?? []) : []
-        async let r2 = topCats.count > 2 ? ((try? vodStreams(categoryID: topCats[2].id)) ?? []) : []
-        return await r0 + r1 + r2
+        async let r0 = Self.trimFastVODs((try? vodStreams(categoryID: topCats[0].id)) ?? [])
+        async let r1 = topCats.count > 1 ? Self.trimFastVODs((try? vodStreams(categoryID: topCats[1].id)) ?? []) : []
+        async let r2 = topCats.count > 2 ? Self.trimFastVODs((try? vodStreams(categoryID: topCats[2].id)) ?? []) : []
+        let merged = await r0 + r1 + r2
+        return Array(merged.prefix(Self.fastVODTotalLimit))
     }
 
     /// Searches cached VODs by title (case-insensitive). Returns all if query is empty.
@@ -848,7 +867,10 @@ public actor XstreamService {
             throw XstreamError.invalidURL
         }
 
-        let (data, response) = try await session.data(from: url)
+        var request = URLRequest(url: url)
+        request.timeoutInterval = Self.apiRequestTimeout
+
+        let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse,
               (200..<300).contains(http.statusCode) else {
             throw XstreamError.httpError(
@@ -856,6 +878,10 @@ public actor XstreamService {
             )
         }
         return data
+    }
+
+    private static func trimFastVODs(_ streams: [XstreamVOD]) -> [XstreamVOD] {
+        Array(streams.prefix(fastVODStreamsPerCategoryLimit))
     }
 }
 

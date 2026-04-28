@@ -16,6 +16,11 @@ public typealias PlatformImage = UIImage
 public actor ImageCache {
     public static let shared = ImageCache()
 
+    private static let imageRequestTimeout: TimeInterval = 8
+    private static let imageResourceTimeout: TimeInterval = 20
+    private static let imageMaximumConnectionsPerHost = 4
+    private static let maxConcurrentImageDownloads = 4
+
     private let store: NSCache<NSString, AnyObject> = {
         let c = NSCache<NSString, AnyObject>()
         c.countLimit = 200
@@ -23,10 +28,27 @@ public actor ImageCache {
         return c
     }()
 
+    private let session: URLSession
+
     // Deduplicates concurrent requests for the same URL.
     private var inFlight: [String: Task<PlatformImage?, Never>] = [:]
+    private var activeImageDownloads = 0
+    private var imageDownloadWaiters: [CheckedContinuation<Void, Never>] = []
 
-    private init() {}
+    private init(session: URLSession? = nil) {
+        self.session = session ?? URLSession(configuration: Self.defaultSessionConfiguration())
+    }
+
+    private static func defaultSessionConfiguration() -> URLSessionConfiguration {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = imageRequestTimeout
+        config.timeoutIntervalForResource = imageResourceTimeout
+        config.httpMaximumConnectionsPerHost = imageMaximumConnectionsPerHost
+        config.requestCachePolicy = .returnCacheDataElseLoad
+        config.urlCache = .shared
+        config.waitsForConnectivity = false
+        return config
+    }
 
     public func image(for url: URL) async -> PlatformImage? {
         let key = url.absoluteString as NSString
@@ -52,18 +74,7 @@ public actor ImageCache {
 
         // 4. Start a new network fetch and register it so concurrent callers can join.
         let fetchTask = Task<PlatformImage?, Never> {
-            do {
-                let (data, response) = try await URLSession.shared.data(from: url)
-                try Task.checkCancellation()
-                guard let img = PlatformImage(data: data) else { return nil }
-                URLCache.shared.storeCachedResponse(
-                    CachedURLResponse(response: response, data: data),
-                    for: URLRequest(url: url)
-                )
-                return img
-            } catch {
-                return nil
-            }
+            await self.downloadImage(for: url)
         }
         inFlight[strKey] = fetchTask
         let result = await fetchTask.value
@@ -76,7 +87,58 @@ public actor ImageCache {
 
     public func clear() {
         store.removeAllObjects()
+        for task in inFlight.values {
+            task.cancel()
+        }
         inFlight.removeAll()
+    }
+
+    private func downloadImage(for url: URL) async -> PlatformImage? {
+        await acquireImageDownloadPermit()
+        defer { releaseImageDownloadPermit() }
+
+        do {
+            try Task.checkCancellation()
+            let request = URLRequest(
+                url: url,
+                cachePolicy: .returnCacheDataElseLoad,
+                timeoutInterval: Self.imageRequestTimeout
+            )
+            let (data, response) = try await session.data(for: request)
+            try Task.checkCancellation()
+            if let http = response as? HTTPURLResponse,
+               !(200..<300).contains(http.statusCode) {
+                return nil
+            }
+            guard let img = PlatformImage(data: data) else { return nil }
+            URLCache.shared.storeCachedResponse(
+                CachedURLResponse(response: response, data: data),
+                for: request
+            )
+            store.setObject(img as AnyObject, forKey: url.absoluteString as NSString, cost: data.count)
+            return img
+        } catch {
+            return nil
+        }
+    }
+
+    private func acquireImageDownloadPermit() async {
+        if activeImageDownloads < Self.maxConcurrentImageDownloads {
+            activeImageDownloads += 1
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            imageDownloadWaiters.append(continuation)
+        }
+    }
+
+    private func releaseImageDownloadPermit() {
+        if imageDownloadWaiters.isEmpty {
+            activeImageDownloads = max(0, activeImageDownloads - 1)
+        } else {
+            imageDownloadWaiters.removeFirst().resume()
+        }
     }
 }
 

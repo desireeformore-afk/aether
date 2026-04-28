@@ -27,15 +27,56 @@ public enum PlayerState: Sendable, Equatable {
 // MARK: - PlayerPlaybackConfig
 
 enum PlayerPlaybackConfig {
+    enum CachingProfile: Equatable {
+        case standard
+        case strengthened
+    }
+
     static let liveNetworkCachingMilliseconds = 1500
-    static let vodNetworkCachingMilliseconds = 800
-    static let startupPlaybackTimeoutSeconds = 30.0
+    static let liveFileCachingMilliseconds = 1000
+    static let liveLiveCachingMilliseconds = 1500
+    static let vodNetworkCachingMilliseconds = 6000
+    static let vodFileCachingMilliseconds = 6000
+    static let strengthenedLiveNetworkCachingMilliseconds = 2500
+    static let strengthenedLiveFileCachingMilliseconds = 1500
+    static let strengthenedLiveLiveCachingMilliseconds = 2500
+    static let strengthenedVODNetworkCachingMilliseconds = 12000
+    static let strengthenedVODFileCachingMilliseconds = 12000
+    static let startupPlaybackTimeoutSeconds = 35.0
+    static let strengthenedStartupPlaybackTimeoutSeconds = 50.0
     static let startupWatchdogMaxRetries = 1
     static let httpUserAgent = "VLC/3.0.20 LibVLC/3.0.20"
     private static let vodExtensions: Set<String> = ["mkv", "mp4", "avi", "mov", "wmv", "flv", "m4v"]
 
-    static func networkCachingMilliseconds(isLiveStream: Bool) -> Int {
-        isLiveStream ? liveNetworkCachingMilliseconds : vodNetworkCachingMilliseconds
+    static func networkCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile) -> Int {
+        switch (isLiveStream, cachingProfile) {
+        case (true, .standard): return liveNetworkCachingMilliseconds
+        case (true, .strengthened): return strengthenedLiveNetworkCachingMilliseconds
+        case (false, .standard): return vodNetworkCachingMilliseconds
+        case (false, .strengthened): return strengthenedVODNetworkCachingMilliseconds
+        }
+    }
+
+    static func fileCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile) -> Int {
+        switch (isLiveStream, cachingProfile) {
+        case (true, .standard): return liveFileCachingMilliseconds
+        case (true, .strengthened): return strengthenedLiveFileCachingMilliseconds
+        case (false, .standard): return vodFileCachingMilliseconds
+        case (false, .strengthened): return strengthenedVODFileCachingMilliseconds
+        }
+    }
+
+    static func liveCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile) -> Int {
+        switch (isLiveStream, cachingProfile) {
+        case (true, .standard): return liveLiveCachingMilliseconds
+        case (true, .strengthened): return strengthenedLiveLiveCachingMilliseconds
+        case (false, .standard): return vodNetworkCachingMilliseconds
+        case (false, .strengthened): return strengthenedVODNetworkCachingMilliseconds
+        }
+    }
+
+    static func startupTimeoutSeconds(cachingProfile: CachingProfile) -> Double {
+        cachingProfile == .strengthened ? strengthenedStartupPlaybackTimeoutSeconds : startupPlaybackTimeoutSeconds
     }
 
     static func isLiveStream(channel: Channel) -> Bool {
@@ -48,9 +89,14 @@ enum PlayerPlaybackConfig {
         }
     }
 
-    static func mediaOptions(isLiveStream: Bool) -> [String] {
+    static func mediaOptions(isLiveStream: Bool, cachingProfile: CachingProfile) -> [String] {
         [
-            "--network-caching=\(networkCachingMilliseconds(isLiveStream: isLiveStream))",
+            "--network-caching=\(networkCachingMilliseconds(isLiveStream: isLiveStream, cachingProfile: cachingProfile))",
+            "--file-caching=\(fileCachingMilliseconds(isLiveStream: isLiveStream, cachingProfile: cachingProfile))",
+            "--live-caching=\(liveCachingMilliseconds(isLiveStream: isLiveStream, cachingProfile: cachingProfile))",
+            "--http-reconnect",
+            "--http-continuous",
+            "--rtsp-tcp",
             "--http-user-agent=\(httpUserAgent)"
         ]
     }
@@ -248,9 +294,13 @@ public final class PlayerCore {
 
     // MARK: - Media setup
 
-    private func makeMedia(for channel: Channel, isLiveStream: Bool) -> VLCMedia? {
+    private func makeMedia(
+        for channel: Channel,
+        isLiveStream: Bool,
+        cachingProfile: PlayerPlaybackConfig.CachingProfile
+    ) -> VLCMedia? {
         guard let media = VLCMedia(url: channel.streamURL) else { return nil }
-        for option in PlayerPlaybackConfig.mediaOptions(isLiveStream: isLiveStream) {
+        for option in PlayerPlaybackConfig.mediaOptions(isLiveStream: isLiveStream, cachingProfile: cachingProfile) {
             media.addOption(option)
         }
         return media
@@ -316,11 +366,21 @@ public final class PlayerCore {
 
         // VOD = movies/series or seekable file containers. Live = indefinite TS/m3u8 streams.
         isLiveStream = PlayerPlaybackConfig.isLiveStream(channel: channel)
-        let networkCachingMilliseconds = PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: isLiveStream)
+        let cachingProfile: PlayerPlaybackConfig.CachingProfile = startupWatchdogRetryCount > 0 ? .strengthened : .standard
+        let networkCachingMilliseconds = PlayerPlaybackConfig.networkCachingMilliseconds(
+            isLiveStream: isLiveStream,
+            cachingProfile: cachingProfile
+        )
+        let fileCachingMilliseconds = PlayerPlaybackConfig.fileCachingMilliseconds(
+            isLiveStream: isLiveStream,
+            cachingProfile: cachingProfile
+        )
         print("[PlayerCore]   Type: \(isLiveStream ? "Live" : "VOD")")
+        print("[PlayerCore]   Caching profile: \(cachingProfile == .strengthened ? "strengthened" : "standard")")
         print("[PlayerCore]   Network caching: \(networkCachingMilliseconds)ms")
+        print("[PlayerCore]   File caching: \(fileCachingMilliseconds)ms")
 
-        guard let media = makeMedia(for: channel, isLiveStream: isLiveStream) else {
+        guard let media = makeMedia(for: channel, isLiveStream: isLiveStream, cachingProfile: cachingProfile) else {
             showStreamErrorBanner("Unable to load stream")
             state = .error("Unable to load stream")
             return
@@ -328,7 +388,7 @@ public final class PlayerCore {
 
         vlcPlayer.media = media
         vlcPlayer.play()
-        startLoadingWatchdog(sessionID: sessionID, channel: channel)
+        startLoadingWatchdog(sessionID: sessionID, channel: channel, cachingProfile: cachingProfile)
     }
 
     // MARK: - Hot-Swapping Variants
@@ -343,7 +403,7 @@ public final class PlayerCore {
         if updatedChannel.availableVariants.isEmpty, let oldVariants = currentChannel?.availableVariants {
             updatedChannel.availableVariants = oldVariants
         }
-        guard let media = makeMedia(for: updatedChannel, isLiveStream: false) else {
+        guard let media = makeMedia(for: updatedChannel, isLiveStream: false, cachingProfile: .standard) else {
             showStreamErrorBanner("Unable to load selected stream")
             return
         }
@@ -370,7 +430,7 @@ public final class PlayerCore {
 
         vlcPlayer.media = media
         vlcPlayer.play()
-        startLoadingWatchdog(sessionID: sessionID, channel: updatedChannel)
+        startLoadingWatchdog(sessionID: sessionID, channel: updatedChannel, cachingProfile: .standard)
     }
 
     public func resume() {
@@ -573,11 +633,11 @@ public final class PlayerCore {
         case .paused:
             state = .paused
         case .stopped, .stopping:
+            if startupTimedOutSessionID == sessionID { return }
             if pendingTransitionStopEvents > 0 {
                 pendingTransitionStopEvents -= 1
                 return
             }
-            if startupTimedOutSessionID == sessionID { return }
             if currentChannel != nil {
                 cancelLoadingWatchdog()
                 stopProgressTracking()
@@ -628,9 +688,13 @@ public final class PlayerCore {
 
     // MARK: - Auto-retry
 
-    private func startLoadingWatchdog(sessionID: UInt64, channel: Channel) {
+    private func startLoadingWatchdog(
+        sessionID: UInt64,
+        channel: Channel,
+        cachingProfile: PlayerPlaybackConfig.CachingProfile
+    ) {
         cancelLoadingWatchdog()
-        let timeout = PlayerPlaybackConfig.startupPlaybackTimeoutSeconds
+        let timeout = PlayerPlaybackConfig.startupTimeoutSeconds(cachingProfile: cachingProfile)
 
         loadingWatchdogTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(timeout))
@@ -647,8 +711,8 @@ public final class PlayerCore {
 
             if self.startupWatchdogRetryCount < PlayerPlaybackConfig.startupWatchdogMaxRetries {
                 self.startupWatchdogRetryCount += 1
-                self.showStreamErrorBanner("Still buffering — retrying stream")
-                print("[PlayerCore] Startup watchdog retry \(self.startupWatchdogRetryCount)/\(PlayerPlaybackConfig.startupWatchdogMaxRetries)")
+                self.showStreamErrorBanner("Still buffering — retrying with stronger cache")
+                print("[PlayerCore] Startup watchdog retry \(self.startupWatchdogRetryCount)/\(PlayerPlaybackConfig.startupWatchdogMaxRetries) with strengthened caching")
                 self.playInternal(
                     channel,
                     startPosition: self.pendingSeekPosition,
@@ -661,6 +725,7 @@ public final class PlayerCore {
             self.showStreamErrorBanner("Stream timed out while buffering")
             self.startupTimedOutSessionID = sessionID
             self.state = .error("Stream timed out while buffering")
+            self.vlcPlayer.stop()
         }
     }
 

@@ -6,6 +6,32 @@ private struct SeriesShelfPayload: Sendable {
     let series: [XstreamSeries]
 }
 
+private struct VODShelfPayload: Sendable {
+    let allShelves: [(title: String, items: [VODShelfItemPayload])]
+    let hubToShelves: [BrandHub: [String: [String: VODShelfItemPayload]]]
+}
+
+private struct VODShelfItemPayload: Identifiable, Sendable {
+    let id: String
+    let title: String
+    let imageURL: String?
+    let vod: XstreamVOD
+    var tags: Set<VODTag>
+    var alternateVODs: [XstreamVOD]
+
+    func makeShelfItem() -> ShelfItem {
+        ShelfItem(
+            id: id,
+            title: title,
+            imageURL: imageURL,
+            vod: vod,
+            tags: tags,
+            alternateVODs: alternateVODs,
+            onTap: {}
+        )
+    }
+}
+
 @MainActor
 final class HomeViewModel: ObservableObject {
     @Published var isPhase1Loaded = false
@@ -68,11 +94,28 @@ final class HomeViewModel: ObservableObject {
             service = XstreamService(credentials: credentials)
         }
 
-        // INSTANT: show disk cache before even starting network load
-        if shelves.isEmpty, let diskCached = Self.loadFromDiskCache(cacheKey: cacheKey) {
-            shelves = diskCached
-            heroBannerItems = Self.buildHeroBanner(from: diskCached)
+        // INSTANT: show memory/disk cache before even starting network load.
+        if shelves.isEmpty {
+            if let cached = Self.cachedVODShelves[cacheKey] {
+                shelves = cached
+                heroBannerItems = Self.buildHeroBanner(from: cached)
+                isPhase1Loaded = true
+            } else if let diskCached = Self.loadFromDiskCache(cacheKey: cacheKey) {
+                shelves = diskCached
+                heroBannerItems = Self.buildHeroBanner(from: diskCached)
+                isPhase1Loaded = true
+            }
+        }
+        if brandHubs.isEmpty, let cachedHubs = Self.cachedBrandHubs[cacheKey] { brandHubs = cachedHubs }
+        if seriesShelves.isEmpty, let cached = Self.cachedSeriesShelves[cacheKey] { seriesShelves = cached }
+        if liveItems.isEmpty, let cached = Self.cachedLive[cacheKey] { liveItems = cached }
+        if allVODs.isEmpty, let cached = Self.cachedAllVODs[cacheKey] { allVODs = cached }
+        if allSeries.isEmpty, let cached = Self.cachedAllSeries[cacheKey] { allSeries = cached }
+        if Self.cachedAllVODs[cacheKey] != nil,
+           Self.cachedSeriesShelves[cacheKey] != nil,
+           Self.cachedLive[cacheKey] != nil {
             isPhase1Loaded = true
+            isFullyLoaded = true
         }
 
         // Restore from in-memory cache if already loaded
@@ -88,7 +131,11 @@ final class HomeViewModel: ObservableObject {
             if let cached = Self.cachedLive[cacheKey] { liveItems = cached }
             if let cached = Self.cachedAllVODs[cacheKey] { allVODs = cached }
             if let cached = Self.cachedAllSeries[cacheKey] { allSeries = cached }
-            isFullyLoaded = true
+            if Self.cachedAllVODs[cacheKey] != nil,
+               Self.cachedSeriesShelves[cacheKey] != nil,
+               Self.cachedLive[cacheKey] != nil {
+                isFullyLoaded = true
+            }
             return
         }
         hasLoaded = true
@@ -120,53 +167,31 @@ final class HomeViewModel: ObservableObject {
         }
 
         do {
-            let (allVODShelves, hubToShelves) = try await loadAllVODsGrouped(svc: svc, cacheKey: cacheKey)
-            guard isActive(cacheKey) else { return }
-            
-            guard !allVODShelves.isEmpty else {
-                self.errorMessage = "Brak dostępnych filmów."
-                isPhase1Loaded = true
-                return
-            }
-            
-            // Limit render to Top 20 Shelves internally to keep UI fast
-            let topVODShelves = Array(allVODShelves.prefix(20))
-            
-            self.shelves = topVODShelves
-            self.heroBannerItems = Self.buildHeroBanner(from: topVODShelves)
-            
-            // Build brandHubs directly from the populated hubToShelves
-            var grouped: [BrandHub: [(title: String, items: [ShelfItem])]] = [:]
-            for hub in BrandHub.allCases {
-                guard let shelvesDict = hubToShelves[hub] else { continue }
-                var sortedHubShelves: [(title: String, items: [ShelfItem])] = []
-                for shelfName in shelvesDict.keys.sorted() {
-                    let items = shelvesDict[shelfName]!.values.sorted { $0.title < $1.title }
-                    if !items.isEmpty { sortedHubShelves.append((title: shelfName, items: items)) }
+            if shelves.isEmpty {
+                let previewStreams = try await svc.vodStreamsFast()
+                guard isActive(cacheKey) else { return }
+
+                let previewPayload = Self.buildVODShelves(from: previewStreams)
+                if previewPayload.allShelves.isEmpty {
+                    self.errorMessage = "Brak dostępnych filmów."
+                } else {
+                    applyVODShelfPayload(
+                        previewPayload,
+                        allStreams: previewStreams,
+                        cacheKey: cacheKey,
+                        cacheFullLibrary: false
+                    )
                 }
-                if !sortedHubShelves.isEmpty { grouped[hub] = sortedHubShelves }
             }
-            self.brandHubs = grouped.map { (hub: $0.key, shelves: $0.value) }
-                .sorted { $0.hub.rawValue < $1.hub.rawValue }
-            self.allVODs = await svc.cachedVods // await required since XstreamService is an actor
-            guard isActive(cacheKey) else { return }
-            
-            Self.cachedVODShelves[cacheKey] = topVODShelves
-            Self.cachedAllVODs[cacheKey] = self.allVODs
-            Self.cachedBrandHubs[cacheKey] = self.brandHubs
-            Self.saveToDiskCache(topVODShelves, cacheKey: cacheKey)
-            
+
             isPhase1Loaded = true
-            
-            // TIER 3: Series + Live in background
-            async let seriesTask: Void = loadSeriesInBackground(svc, cacheKey: cacheKey)
-            async let liveTask: Void = loadLiveInBackground(svc, cacheKey: cacheKey)
-            await seriesTask
-            await liveTask
+
+            await loadFullVODLibraryInBackground(svc, cacheKey: cacheKey)
+            await loadSeriesInBackground(svc, cacheKey: cacheKey)
+            await loadLiveInBackground(svc, cacheKey: cacheKey)
             guard isActive(cacheKey) else { return }
-            
+
             isFullyLoaded = true
-            
         } catch {
             guard isActive(cacheKey) else { return }
             self.error = error
@@ -175,14 +200,9 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    private func loadAllVODsGrouped(svc: XstreamService, cacheKey: String) async throws -> (allShelves: [(title: String, items: [ShelfItem])], hubToShelves: [BrandHub: [String: [String: ShelfItem]]]) {
-        // SINGLE REQUEST: one call fetches the entire VOD library.
-        // This is orders of magnitude faster than 250 per-category requests and correctly
-        // populates svc.cachedVods so the global search works without any extra plumbing.
-        let allStreams: [XstreamVOD] = (try? await svc.vodStreams(categoryID: nil)) ?? []
-
+    private static func buildVODShelves(from allStreams: [XstreamVOD]) -> VODShelfPayload {
         // hub -> shelfName -> normalizedTitle -> Item
-        var hubToShelves: [BrandHub: [String: [String: ShelfItem]]] = [:]
+        var hubToShelves: [BrandHub: [String: [String: VODShelfItemPayload]]] = [:]
 
         for vod in allStreams {
             let category = vod.normalizedCategory ?? CategoryNormalizer.normalize(
@@ -210,7 +230,14 @@ final class HomeViewModel: ObservableObject {
                 shelfDict[lowerTitle] = existing
             } else {
                 if shelfDict.count >= 200 { continue }
-                let item = ShelfItem(id: "\(vod.id)", title: cleanTitle, imageURL: vod.streamIcon, vod: vod, tags: tags, alternateVODs: [vod], onTap: {})
+                let item = VODShelfItemPayload(
+                    id: "\(vod.id)",
+                    title: cleanTitle,
+                    imageURL: vod.streamIcon,
+                    vod: vod,
+                    tags: tags,
+                    alternateVODs: [vod]
+                )
                 shelfDict[lowerTitle] = item
             }
 
@@ -219,7 +246,7 @@ final class HomeViewModel: ObservableObject {
             hubToShelves[hub] = shelvesForHub
         }
 
-        var finalShelves: [(title: String, items: [ShelfItem])] = []
+        var finalShelves: [(title: String, items: [VODShelfItemPayload])] = []
         for hub in BrandHub.allCases {
             guard let shelvesDict = hubToShelves[hub] else { continue }
             for shelfName in shelvesDict.keys.sorted() {
@@ -230,10 +257,69 @@ final class HomeViewModel: ObservableObject {
             }
         }
 
-        // Expose flat list for search — already cached inside the actor via vodStreams(nil)
-        Self.cachedAllVODs[cacheKey] = allStreams
+        return VODShelfPayload(allShelves: finalShelves, hubToShelves: hubToShelves)
+    }
 
-        return (finalShelves, hubToShelves)
+    private func applyVODShelfPayload(
+        _ payload: VODShelfPayload,
+        allStreams: [XstreamVOD],
+        cacheKey: String,
+        cacheFullLibrary: Bool
+    ) {
+        let topVODShelves = payload.allShelves.prefix(20).map { shelf in
+            (title: shelf.title, items: shelf.items.map { $0.makeShelfItem() })
+        }
+
+        shelves = topVODShelves
+        heroBannerItems = Self.buildHeroBanner(from: topVODShelves)
+        brandHubs = Self.buildBrandHubs(from: payload.hubToShelves)
+        allVODs = allStreams
+
+        Self.cachedVODShelves[cacheKey] = topVODShelves
+        Self.cachedBrandHubs[cacheKey] = brandHubs
+        if cacheFullLibrary {
+            Self.cachedAllVODs[cacheKey] = allStreams
+        }
+        Self.saveToDiskCache(topVODShelves, cacheKey: cacheKey)
+    }
+
+    private func loadFullVODLibraryInBackground(_ svc: XstreamService, cacheKey: String) async {
+        do {
+            let allStreams = try await svc.vodStreams(categoryID: nil)
+            guard isActive(cacheKey) else { return }
+
+            let fullPayload = Self.buildVODShelves(from: allStreams)
+            guard !fullPayload.allShelves.isEmpty else { return }
+            applyVODShelfPayload(
+                fullPayload,
+                allStreams: allStreams,
+                cacheKey: cacheKey,
+                cacheFullLibrary: true
+            )
+        } catch {
+            guard isActive(cacheKey) else { return }
+            print("[HomeViewModel] Full VOD library load failed after phase 1: \(error.localizedDescription)")
+        }
+    }
+
+    private static func buildBrandHubs(
+        from hubToShelves: [BrandHub: [String: [String: VODShelfItemPayload]]]
+    ) -> [(hub: BrandHub, shelves: [(title: String, items: [ShelfItem])])] {
+        var grouped: [BrandHub: [(title: String, items: [ShelfItem])]] = [:]
+        for hub in BrandHub.allCases {
+            guard let shelvesDict = hubToShelves[hub] else { continue }
+            var sortedHubShelves: [(title: String, items: [ShelfItem])] = []
+            for shelfName in shelvesDict.keys.sorted() {
+                guard let shelfItems = shelvesDict[shelfName] else { continue }
+                let items = shelfItems.values
+                    .sorted { $0.title < $1.title }
+                    .map { $0.makeShelfItem() }
+                if !items.isEmpty { sortedHubShelves.append((title: shelfName, items: items)) }
+            }
+            if !sortedHubShelves.isEmpty { grouped[hub] = sortedHubShelves }
+        }
+        return grouped.map { (hub: $0.key, shelves: $0.value) }
+            .sorted { $0.hub.rawValue < $1.hub.rawValue }
     }
 
     private func loadSeriesInBackground(_ svc: XstreamService, cacheKey: String) async {
