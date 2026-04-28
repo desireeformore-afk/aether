@@ -259,7 +259,7 @@ struct SidebarView: View {
 
             Spacer(minLength: 0)
         }
-        .frame(width: SidebarLayoutMetrics.visualWidth, maxHeight: .infinity)
+        .frame(minWidth: SidebarLayoutMetrics.visualWidth, idealWidth: SidebarLayoutMetrics.visualWidth, maxWidth: SidebarLayoutMetrics.visualWidth, maxHeight: .infinity)
         .fixedSize(horizontal: true, vertical: false)
         .background(sidebarBg)
     }
