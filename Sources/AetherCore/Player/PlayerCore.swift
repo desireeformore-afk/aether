@@ -48,7 +48,7 @@ enum PlayerPlaybackConfig {
     static let httpUserAgent = "VLC/3.0.20 LibVLC/3.0.20"
     private static let vodExtensions: Set<String> = ["mkv", "mp4", "avi", "mov", "wmv", "flv", "m4v"]
 
-    static func networkCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile) -> Int {
+    static func networkCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile = .standard) -> Int {
         switch (isLiveStream, cachingProfile) {
         case (true, .standard): return liveNetworkCachingMilliseconds
         case (true, .strengthened): return strengthenedLiveNetworkCachingMilliseconds
@@ -57,7 +57,7 @@ enum PlayerPlaybackConfig {
         }
     }
 
-    static func fileCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile) -> Int {
+    static func fileCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile = .standard) -> Int {
         switch (isLiveStream, cachingProfile) {
         case (true, .standard): return liveFileCachingMilliseconds
         case (true, .strengthened): return strengthenedLiveFileCachingMilliseconds
@@ -66,7 +66,7 @@ enum PlayerPlaybackConfig {
         }
     }
 
-    static func liveCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile) -> Int {
+    static func liveCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile = .standard) -> Int {
         switch (isLiveStream, cachingProfile) {
         case (true, .standard): return liveLiveCachingMilliseconds
         case (true, .strengthened): return strengthenedLiveLiveCachingMilliseconds

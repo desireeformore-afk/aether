@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 import SwiftUI
 
 #if canImport(AppKit)
@@ -11,7 +12,7 @@ public typealias PlatformImage = UIImage
 
 // MARK: - ImageCache
 
-/// In-memory NSCache (200 images / 100 MB) backed by URLCache for disk persistence.
+/// In-memory NSCache (200 image payloads / 100 MB) backed by URLCache for disk persistence.
 /// In-flight deduplication prevents the same URL from being fetched multiple times concurrently.
 public actor ImageCache {
     public static let shared = ImageCache()
@@ -21,8 +22,8 @@ public actor ImageCache {
     private static let imageMaximumConnectionsPerHost = 4
     private static let maxConcurrentImageDownloads = 4
 
-    private let store: NSCache<NSString, AnyObject> = {
-        let c = NSCache<NSString, AnyObject>()
+    private let store: NSCache<NSString, NSData> = {
+        let c = NSCache<NSString, NSData>()
         c.countLimit = 200
         c.totalCostLimit = 100 * 1024 * 1024
         return c
@@ -31,7 +32,7 @@ public actor ImageCache {
     private let session: URLSession
 
     // Deduplicates concurrent requests for the same URL.
-    private var inFlight: [String: Task<PlatformImage?, Never>] = [:]
+    private var inFlight: [String: Task<Data?, Never>] = [:]
     private var activeImageDownloads = 0
     private var imageDownloadWaiters: [CheckedContinuation<Void, Never>] = []
 
@@ -50,21 +51,21 @@ public actor ImageCache {
         return config
     }
 
-    public func image(for url: URL) async -> PlatformImage? {
+    public func imageData(for url: URL) async -> Data? {
         let key = url.absoluteString as NSString
         let strKey = url.absoluteString
 
         // 1. In-memory hit
-        if let obj = store.object(forKey: key), let img = obj as? PlatformImage {
-            return img
+        if let data = store.object(forKey: key) {
+            return data as Data
         }
 
         // 2. URLCache (disk) hit
         let request = URLRequest(url: url)
         if let data = URLCache.shared.cachedResponse(for: request)?.data,
-           let img = PlatformImage(data: data) {
-            store.setObject(img as AnyObject, forKey: key, cost: data.count)
-            return img
+           Self.isDecodableImageData(data) {
+            store.setObject(data as NSData, forKey: key, cost: data.count)
+            return data
         }
 
         // 3. Deduplicate: join an existing in-flight fetch if one is already running.
@@ -73,14 +74,14 @@ public actor ImageCache {
         }
 
         // 4. Start a new network fetch and register it so concurrent callers can join.
-        let fetchTask = Task<PlatformImage?, Never> {
-            await self.downloadImage(for: url)
+        let fetchTask = Task<Data?, Never> {
+            await self.downloadImageData(for: url)
         }
         inFlight[strKey] = fetchTask
         let result = await fetchTask.value
         inFlight.removeValue(forKey: strKey)
-        if let img = result {
-            store.setObject(img as AnyObject, forKey: key, cost: 0)
+        if let data = result {
+            store.setObject(data as NSData, forKey: key, cost: data.count)
         }
         return result
     }
@@ -93,7 +94,7 @@ public actor ImageCache {
         inFlight.removeAll()
     }
 
-    private func downloadImage(for url: URL) async -> PlatformImage? {
+    private func downloadImageData(for url: URL) async -> Data? {
         await acquireImageDownloadPermit()
         defer { releaseImageDownloadPermit() }
 
@@ -110,16 +111,23 @@ public actor ImageCache {
                !(200..<300).contains(http.statusCode) {
                 return nil
             }
-            guard let img = PlatformImage(data: data) else { return nil }
+            guard Self.isDecodableImageData(data) else { return nil }
             URLCache.shared.storeCachedResponse(
                 CachedURLResponse(response: response, data: data),
                 for: request
             )
-            store.setObject(img as AnyObject, forKey: url.absoluteString as NSString, cost: data.count)
-            return img
+            store.setObject(data as NSData, forKey: url.absoluteString as NSString, cost: data.count)
+            return data
         } catch {
             return nil
         }
+    }
+
+    private static func isDecodableImageData(_ data: Data) -> Bool {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
+            return false
+        }
+        return CGImageSourceGetCount(source) > 0
     }
 
     private func acquireImageDownloadPermit() async {
@@ -171,13 +179,29 @@ public struct CachedImageView<Placeholder: View, Content: View>: View {
             }
         }
         .task(id: url?.absoluteString) {
-            platformImage = nil
+            await resetImage()
             guard let url else { return }
-            let loaded = await ImageCache.shared.image(for: url)
+            let data = await ImageCache.shared.imageData(for: url)
             guard !Task.isCancelled else { return }
-            withAnimation(.easeIn(duration: 0.25)) {
-                platformImage = loaded
-            }
+            await applyImageData(data)
+        }
+    }
+
+    @MainActor
+    private func resetImage() {
+        platformImage = nil
+    }
+
+    @MainActor
+    private func applyImageData(_ data: Data?) {
+        let loaded = data.flatMap(PlatformImage.init(data:))
+        guard !Task.isCancelled else { return }
+        if loaded == nil {
+            platformImage = nil
+            return
+        }
+        withAnimation(.easeIn(duration: 0.25)) {
+            platformImage = loaded
         }
     }
 }

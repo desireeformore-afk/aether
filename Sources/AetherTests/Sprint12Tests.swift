@@ -137,13 +137,15 @@ final class PlayerPlaybackConfigTests: XCTestCase {
 
     func testNetworkCachingValuesMatchCurrentPlaybackPolicy() {
         XCTAssertEqual(PlayerPlaybackConfig.liveNetworkCachingMilliseconds, 1500)
-        XCTAssertEqual(PlayerPlaybackConfig.vodNetworkCachingMilliseconds, 800)
-        XCTAssertGreaterThan(PlayerPlaybackConfig.liveNetworkCachingMilliseconds,
-                             PlayerPlaybackConfig.vodNetworkCachingMilliseconds)
+        XCTAssertEqual(PlayerPlaybackConfig.vodNetworkCachingMilliseconds, 6000)
+        XCTAssertEqual(PlayerPlaybackConfig.strengthenedVODNetworkCachingMilliseconds, 12000)
+        XCTAssertGreaterThan(PlayerPlaybackConfig.vodNetworkCachingMilliseconds,
+                             PlayerPlaybackConfig.liveNetworkCachingMilliseconds)
     }
 
     func testNetworkCachingSelectorUsesStreamType() {
         XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: true), 1500)
-        XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: false), 800)
+        XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: false), 6000)
+        XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: false, cachingProfile: .strengthened), 12000)
     }
 }
