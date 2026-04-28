@@ -153,7 +153,7 @@ public final class PlayerCore {
     // MARK: - Internal
 
     /// The underlying VLC media player.
-    private let vlcPlayer: VLCMediaPlayer = VLCMediaPlayer(options: ["-q", "--quiet"])
+    private let vlcPlayer: VLCMediaPlayer = VLCMediaPlayer()
 
     /// Accessor for StreamStatsView — exposes VLC player for stats reading only.
     /// Do NOT use for playback control outside PlayerCore.
@@ -203,6 +203,7 @@ public final class PlayerCore {
 
     /// Attaches the VLC renderer to a drawable owned by a specific SwiftUI representable instance.
     public func attachDrawable(_ view: AnyObject, ownerID: UUID) {
+        guard currentDrawableOwnerID != ownerID || currentDrawable !== view else { return }
         currentDrawable = view
         currentDrawableOwnerID = ownerID
         vlcPlayer.drawable = view

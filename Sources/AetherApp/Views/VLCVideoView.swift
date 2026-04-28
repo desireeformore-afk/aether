@@ -4,7 +4,31 @@ import SwiftUI
 import AppKit
 import AetherCore
 
-/// SwiftUI wrapper that provides a Metal-backed NSView for VLC video rendering.
+private final class VLCVideoHostView: NSView {
+    override var isFlipped: Bool { true }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        configure()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configure()
+    }
+
+    private func configure() {
+        wantsLayer = true
+        layer = CALayer()
+        layer?.backgroundColor = NSColor.black.cgColor
+        layer?.contentsGravity = .resizeAspect
+        layer?.magnificationFilter = .linear
+        layer?.minificationFilter = .linear
+        layerContentsRedrawPolicy = .onSetNeedsDisplay
+    }
+}
+
+/// SwiftUI wrapper that provides a stable layer-backed NSView for VLC video rendering.
 @MainActor
 public struct VLCVideoView: NSViewRepresentable {
     public let player: PlayerCore
@@ -18,29 +42,40 @@ public struct VLCVideoView: NSViewRepresentable {
     }
 
     public func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor.black.cgColor
-        // Enforce letterbox: video scales to fit while preserving aspect ratio
-        view.layer?.contentsGravity = .resizeAspect
-        player.attachDrawable(view, ownerID: context.coordinator.ownerID)
+        let view = VLCVideoHostView()
+        context.coordinator.attachIfNeeded(view)
         return view
     }
 
     public func updateNSView(_ nsView: NSView, context: Context) {
-        player.attachDrawable(nsView, ownerID: context.coordinator.ownerID)
+        context.coordinator.attachIfNeeded(nsView)
     }
 
     public static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
-        coordinator.player.detachDrawable(nsView, ownerID: coordinator.ownerID)
+        coordinator.detach(nsView)
     }
 
+    @MainActor
     public final class Coordinator {
         let ownerID = UUID()
         let player: PlayerCore
+        weak var attachedView: NSView?
 
         init(player: PlayerCore) {
             self.player = player
+        }
+
+        func attachIfNeeded(_ view: NSView) {
+            guard attachedView !== view else { return }
+            player.attachDrawable(view, ownerID: ownerID)
+            attachedView = view
+        }
+
+        func detach(_ view: NSView) {
+            player.detachDrawable(view, ownerID: ownerID)
+            if attachedView === view {
+                attachedView = nil
+            }
         }
     }
 }
@@ -68,24 +103,39 @@ public struct VLCVideoView: UIViewRepresentable {
     public func makeUIView(context: Context) -> UIView {
         let view = UIView()
         view.backgroundColor = .black
-        player.attachDrawable(view, ownerID: context.coordinator.ownerID)
+        context.coordinator.attachIfNeeded(view)
         return view
     }
 
     public func updateUIView(_ uiView: UIView, context: Context) {
-        player.attachDrawable(uiView, ownerID: context.coordinator.ownerID)
+        context.coordinator.attachIfNeeded(uiView)
     }
 
     public static func dismantleUIView(_ uiView: UIView, coordinator: Coordinator) {
-        coordinator.player.detachDrawable(uiView, ownerID: coordinator.ownerID)
+        coordinator.detach(uiView)
     }
 
+    @MainActor
     public final class Coordinator {
         let ownerID = UUID()
         let player: PlayerCore
+        weak var attachedView: UIView?
 
         init(player: PlayerCore) {
             self.player = player
+        }
+
+        func attachIfNeeded(_ view: UIView) {
+            guard attachedView !== view else { return }
+            player.attachDrawable(view, ownerID: ownerID)
+            attachedView = view
+        }
+
+        func detach(_ view: UIView) {
+            player.detachDrawable(view, ownerID: ownerID)
+            if attachedView === view {
+                attachedView = nil
+            }
         }
     }
 }

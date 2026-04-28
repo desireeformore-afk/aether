@@ -125,7 +125,7 @@ struct AetherApp: App {
         .modelContainer(AetherApp.sharedModelContainer)
         .defaultSize(width: 1280, height: 800)
         #if os(macOS)
-        .windowResizability(.contentMinSize)
+        .windowResizability(.automatic)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
