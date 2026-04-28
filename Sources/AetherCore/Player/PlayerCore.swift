@@ -29,9 +29,28 @@ public enum PlayerState: Sendable, Equatable {
 enum PlayerPlaybackConfig {
     static let liveNetworkCachingMilliseconds = 1500
     static let vodNetworkCachingMilliseconds = 800
+    static let httpUserAgent = "VLC/3.0.20 LibVLC/3.0.20"
+    private static let vodExtensions: Set<String> = ["mkv", "mp4", "avi", "mov", "wmv", "flv", "m4v"]
 
     static func networkCachingMilliseconds(isLiveStream: Bool) -> Int {
         isLiveStream ? liveNetworkCachingMilliseconds : vodNetworkCachingMilliseconds
+    }
+
+    static func isLiveStream(channel: Channel) -> Bool {
+        switch channel.contentType {
+        case .liveTV:
+            let ext = channel.streamURL.pathExtension.lowercased()
+            return !vodExtensions.contains(ext)
+        case .movie, .series:
+            return false
+        }
+    }
+
+    static func mediaOptions(isLiveStream: Bool) -> [String] {
+        [
+            "--network-caching=\(networkCachingMilliseconds(isLiveStream: isLiveStream))",
+            "--http-user-agent=\(httpUserAgent)"
+        ]
     }
 }
 
@@ -221,6 +240,16 @@ public final class PlayerCore {
         progressUpdateObservers.removeValue(forKey: id)
     }
 
+    // MARK: - Media setup
+
+    private func makeMedia(for channel: Channel, isLiveStream: Bool) -> VLCMedia? {
+        guard let media = VLCMedia(url: channel.streamURL) else { return nil }
+        for option in PlayerPlaybackConfig.mediaOptions(isLiveStream: isLiveStream) {
+            media.addOption(option)
+        }
+        return media
+    }
+
     // MARK: - Public playback API
 
     /// Starts playback of `channel`. Debounced — rapid calls within 500ms are ignored.
@@ -277,23 +306,14 @@ public final class PlayerCore {
         print("[PlayerCore]   URL: \(url.aetherMaskedForLog)")
         print("[PlayerCore]   Extension: \(ext)")
 
-        // VOD = has a seekable duration (MKV, MP4, AVI, MOV…)
-        // Live = indefinite TS/m3u8 streams
-        let vodExtensions: Set<String> = ["mkv", "mp4", "avi", "mov", "wmv", "flv", "m4v"]
-        isLiveStream = !vodExtensions.contains(ext)
+        // VOD = movies/series or seekable file containers. Live = indefinite TS/m3u8 streams.
+        isLiveStream = PlayerPlaybackConfig.isLiveStream(channel: channel)
 
-        let media = VLCMedia(url: url)
-
-        // VLC network caching: lower value = faster start, higher = smoother on bad connections.
-        // 1500ms for live (tolerates jitter), 800ms for VOD (starts faster, seeks more accurately).
-        let cachingMs = PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: isLiveStream)
-        media?.addOption("--network-caching=\(cachingMs)")
-
-        // Spoof UA — some IPTV servers reject the default VLC user agent
-        media?.addOption("--http-user-agent=VLC/3.0.20 LibVLC/3.0.20")
-
-        // Hardware decoding via VideoToolbox (GPU) — zero CPU transcoding
-        media?.addOption("--videotoolbox-hw-decoder-use")
+        guard let media = makeMedia(for: channel, isLiveStream: isLiveStream) else {
+            showStreamErrorBanner("Unable to load stream")
+            state = .error("Unable to load stream")
+            return
+        }
 
         vlcPlayer.media = media
         vlcPlayer.play()
@@ -306,34 +326,34 @@ public final class PlayerCore {
         guard !isLiveStream else { return } // cannot reliably hot-swap live TV
         if newChannel.streamURL == currentChannel?.streamURL { return }
         
+        // Retain previous variants if possible, just update the currently active stream
+        var updatedChannel = newChannel
+        if updatedChannel.availableVariants.isEmpty, let oldVariants = currentChannel?.availableVariants {
+            updatedChannel.availableVariants = oldVariants
+        }
+        guard let media = makeMedia(for: updatedChannel, isLiveStream: false) else {
+            showStreamErrorBanner("Unable to load selected stream")
+            return
+        }
+
         let targetTime = currentTime
         retryTask?.cancel()
         retryTask = nil
         let shouldStopExistingMedia = vlcPlayer.isPlaying || vlcPlayer.media != nil
         advancePlaybackSession()
         print("[PlayerCore] Hot-swapping stream variant at \(targetTime)s to: \(newChannel.streamURL.aetherMaskedForLog)")
-        
+
         state = .loading
         hasEverPlayed = false
         pendingSeekPosition = targetTime
-        
-        // Retain previous variants if possible, just update the currently active stream
-        var updatedChannel = newChannel
-        if updatedChannel.availableVariants.isEmpty, let oldVariants = currentChannel?.availableVariants {
-            updatedChannel.availableVariants = oldVariants
-        }
+
         currentChannel = updatedChannel
-        
+
         if shouldStopExistingMedia {
             pendingTransitionStopEvents += 1
             vlcPlayer.stop()
         }
-        
-        let media = VLCMedia(url: newChannel.streamURL)
-        media?.addOption("--network-caching=\(PlayerPlaybackConfig.vodNetworkCachingMilliseconds)")
-        media?.addOption("--http-user-agent=VLC/3.0.20 LibVLC/3.0.20")
-        media?.addOption("--videotoolbox-hw-decoder-use")
-        
+
         vlcPlayer.media = media
         vlcPlayer.play()
     }

@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import Observation
 import SwiftData
@@ -62,12 +63,7 @@ struct AetherApp: App {
         _analyticsService = State(wrappedValue: analytics)
         _statusBarController = State(wrappedValue: StatusBarController(player: player))
 
-        // Aggressive image caching — 100MB memory, 500MB disk
-        URLCache.shared = URLCache(
-            memoryCapacity: 100 * 1024 * 1024,
-            diskCapacity: 500 * 1024 * 1024,
-            diskPath: "aether_image_cache"
-        )
+        Self.configureImageURLCache()
 
         // Wire analytics to player without taking ownership of the single legacy callback.
         player.addWatchSessionEndObserver { channel, startTime, duration in
@@ -122,10 +118,14 @@ struct AetherApp: App {
                     ))
                     .interactiveDismissDisabled()
                 }
+                #if os(macOS)
+                .frame(minWidth: 960, minHeight: 640)
+                #endif
         }
         .modelContainer(AetherApp.sharedModelContainer)
         .defaultSize(width: 1280, height: 800)
         #if os(macOS)
+        .windowResizability(.contentMinSize)
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
@@ -207,7 +207,36 @@ struct AetherApp: App {
 // MARK: - Shared SwiftData Container
 
 extension AetherApp {
+    private static let imageURLCacheMemoryCapacity = 100 * 1024 * 1024
+    private static let imageURLCacheDiskCapacity = 500 * 1024 * 1024
     private static let playlistBackupKey = "playlist_backup_v7"
+
+    private static func configureImageURLCache() {
+        URLCache.shared = URLCache(
+            memoryCapacity: imageURLCacheMemoryCapacity,
+            diskCapacity: imageURLCacheDiskCapacity,
+            directory: imageURLCacheDirectory()
+        )
+    }
+
+    private static func imageURLCacheDirectory() -> URL? {
+        do {
+            let baseURL = try FileManager.default.url(
+                for: .cachesDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: true
+            )
+            let directory = baseURL
+                .appendingPathComponent("Aether", isDirectory: true)
+                .appendingPathComponent("ImageCache", isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            return directory
+        } catch {
+            print("[Aether] Failed to prepare image URL cache directory: \(error.localizedDescription)")
+            return nil
+        }
+    }
 
     /// Explicit store path — stable regardless of bundle ID (SPM dev-build workaround).
     static let sharedModelContainer: ModelContainer = {
