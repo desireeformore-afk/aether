@@ -40,8 +40,8 @@ enum PlayerPlaybackConfig {
     static let strengthenedLiveNetworkCachingMilliseconds = 2500
     static let strengthenedLiveFileCachingMilliseconds = 1500
     static let strengthenedLiveLiveCachingMilliseconds = 2500
-    static let strengthenedVODNetworkCachingMilliseconds = 20000
-    static let strengthenedVODFileCachingMilliseconds = 20000
+    static let strengthenedVODNetworkCachingMilliseconds = 12000
+    static let strengthenedVODFileCachingMilliseconds = 12000
     static let startupPlaybackTimeoutSeconds = 35.0
     static let strengthenedStartupPlaybackTimeoutSeconds = 50.0
     static let startupWatchdogMaxRetries = 1
