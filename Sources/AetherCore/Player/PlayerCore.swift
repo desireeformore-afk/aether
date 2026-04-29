@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 import VLCKit
-import MediaPlayer
+@preconcurrency import MediaPlayer
 #if canImport(AppKit)
 import AppKit
 #elseif canImport(UIKit)
@@ -478,7 +478,7 @@ public final class PlayerCore {
         selectedAudioTrackID = -1
         selectedSubtitleTrackID = -1
         state = .idle
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        publishNowPlayingInfo(nil)
     }
 
     public func toggleMute() {
@@ -948,6 +948,13 @@ public final class PlayerCore {
 
     // MARK: - Now Playing (Lock Screen / Control Center)
 
+    private func publishNowPlayingInfo(_ info: [String: Any]?) {
+        let snapshot = info.map { NSDictionary(dictionary: $0) }
+        DispatchQueue.main.async {
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = snapshot as? [String: Any]
+        }
+    }
+
     private func updateNowPlayingInfo() {
         guard let channel = currentChannel else { return }
         var info: [String: Any] = [
@@ -965,7 +972,7 @@ public final class PlayerCore {
                 #endif
             }
         }
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        publishNowPlayingInfo(info)
     }
 
     private func setupRemoteCommands() {
