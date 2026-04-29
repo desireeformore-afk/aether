@@ -46,6 +46,7 @@ enum PlayerPlaybackConfig {
     static let strengthenedStartupPlaybackTimeoutSeconds = 50.0
     static let startupWatchdogMaxRetries = 1
     static let startupWatchdogPollIntervalSeconds = 0.5
+    static let startupWatchdogLogIntervalSeconds = 5.0
     static let startupProgressMinimumTimeAdvanceMilliseconds: Int32 = 250
     static let startupProgressMinimumPositionAdvance: Float = 0.0001
     static let httpUserAgent = "VLC/3.0.20 LibVLC/3.0.20"
@@ -102,6 +103,23 @@ enum PlayerPlaybackConfig {
             "--rtsp-tcp",
             "--http-user-agent=\(httpUserAgent)"
         ]
+    }
+}
+
+private extension PlayerState {
+    var logDescription: String {
+        switch self {
+        case .idle:
+            return "idle"
+        case .loading:
+            return "loading"
+        case .playing:
+            return "playing"
+        case .paused:
+            return "paused"
+        case .error(let message):
+            return "error(\(message))"
+        }
     }
 }
 
@@ -603,7 +621,7 @@ public final class PlayerCore {
             // so the video surface stays visible during mid-stream rebuffering.
             if startupTimedOutSessionID != sessionID, !hasEverPlayed { state = .loading }
         case .playing:
-            finishStartupPlayback(sessionID: sessionID)
+            finishStartupPlayback(sessionID: sessionID, reason: "VLC delegate reported .playing")
         case .paused:
             state = .paused
         case .stopped, .stopping:
@@ -720,11 +738,14 @@ public final class PlayerCore {
         cancelLoadingWatchdog()
         let timeout = PlayerPlaybackConfig.startupTimeoutSeconds(cachingProfile: cachingProfile)
         let pollInterval = PlayerPlaybackConfig.startupWatchdogPollIntervalSeconds
+        let logInterval = PlayerPlaybackConfig.startupWatchdogLogIntervalSeconds
 
         loadingWatchdogTask = Task { @MainActor [weak self] in
             let startedAt = Date()
             var lastTimeMilliseconds: Int32?
             var lastPosition: Float?
+            var nextStatusLogAt = startedAt.addingTimeInterval(logInterval)
+            var lastLoggedIsPlaying: Bool?
 
             while true {
                 try? await Task.sleep(for: .seconds(pollInterval))
@@ -738,13 +759,16 @@ public final class PlayerCore {
                 let currentTimeMilliseconds = max(Int32(0), self.vlcPlayer.time.intValue)
                 let rawPosition = Double(self.vlcPlayer.position)
                 let currentPosition: Float = rawPosition.isFinite ? Float(max(0.0, rawPosition)) : 0
-
-                if self.vlcPlayer.isPlaying {
-                    self.finishStartupPlayback(
-                        sessionID: sessionID,
-                        reason: "Startup watchdog observed active VLC playback"
-                    )
-                    return
+                let vlcIsPlaying = self.vlcPlayer.isPlaying
+                let now = Date()
+                let shouldLogStatus = lastLoggedIsPlaying != vlcIsPlaying || now >= nextStatusLogAt
+                if shouldLogStatus {
+                    let elapsed = now.timeIntervalSince(startedAt)
+                    let seconds = Double(currentTimeMilliseconds) / 1000.0
+                    let percent = Double(currentPosition * 100)
+                    print("[PlayerCore] Startup watchdog waiting \(Int(elapsed))s/\(Int(timeout))s: isPlaying=\(vlcIsPlaying), state=\(self.state.logDescription), time=\(String(format: "%.1f", seconds))s, position=\(String(format: "%.2f", percent))%")
+                    lastLoggedIsPlaying = vlcIsPlaying
+                    nextStatusLogAt = now.addingTimeInterval(logInterval)
                 }
 
                 if let previousTimeMilliseconds = lastTimeMilliseconds {
@@ -791,7 +815,12 @@ public final class PlayerCore {
 
             self.loadingWatchdogTask = nil
             let streamKind = self.isLiveStream ? "live" : "VOD"
-            print("[PlayerCore] Startup watchdog fired after \(Int(timeout))s for \(streamKind): \(channel.streamURL.aetherMaskedForLog)")
+            let currentTimeMilliseconds = max(Int32(0), self.vlcPlayer.time.intValue)
+            let rawPosition = Double(self.vlcPlayer.position)
+            let currentPosition: Float = rawPosition.isFinite ? Float(max(0.0, rawPosition)) : 0
+            let seconds = Double(currentTimeMilliseconds) / 1000.0
+            let percent = Double(currentPosition * 100)
+            print("[PlayerCore] Startup watchdog fired after \(Int(timeout))s for \(streamKind): \(channel.streamURL.aetherMaskedForLog) (isPlaying=\(self.vlcPlayer.isPlaying), state=\(self.state.logDescription), time=\(String(format: "%.1f", seconds))s, position=\(String(format: "%.2f", percent))%)")
 
             if self.startupWatchdogRetryCount < PlayerPlaybackConfig.startupWatchdogMaxRetries {
                 self.startupWatchdogRetryCount += 1
