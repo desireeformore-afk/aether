@@ -736,8 +736,8 @@ public final class PlayerCore {
                       self.state == .loading else { return }
 
                 let currentTimeMilliseconds = max(Int32(0), self.vlcPlayer.time.intValue)
-                let rawPosition = self.vlcPlayer.position
-                let currentPosition = rawPosition.isFinite ? max(Float(0), rawPosition) : 0
+                let rawPosition = Double(self.vlcPlayer.position)
+                let currentPosition: Float = rawPosition.isFinite ? Float(max(0.0, rawPosition)) : 0
 
                 if self.vlcPlayer.isPlaying {
                     self.finishStartupPlayback(
