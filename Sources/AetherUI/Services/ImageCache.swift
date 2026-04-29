@@ -179,11 +179,15 @@ public struct CachedImageView<Placeholder: View, Content: View>: View {
             }
         }
         .task(id: url?.absoluteString) {
-            await resetImage()
+            await MainActor.run {
+                resetImage()
+            }
             guard let url else { return }
             let data = await ImageCache.shared.imageData(for: url)
             guard !Task.isCancelled else { return }
-            await applyImageData(data)
+            await MainActor.run {
+                applyImageData(data)
+            }
         }
     }
 

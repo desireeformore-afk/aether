@@ -40,11 +40,14 @@ enum PlayerPlaybackConfig {
     static let strengthenedLiveNetworkCachingMilliseconds = 2500
     static let strengthenedLiveFileCachingMilliseconds = 1500
     static let strengthenedLiveLiveCachingMilliseconds = 2500
-    static let strengthenedVODNetworkCachingMilliseconds = 12000
-    static let strengthenedVODFileCachingMilliseconds = 12000
+    static let strengthenedVODNetworkCachingMilliseconds = 20000
+    static let strengthenedVODFileCachingMilliseconds = 20000
     static let startupPlaybackTimeoutSeconds = 35.0
     static let strengthenedStartupPlaybackTimeoutSeconds = 50.0
     static let startupWatchdogMaxRetries = 1
+    static let startupWatchdogPollIntervalSeconds = 0.5
+    static let startupProgressMinimumTimeAdvanceMilliseconds: Int32 = 250
+    static let startupProgressMinimumPositionAdvance: Float = 0.0001
     static let httpUserAgent = "VLC/3.0.20 LibVLC/3.0.20"
     private static let vodExtensions: Set<String> = ["mkv", "mp4", "avi", "mov", "wmv", "flv", "m4v"]
 
@@ -600,36 +603,7 @@ public final class PlayerCore {
             // so the video surface stays visible during mid-stream rebuffering.
             if startupTimedOutSessionID != sessionID, !hasEverPlayed { state = .loading }
         case .playing:
-            cancelLoadingWatchdog()
-            startupTimedOutSessionID = nil
-            hasEverPlayed = true
-            if state != .playing {
-                state = .playing
-                retryCount = 0
-                startProgressTracking()
-                updateNowPlayingInfo()
-                
-                if let seekPos = pendingSeekPosition {
-                    pendingSeekPosition = nil
-                    // Execute seek after a small delay to ensure buffer is ready
-                    let seekSessionID = playbackSessionID
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                        Task { @MainActor [weak self] in
-                            guard let self, self.isCurrentPlaybackSession(seekSessionID) else { return }
-                            self.userSeek(to: seekPos)
-                        }
-                    }
-                }
-                
-                // Populate track lists once media is actually playing
-                let trackSessionID = playbackSessionID
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                    Task { @MainActor [weak self] in
-                        guard let self, self.isCurrentPlaybackSession(trackSessionID) else { return }
-                        self.refreshTrackLists()
-                    }
-                }
-            }
+            finishStartupPlayback(sessionID: sessionID)
         case .paused:
             state = .paused
         case .stopped, .stopping:
@@ -666,6 +640,56 @@ public final class PlayerCore {
         availableSubtitleTracks = []
     }
 
+    private func finishStartupPlayback(sessionID: UInt64, reason: String? = nil) {
+        guard isCurrentPlaybackSession(sessionID),
+              startupTimedOutSessionID != sessionID,
+              currentChannel != nil else { return }
+
+        cancelLoadingWatchdog()
+        startupTimedOutSessionID = nil
+        hasEverPlayed = true
+
+        guard state != .playing else { return }
+        if let reason {
+            print("[PlayerCore] \(reason) — forcing .playing")
+        }
+
+        state = .playing
+        retryCount = 0
+
+        let currentMilliseconds = max(Int32(0), vlcPlayer.time.intValue)
+        if currentMilliseconds > 0 {
+            currentTimeValue = Double(currentMilliseconds) / 1000.0
+        }
+
+        startProgressTracking()
+        updateNowPlayingInfo()
+        applyPendingSeekAfterStartup(sessionID: sessionID)
+        scheduleTrackListRefresh(sessionID: sessionID)
+    }
+
+    private func applyPendingSeekAfterStartup(sessionID: UInt64) {
+        guard let seekPos = pendingSeekPosition else { return }
+        pendingSeekPosition = nil
+
+        // Execute seek after a small delay to ensure buffer is ready.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self, self.isCurrentPlaybackSession(sessionID) else { return }
+                self.userSeek(to: seekPos)
+            }
+        }
+    }
+
+    private func scheduleTrackListRefresh(sessionID: UInt64) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self, self.isCurrentPlaybackSession(sessionID) else { return }
+                self.refreshTrackLists()
+            }
+        }
+    }
+
     // MARK: - Track lists
 
     private func refreshTrackLists() {
@@ -695,9 +719,69 @@ public final class PlayerCore {
     ) {
         cancelLoadingWatchdog()
         let timeout = PlayerPlaybackConfig.startupTimeoutSeconds(cachingProfile: cachingProfile)
+        let pollInterval = PlayerPlaybackConfig.startupWatchdogPollIntervalSeconds
 
         loadingWatchdogTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(timeout))
+            let startedAt = Date()
+            var lastTimeMilliseconds: Int32?
+            var lastPosition: Float?
+
+            while true {
+                try? await Task.sleep(for: .seconds(pollInterval))
+                guard !Task.isCancelled else { return }
+                guard let self,
+                      self.isCurrentPlaybackSession(sessionID),
+                      self.currentChannel?.id == channel.id,
+                      !self.hasEverPlayed,
+                      self.state == .loading else { return }
+
+                let currentTimeMilliseconds = max(Int32(0), self.vlcPlayer.time.intValue)
+                let rawPosition = self.vlcPlayer.position
+                let currentPosition = rawPosition.isFinite ? max(Float(0), rawPosition) : 0
+
+                if self.vlcPlayer.isPlaying {
+                    self.finishStartupPlayback(
+                        sessionID: sessionID,
+                        reason: "Startup watchdog observed active VLC playback"
+                    )
+                    return
+                }
+
+                if let previousTimeMilliseconds = lastTimeMilliseconds {
+                    if currentTimeMilliseconds + PlayerPlaybackConfig.startupProgressMinimumTimeAdvanceMilliseconds < previousTimeMilliseconds {
+                        lastTimeMilliseconds = currentTimeMilliseconds
+                    } else if currentTimeMilliseconds - previousTimeMilliseconds >= PlayerPlaybackConfig.startupProgressMinimumTimeAdvanceMilliseconds {
+                        let seconds = Double(currentTimeMilliseconds) / 1000.0
+                        self.finishStartupPlayback(
+                            sessionID: sessionID,
+                            reason: "Startup watchdog observed playback time advancing to \(String(format: "%.1f", seconds))s"
+                        )
+                        return
+                    }
+                } else {
+                    lastTimeMilliseconds = currentTimeMilliseconds
+                }
+
+                if let previousPosition = lastPosition {
+                    if currentPosition + PlayerPlaybackConfig.startupProgressMinimumPositionAdvance < previousPosition {
+                        lastPosition = currentPosition
+                    } else if currentPosition - previousPosition >= PlayerPlaybackConfig.startupProgressMinimumPositionAdvance {
+                        let percent = Double(currentPosition * 100)
+                        self.finishStartupPlayback(
+                            sessionID: sessionID,
+                            reason: "Startup watchdog observed playback position advancing to \(String(format: "%.2f", percent))%"
+                        )
+                        return
+                    }
+                } else {
+                    lastPosition = currentPosition
+                }
+
+                if Date().timeIntervalSince(startedAt) >= timeout {
+                    break
+                }
+            }
+
             guard !Task.isCancelled else { return }
             guard let self,
                   self.isCurrentPlaybackSession(sessionID),
