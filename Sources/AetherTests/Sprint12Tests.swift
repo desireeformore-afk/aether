@@ -222,10 +222,44 @@ final class PlayerPlaybackConfigTests: XCTestCase {
         XCTAssertTrue(args.contains("-ss"))
         XCTAssertTrue(args.contains("42.250"))
         XCTAssertTrue(args.contains("-hls_segment_type"))
-        XCTAssertTrue(args.contains("fmp4"))
+        XCTAssertTrue(args.contains("mpegts"))
+        XCTAssertTrue(args.contains("-hls_playlist_type"))
+        XCTAssertTrue(args.contains("event"))
+        XCTAssertTrue(args.contains("-start_number"))
+        XCTAssertTrue(args.contains { $0.hasSuffix("segment_%05d.ts") })
+        XCTAssertTrue(args.contains("independent_segments+temp_file"))
+        XCTAssertFalse(args.contains("fmp4"))
         XCTAssertTrue(args.contains("-user_agent"))
         XCTAssertTrue(args.contains("AetherTest"))
         XCTAssertEqual(args.last, playlistURL.path)
+    }
+
+    func testLocalPlaybackProxyRejectsFMP4PlaylistForVLCSafety() {
+        let playlist = """
+        #EXTM3U
+        #EXT-X-VERSION:7
+        #EXT-X-MAP:URI="init.mp4"
+        #EXTINF:2.000,
+        segment_00001.m4s
+        #EXTINF:2.000,
+        segment_00002.m4s
+        """
+
+        XCTAssertFalse(LocalPlaybackProxy.playlistHasPlayableSegments(playlist, minimumSegments: 2))
+    }
+
+    func testLocalPlaybackProxyRequiresPositiveDurations() {
+        let playlist = """
+        #EXTM3U
+        #EXT-X-VERSION:3
+        #EXTINF:0.000,
+        segment_00001.ts
+        #EXTINF:2.000,
+        segment_00002.ts
+        """
+
+        XCTAssertFalse(LocalPlaybackProxy.playlistHasPlayableSegments(playlist, minimumSegments: 2))
+        XCTAssertTrue(LocalPlaybackProxy.playlistHasPlayableSegments(playlist, minimumSegments: 1))
     }
 
     func testMatroskaStartPositionUsesInteractiveSeekCachingProfile() {

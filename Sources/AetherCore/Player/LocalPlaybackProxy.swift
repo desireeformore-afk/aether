@@ -26,7 +26,7 @@ actor LocalPlaybackProxy {
         "/usr/local/bin/ffmpeg",
         "/usr/bin/ffmpeg"
     ]
-    private static let startupTimeoutSeconds: TimeInterval = 5.0
+    private static let startupTimeoutSeconds: TimeInterval = 8.0
     private static let playlistPollMilliseconds = 150
 
     #if os(macOS)
@@ -135,7 +135,7 @@ actor LocalPlaybackProxy {
         userAgent: String
     ) -> [String] {
         let directory = playlistURL.deletingLastPathComponent()
-        let segmentPattern = directory.appendingPathComponent("segment_%05d.m4s").path
+        let segmentPattern = directory.appendingPathComponent("segment_%05d.ts").path
         let start = String(format: "%.3f", locale: Locale(identifier: "en_US_POSIX"), max(0, startPosition))
         let scheme = remoteURL.scheme?.lowercased()
 
@@ -166,12 +166,15 @@ actor LocalPlaybackProxy {
             "-avoid_negative_ts", "make_zero",
             "-fflags", "+genpts",
             "-max_muxing_queue_size", "2048",
+            "-muxdelay", "0",
+            "-muxpreload", "0",
             "-f", "hls",
             "-hls_time", "2",
-            "-hls_list_size", "8",
-            "-hls_flags", "delete_segments+append_list+independent_segments+omit_endlist",
-            "-hls_segment_type", "fmp4",
-            "-hls_fmp4_init_filename", "init.mp4",
+            "-hls_list_size", "0",
+            "-start_number", "0",
+            "-hls_playlist_type", "event",
+            "-hls_flags", "independent_segments+temp_file",
+            "-hls_segment_type", "mpegts",
             "-hls_segment_filename", segmentPattern,
             playlistURL.path
         ]
@@ -212,7 +215,54 @@ actor LocalPlaybackProxy {
         guard let text = try? String(contentsOf: playlistURL, encoding: .utf8) else {
             return false
         }
-        return text.contains("#EXTINF")
+        return Self.playlistHasPlayableSegments(
+            text,
+            baseURL: playlistURL.deletingLastPathComponent()
+        )
+    }
+
+    static func playlistHasPlayableSegments(
+        _ text: String,
+        baseURL: URL? = nil,
+        minimumSegments: Int = 2
+    ) -> Bool {
+        guard !text.contains("#EXT-X-MAP") else { return false }
+
+        var playableSegments = 0
+        var pendingPositiveDuration = false
+
+        for rawLine in text.split(whereSeparator: \.isNewline) {
+            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !line.isEmpty else { continue }
+
+            if line.hasPrefix("#EXTINF:") {
+                let durationText = line
+                    .dropFirst("#EXTINF:".count)
+                    .split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false)
+                    .first
+                    .map(String.init) ?? ""
+                let duration = Double(durationText) ?? 0
+                pendingPositiveDuration = duration > 0.05 && duration.isFinite
+                continue
+            }
+
+            guard !line.hasPrefix("#"), pendingPositiveDuration else { continue }
+            pendingPositiveDuration = false
+
+            if let baseURL {
+                let segmentURL = baseURL.appendingPathComponent(line)
+                let attributes = try? FileManager.default.attributesOfItem(atPath: segmentURL.path)
+                let fileSize = attributes?[.size] as? NSNumber
+                guard (fileSize?.intValue ?? 0) > 0 else { continue }
+            }
+
+            playableSegments += 1
+            if playableSegments >= minimumSegments {
+                return true
+            }
+        }
+
+        return false
     }
 
     private func stopCurrentProcess(removeFiles: Bool) {

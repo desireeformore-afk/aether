@@ -1135,7 +1135,9 @@ public final class PlayerCore {
     private func shouldRestartViaLocalProxy(for playbackPlan: PlayerPlaybackConfig.PlaybackPlan) -> Bool {
         guard !playbackPlan.isLiveStream else { return false }
         guard playbackPlan.container == .matroska else { return false }
-        return playbackPlan.restartsPlaybackForSeek || LocalPlaybackProxy.isFFmpegAvailable
+        if playbackPlan.route == .limitedSeek { return false }
+        return playbackPlan.restartsPlaybackForSeek ||
+            (playbackPlan.route == .redirectCached && LocalPlaybackProxy.isFFmpegAvailable)
     }
 
     private func restartMatroskaViaLocalProxy(at seconds: Double) {
