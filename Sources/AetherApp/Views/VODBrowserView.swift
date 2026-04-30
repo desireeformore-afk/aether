@@ -64,12 +64,36 @@ struct VODBrowserView: View {
             if var existing = dict[lowerTitle] {
                 existing.tags.formUnion(tags)
                 existing.alternateVODs.append(vod)
+                existing.variantCount = existing.alternateVODs.count
+                existing.rating = betterRating(existing.rating, vod.rating)
                 dict[lowerTitle] = existing
             } else {
                 let id = String(vod.id)
-                var item = ShelfItem(id: id, title: cleanTitle, imageURL: vod.streamIcon, vod: vod, tags: tags, alternateVODs: [vod], onTap: {})
+                var item = ShelfItem(
+                    id: id,
+                    title: cleanTitle,
+                    imageURL: vod.streamIcon,
+                    vod: vod,
+                    tags: tags,
+                    alternateVODs: [vod],
+                    subtitle: normalizedCategory(for: vod).displayName,
+                    rating: vod.rating,
+                    variantCount: 1,
+                    onTap: {}
+                )
                 // Inject the selection closure
-                item = ShelfItem(id: id, title: cleanTitle, imageURL: vod.streamIcon, vod: vod, tags: tags, alternateVODs: [vod], onTap: { [item] in self.selectedVODItem = item })
+                item = ShelfItem(
+                    id: id,
+                    title: cleanTitle,
+                    imageURL: vod.streamIcon,
+                    vod: vod,
+                    tags: tags,
+                    alternateVODs: [vod],
+                    subtitle: normalizedCategory(for: vod).displayName,
+                    rating: vod.rating,
+                    variantCount: 1,
+                    onTap: { [item] in self.selectedVODItem = item }
+                )
                 dict[lowerTitle] = item
             }
         }
@@ -232,18 +256,69 @@ struct VODBrowserView: View {
                         .padding(.bottom, -20)
                 }
 
-                ForEach(Array(homeViewModel.brandHubs.enumerated()), id: \.offset) { _, hubData in
-                    if !hubData.shelves.isEmpty {
-                        sectionHeader(hubData.hub.rawValue)
-                        ForEach(Array(hubData.shelves.enumerated()), id: \.offset) { _, shelf in
+                if !homeViewModel.catalogSnapshot.movieSections.isEmpty {
+                    ForEach(homeViewModel.catalogSnapshot.movieSections) { section in
+                        let items = shelfItems(from: section.items)
+                        if !items.isEmpty {
                             CategoryShelf(
-                                title: shelf.title,
-                                items: shelfItemsWithTap(shelf.items),
-                                onMore: {
-                                    selectedServiceTitle = shelf.title
-                                    selectedServiceItems = shelfItemsWithTap(shelf.items)
-                                    showServiceDetail = true
+                                title: premiumTitle(for: section),
+                                items: items,
+                                onMore: { showShelfDetail(title: premiumTitle(for: section), items: items) }
+                            )
+                        }
+                    }
+                } else {
+                    ForEach(Array(homeViewModel.shelves.prefix(4).enumerated()), id: \.offset) { _, shelf in
+                        let items = shelfItemsWithTap(shelf.items)
+                        CategoryShelf(
+                            title: shelf.title,
+                            items: items,
+                            onMore: { showShelfDetail(title: shelf.title, items: items) }
+                        )
+                    }
+                }
+
+                if !homeViewModel.catalogSnapshot.brandHubSections.isEmpty {
+                    ForEach(homeViewModel.catalogSnapshot.brandHubSections) { hubData in
+                        if !hubData.sections.isEmpty {
+                            sectionHeader(hubData.hub.rawValue)
+                            ForEach(hubData.sections) { section in
+                                let items = shelfItems(from: section.items)
+                                if !items.isEmpty {
+                                    CategoryShelf(
+                                        title: section.title,
+                                        items: items,
+                                        onMore: { showShelfDetail(title: section.title, items: items) }
+                                    )
                                 }
+                            }
+                        }
+                    }
+                } else {
+                    ForEach(Array(homeViewModel.brandHubs.enumerated()), id: \.offset) { _, hubData in
+                        if !hubData.shelves.isEmpty {
+                            sectionHeader(hubData.hub.rawValue)
+                            ForEach(Array(hubData.shelves.enumerated()), id: \.offset) { _, shelf in
+                                let items = shelfItemsWithTap(shelf.items)
+                                CategoryShelf(
+                                    title: shelf.title,
+                                    items: items,
+                                    onMore: { showShelfDetail(title: shelf.title, items: items) }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if !homeViewModel.catalogSnapshot.movieGenreSections.isEmpty {
+                    sectionHeader("Genres")
+                    ForEach(Array(homeViewModel.catalogSnapshot.movieGenreSections.prefix(8))) { section in
+                        let items = shelfItems(from: section.items)
+                        if !items.isEmpty {
+                            CategoryShelf(
+                                title: section.title,
+                                items: items,
+                                onMore: { showShelfDetail(title: section.title, items: items) }
                             )
                         }
                     }
@@ -281,12 +356,19 @@ struct VODBrowserView: View {
                     vod: vod, series: nil,
                     tags: item.tags,
                     alternateVODs: item.alternateVODs,
+                    subtitle: item.subtitle,
+                    rating: item.rating,
+                    year: item.year,
+                    variantCount: item.variantCount,
                     onTap: { selectedVODItem = item }
                 )
             } else if let series = item.series {
                 return ShelfItem(
                     id: item.id, title: item.title, imageURL: item.imageURL,
                     vod: nil, series: series,
+                    subtitle: item.subtitle,
+                    rating: item.rating,
+                    year: item.year,
                     onTap: { selectedSeries = series }
                 )
             } else if let stream = item.stream {
@@ -300,26 +382,68 @@ struct VODBrowserView: View {
         }
     }
 
+    private func shelfItems(from items: [UnifiedMediaItem]) -> [ShelfItem] {
+        items.compactMap { shelfItem(from: $0) }
+    }
+
     private func shelfItem(from item: UnifiedMediaItem) -> ShelfItem? {
         guard let vod = item.primaryVOD else { return nil }
-        let shelf = ShelfItem(
+        let detailItem = ShelfItem(
             id: item.id,
             title: item.title,
             imageURL: item.posterURLString,
             vod: vod,
             tags: item.tags,
             alternateVODs: item.vodVariants,
+            subtitle: item.categoryName ?? item.genre,
+            rating: item.rating,
+            year: item.year,
+            variantCount: item.variants.count,
             onTap: {}
         )
         return ShelfItem(
-            id: shelf.id,
-            title: shelf.title,
-            imageURL: shelf.imageURL,
+            id: detailItem.id,
+            title: detailItem.title,
+            imageURL: detailItem.imageURL,
             vod: vod,
-            tags: shelf.tags,
-            alternateVODs: shelf.alternateVODs,
-            onTap: { selectedVODItem = shelf }
+            tags: detailItem.tags,
+            alternateVODs: detailItem.alternateVODs,
+            subtitle: detailItem.subtitle,
+            rating: detailItem.rating,
+            year: detailItem.year,
+            variantCount: detailItem.variantCount,
+            onTap: { selectedVODItem = detailItem }
         )
+    }
+
+    private func showShelfDetail(title: String, items: [ShelfItem]) {
+        selectedServiceTitle = title
+        selectedServiceItems = items
+        showServiceDetail = true
+    }
+
+    private func premiumTitle(for section: CatalogSection) -> String {
+        switch section.role {
+        case .topRated:
+            return "Top Rated"
+        case .ultraHD:
+            return "4K/HDR"
+        case .movies:
+            return "Movies"
+        case .recommended:
+            return "Recommended"
+        case .continueWatching:
+            return "Continue Watching"
+        case .genre, .platformHub, .series:
+            return section.title
+        }
+    }
+
+    private func betterRating(_ lhs: String?, _ rhs: String?) -> String? {
+        let left = Double(lhs?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0
+        let right = Double(rhs?.replacingOccurrences(of: ",", with: ".") ?? "") ?? 0
+        if right > left { return rhs }
+        return lhs ?? rhs
     }
 
     private func updateHeroBanner() {
@@ -376,7 +500,7 @@ private struct VODGridCell: View {
         let record = progressRecord
         if let record, record.progressFraction > 0.02, record.progressFraction < 0.97 {
             ZStack(alignment: .bottom) {
-                PosterCard(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
+                poster
                 GeometryReader { geo in
                     Rectangle()
                         .fill(Color.accentColor)
@@ -386,8 +510,21 @@ private struct VODGridCell: View {
                 .padding(.horizontal, 4)
             }
         } else {
-            PosterCard(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
+            poster
         }
+    }
+
+    private var poster: some View {
+        PosterCard(
+            title: item.title,
+            imageURL: item.imageURL,
+            tags: item.tags,
+            subtitle: item.subtitle,
+            rating: item.rating,
+            year: item.year,
+            variantCount: item.variantCount,
+            onTap: item.onTap
+        )
     }
 }
 

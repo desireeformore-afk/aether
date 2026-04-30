@@ -45,6 +45,9 @@ struct SeriesBrowserView: View {
                     title: series.name,
                     imageURL: series.cover,
                     series: series,
+                    subtitle: normalizedCategory(for: series).displayName,
+                    rating: series.rating,
+                    year: series.releaseDate.map { String($0.prefix(4)) },
                     onTap: { selectedSeries = series }
                 )
             }
@@ -119,7 +122,14 @@ struct SeriesBrowserView: View {
                 spacing: 14
             ) {
                 ForEach(filteredSeriesItems) { item in
-                    PosterCard(title: item.title, imageURL: item.imageURL, onTap: item.onTap)
+                    PosterCard(
+                        title: item.title,
+                        imageURL: item.imageURL,
+                        subtitle: item.subtitle,
+                        rating: item.rating,
+                        year: item.year,
+                        onTap: item.onTap
+                    )
                 }
             }
             .padding(.horizontal, 20)
@@ -139,8 +149,27 @@ struct SeriesBrowserView: View {
                         .padding(.bottom, -20)
                 }
 
-                ForEach(Array(homeViewModel.seriesShelves.enumerated()), id: \.offset) { _, shelf in
-                    CategoryShelf(title: shelf.title, items: shelfItemsWithTap(shelf.items))
+                if !homeViewModel.catalogSnapshot.seriesSections.isEmpty {
+                    ForEach(homeViewModel.catalogSnapshot.seriesSections) { section in
+                        let items = shelfItems(from: section.items)
+                        if !items.isEmpty {
+                            CategoryShelf(title: premiumTitle(for: section), items: items)
+                        }
+                    }
+                } else {
+                    ForEach(Array(homeViewModel.seriesShelves.enumerated()), id: \.offset) { _, shelf in
+                        CategoryShelf(title: shelf.title, items: shelfItemsWithTap(shelf.items))
+                    }
+                }
+
+                if !homeViewModel.catalogSnapshot.seriesGenreSections.isEmpty {
+                    sectionHeader("Genres")
+                    ForEach(Array(homeViewModel.catalogSnapshot.seriesGenreSections.prefix(8))) { section in
+                        let items = shelfItems(from: section.items)
+                        if !items.isEmpty {
+                            CategoryShelf(title: section.title, items: items)
+                        }
+                    }
                 }
 
                 Spacer(minLength: 40)
@@ -160,6 +189,10 @@ struct SeriesBrowserView: View {
                     vod: vod,
                     tags: item.tags,
                     alternateVODs: item.alternateVODs,
+                    subtitle: item.subtitle,
+                    rating: item.rating,
+                    year: item.year,
+                    variantCount: item.variantCount,
                     onTap: { selectedVODItem = item }
                 )
             }
@@ -169,9 +202,16 @@ struct SeriesBrowserView: View {
                 title: item.title,
                 imageURL: item.imageURL,
                 series: series,
+                subtitle: item.subtitle,
+                rating: item.rating,
+                year: item.year,
                 onTap: { selectedSeries = series }
             )
         }
+    }
+
+    private func shelfItems(from items: [UnifiedMediaItem]) -> [ShelfItem] {
+        items.compactMap { shelfItem(from: $0) }
     }
 
     private func shelfItem(from item: UnifiedMediaItem) -> ShelfItem? {
@@ -181,8 +221,42 @@ struct SeriesBrowserView: View {
             title: item.title,
             imageURL: item.posterURLString,
             series: series,
+            subtitle: item.categoryName ?? item.genre,
+            rating: item.rating,
+            year: item.year,
             onTap: { selectedSeries = series }
         )
+    }
+
+    @ViewBuilder
+    private func sectionHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(AetherTheme.ColorToken.secondaryText)
+                .textCase(.uppercase)
+            Rectangle()
+                .fill(AetherTheme.ColorToken.hairline)
+                .frame(height: 1)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 32)
+        .padding(.bottom, 4)
+    }
+
+    private func premiumTitle(for section: CatalogSection) -> String {
+        switch section.role {
+        case .topRated:
+            return "Top Rated Series"
+        case .series:
+            return "Series"
+        case .recommended:
+            return "Recommended"
+        case .continueWatching:
+            return "Continue Watching"
+        case .genre, .platformHub, .movies, .ultraHD:
+            return section.title
+        }
     }
 
     private func updateHeroBanner() {

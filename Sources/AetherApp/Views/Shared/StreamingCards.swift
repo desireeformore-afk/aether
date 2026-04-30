@@ -21,6 +21,10 @@ struct ShelfItem: Identifiable {
     // The Clean Engine properties
     var tags: Set<VODTag> = []
     var alternateVODs: [XstreamVOD] = []
+    var subtitle: String? = nil
+    var rating: String? = nil
+    var year: String? = nil
+    var variantCount: Int = 0
     
     let onTap: () -> Void
 }
@@ -31,12 +35,29 @@ struct PosterCard: View {
     let title: String
     let imageURL: String?
     var tags: Set<VODTag> = []
+    var subtitle: String? = nil
+    var rating: String? = nil
+    var year: String? = nil
+    var variantCount: Int = 0
     let onTap: () -> Void
 
     @State private var isHovered = false
 
     private let cardWidth: CGFloat = 160
     private var cardHeight: CGFloat { cardWidth * 3 / 2 }
+    private var ratingValue: Double {
+        guard let rating else { return 0 }
+        return Double(rating.replacingOccurrences(of: ",", with: ".")) ?? 0
+    }
+    private var metadataLine: String? {
+        [year, subtitle]
+            .compactMap { value in
+                guard let value, !value.isEmpty else { return nil }
+                return value
+            }
+            .joined(separator: " • ")
+            .nilIfEmpty
+    }
 
     var body: some View {
         Button(action: onTap) {
@@ -50,50 +71,93 @@ struct PosterCard: View {
                 .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: AetherTheme.Radius.card))
 
-                if isHovered {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Spacer()
-                        
-                        if !tags.isEmpty {
-                            HStack(spacing: 4) {
-                                ForEach(Array(tags).sorted(by: { $0.rawValue < $1.rawValue })) { tag in
-                                    Text(tag.rawValue)
-                                        .font(.system(size: 9, weight: .bold))
-                                        .foregroundStyle(tag.isResolution ? .black : .white)
-                                        .padding(.horizontal, 4)
-                                        .padding(.vertical, 2)
-                                        .background(tag.isResolution ? AetherTheme.ColorToken.gold : Color.white.opacity(0.3))
-                                        .clipShape(RoundedRectangle(cornerRadius: 3))
-                                }
+                VStack {
+                    HStack(alignment: .top, spacing: 6) {
+                        if ratingValue > 0 {
+                            HStack(spacing: 3) {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 9, weight: .bold))
+                                Text(String(format: "%.1f", ratingValue))
+                                    .font(.system(size: 10, weight: .semibold))
+                            }
+                            .foregroundStyle(AetherTheme.ColorToken.gold)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(Color.black.opacity(0.68), in: Capsule())
+                        }
+
+                        Spacer(minLength: 0)
+
+                        if variantCount > 1 {
+                            Text("\(variantCount)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 4)
+                                .background(Color.black.opacity(0.68), in: Capsule())
+                                .accessibilityLabel("\(variantCount) variants")
+                        }
+                    }
+                    Spacer()
+                }
+                .padding(7)
+                .frame(width: cardWidth, height: cardHeight)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Spacer()
+
+                    if isHovered, !tags.isEmpty {
+                        HStack(spacing: 4) {
+                            ForEach(Array(tags).sorted(by: { $0.rawValue < $1.rawValue }).prefix(3)) { tag in
+                                Text(tag.rawValue)
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(tag.isResolution ? .black : .white)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 3)
+                                    .background(tag.isResolution ? AetherTheme.ColorToken.gold : Color.white.opacity(0.24))
+                                    .clipShape(RoundedRectangle(cornerRadius: 3))
                             }
                         }
-                        
-                        Text(title)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.white)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
                     }
-                    .padding(10)
-                    .frame(width: cardWidth, height: cardHeight, alignment: .bottomLeading)
-                    .background(
-                        LinearGradient(
-                            stops: [
-                                .init(color: .clear, location: 0),
-                                .init(color: .black.opacity(0.5), location: 0.55),
-                                .init(color: .black.opacity(0.92), location: 1)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+
+                    Text(title)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+
+                    if isHovered, let metadataLine {
+                        Text(metadataLine)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.72))
+                            .lineLimit(1)
+                    }
+                }
+                .padding(10)
+                .frame(width: cardWidth, height: cardHeight, alignment: .bottomLeading)
+                .background(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: isHovered ? 0.18 : 0.50),
+                            .init(color: .black.opacity(isHovered ? 0.48 : 0.20), location: 0.62),
+                            .init(color: .black.opacity(isHovered ? 0.92 : 0.72), location: 1)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: AetherTheme.Radius.card))
-                    .transition(.opacity)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: AetherTheme.Radius.card))
+                .animation(AetherTheme.Motion.quick, value: isHovered)
+
+                if isHovered {
+                    RoundedRectangle(cornerRadius: AetherTheme.Radius.card)
+                        .stroke(Color.white.opacity(0.22), lineWidth: 1)
+                        .transition(.opacity)
                 }
             }
             .frame(width: cardWidth, height: cardHeight)
-            .scaleEffect(isHovered ? 1.05 : 1.0)
-            .shadow(color: .black.opacity(isHovered ? 0.6 : 0.15), radius: isHovered ? 20 : 8, y: isHovered ? 12 : 4)
+            .scaleEffect(isHovered ? 1.045 : 1.0)
+            .shadow(color: .black.opacity(isHovered ? 0.50 : 0.16), radius: isHovered ? 18 : 8, y: isHovered ? 12 : 4)
             .animation(AetherTheme.Motion.spring, value: isHovered)
             .contentShape(Rectangle())
         }
@@ -268,6 +332,10 @@ struct CategoryShelf: View {
                             title: item.title,
                             imageURL: item.imageURL,
                             tags: item.tags,
+                            subtitle: item.subtitle,
+                            rating: item.rating,
+                            year: item.year,
+                            variantCount: item.variantCount,
                             onTap: item.onTap
                         )
                     }
@@ -276,6 +344,12 @@ struct CategoryShelf: View {
             }
         }
         .padding(.top, 20)
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
     }
 }
 
