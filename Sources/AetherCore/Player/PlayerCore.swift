@@ -656,7 +656,7 @@ public final class PlayerCore {
     private func preparePlaybackSource(
         for channel: Channel,
         playbackPlan: PlayerPlaybackConfig.PlaybackPlan
-    ) async -> PreparedPlaybackSource {
+    ) async -> PreparedPlaybackSource? {
         if playbackPlan.route == .localHLSProxy, let startPosition = playbackPlan.startPosition {
             let resolvedURL = await resolvedPlaybackURL(
                 originalURL: channel.streamURL,
@@ -676,6 +676,11 @@ public final class PlayerCore {
                     message: playbackPlan.limitationMessage
                 )
             } catch {
+                if error is CancellationError {
+                    print("[PlayerCore]   Local HLS proxy preparation cancelled")
+                    return nil
+                }
+
                 let fallbackPlan = PlayerPlaybackConfig.playbackPlan(
                     for: channel,
                     cachingProfile: playbackPlan.cachingProfile,
@@ -728,8 +733,15 @@ public final class PlayerCore {
 
     /// Starts playback of `channel`. Debounced — rapid calls within 500ms are ignored.
     public func play(_ channel: Channel, startPosition: Double? = nil) {
-        // Same channel already playing — skip
-        if currentChannel?.id == channel.id, state == .playing { return }
+        if currentChannel?.id == channel.id, startPosition == nil {
+            if state == .playing {
+                return
+            }
+            if state == .loading {
+                print("[PlayerCore] Ignoring duplicate play request while current media is still loading")
+                return
+            }
+        }
 
         playInternal(channel, startPosition: startPosition)
     }
@@ -832,6 +844,20 @@ public final class PlayerCore {
                       self.currentChannel?.id == channel.id else { return }
             }
 
+            let shouldPrepareBeforeStopping = playbackPlan.route == .localHLSProxy
+            let preparedPlaybackSource: PreparedPlaybackSource?
+            if shouldPrepareBeforeStopping {
+                preparedPlaybackSource = await self.preparePlaybackSource(
+                    for: channel,
+                    playbackPlan: playbackPlan
+                )
+                guard !Task.isCancelled,
+                      self.isCurrentPlaybackSession(sessionID),
+                      self.currentChannel?.id == channel.id else { return }
+            } else {
+                preparedPlaybackSource = nil
+            }
+
             if self.vlcPlayer.isPlaying || self.vlcPlayer.media != nil {
                 self.pendingTransitionStopEvents += 1
                 self.vlcPlayer.stop()
@@ -841,13 +867,19 @@ public final class PlayerCore {
                       self.currentChannel?.id == channel.id else { return }
             }
 
-            let prepared = await self.preparePlaybackSource(
-                for: channel,
-                playbackPlan: playbackPlan
-            )
+            let prepared: PreparedPlaybackSource?
+            if let preparedPlaybackSource {
+                prepared = preparedPlaybackSource
+            } else {
+                prepared = await self.preparePlaybackSource(
+                    for: channel,
+                    playbackPlan: playbackPlan
+                )
+            }
             guard !Task.isCancelled,
                   self.isCurrentPlaybackSession(sessionID),
-                  self.currentChannel?.id == channel.id else { return }
+                  self.currentChannel?.id == channel.id,
+                  let prepared else { return }
 
             self.currentPlaybackPlan = prepared.playbackPlan
             self.playbackLimitationMessage = prepared.message
