@@ -18,6 +18,7 @@ struct VODDetailView: View {
     @State private var backdropURL: URL? = nil
     @State private var posterURL: URL? = nil
     @State private var isHoveringPoster = false
+    @State private var isHoveringPlay = false
 
     init(item: ShelfItem, credentials: XstreamCredentials, player: PlayerCore) {
         self.item = item
@@ -66,7 +67,7 @@ struct VODDetailView: View {
             }
             dismissButton
         }
-        .frame(width: 680, height: 420)
+        .frame(width: 720, height: 440)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.6), radius: 30, x: 0, y: 15)
         .task(id: item.title) {
@@ -133,7 +134,7 @@ struct VODDetailView: View {
                 }
 
                 Text(item.title)
-                    .font(.system(size: 26, weight: .bold))
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(.white)
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -141,24 +142,8 @@ struct VODDetailView: View {
                 metadataRow
                     .padding(.top, 12)
 
-                if variantVODs.count > 1 {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Wersja")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
-                        
-                        Picker("", selection: $selectedVOD) {
-                            ForEach(variantVODs) { altVod in
-                                Text(CatalogVariantSelector.variantLabel(for: altVod)).tag(Optional(altVod))
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
-                        .frame(width: 300)
-                    }
+                variantSelector
                     .padding(.top, 20)
-                }
 
                 Spacer()
 
@@ -172,16 +157,58 @@ struct VODDetailView: View {
     }
 
     @ViewBuilder
+    private var variantSelector: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(AetherTheme.ColorToken.secondaryText)
+                Text("Language & Quality")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(AetherTheme.ColorToken.secondaryText)
+                    .textCase(.uppercase)
+
+                if variantVODs.count > 1 {
+                    Text("\(variantVODs.count) variants")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(AetherTheme.ColorToken.tertiaryText)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.white.opacity(0.08), in: Capsule())
+                }
+            }
+
+            if variantVODs.count > 1 {
+                Picker("", selection: $selectedVOD) {
+                    ForEach(variantVODs) { altVod in
+                        Text(CatalogVariantSelector.variantLabel(for: altVod)).tag(Optional(altVod))
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(width: 310, alignment: .leading)
+            } else {
+                Text(selectedVOD.map(CatalogVariantSelector.variantLabel(for:)) ?? "Auto")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AetherTheme.ColorToken.primaryText)
+                    .padding(.horizontal, 12)
+                    .frame(height: 32)
+                    .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: AetherTheme.Radius.control))
+            }
+        }
+    }
+
+    @ViewBuilder
     private var metadataRow: some View {
         HStack(spacing: 12) {
-            if let year = tmdbDetails?.yearString {
+            if let year = tmdbDetails?.yearString ?? item.year {
                 Text(year)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
             
-            if let cat = selectedVOD?.categoryName, !cat.isEmpty {
-                if tmdbDetails?.yearString != nil {
+            if let cat = selectedVOD?.categoryName ?? item.subtitle, !cat.isEmpty {
+                if tmdbDetails?.yearString != nil || item.year != nil {
                     Circle()
                         .fill(Color.secondary.opacity(0.4))
                         .frame(width: 4, height: 4)
@@ -247,11 +274,18 @@ struct VODDetailView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
                 .foregroundStyle(.white)
-                .background(Color.blue)
+                .background(
+                    isHoveringPlay
+                    ? AetherTheme.ColorToken.accent.opacity(0.92)
+                    : AetherTheme.ColorToken.accent
+                )
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
             .disabled(selectedVOD == nil)
+            .scaleEffect(isHoveringPlay ? 1.015 : 1)
+            .animation(AetherTheme.Motion.quick, value: isHoveringPlay)
+            .onHover { isHoveringPlay = $0 }
 
             Button { toggleVODFavorite() } label: {
                 Image(systemName: isVODFavorited ? "star.fill" : "star")

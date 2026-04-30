@@ -23,99 +23,81 @@ struct GlobalContentSearchView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Search bar
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search movies and series...", text: $query)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 17))
-                    .focused($isSearchFocused)
-                if !query.isEmpty {
-                    Button(action: { query = "" }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(12)
-            .background(AetherTheme.ColorToken.elevated)
-            .clipShape(RoundedRectangle(cornerRadius: AetherTheme.Radius.control))
-            .padding()
+            searchBar
 
             if query.isEmpty {
-                ContentUnavailableView(
-                    "Szukaj",
-                    systemImage: "magnifyingglass",
-                    description: Text("Type a movie or series title")
+                searchEmptyState(
+                    title: "Search",
+                    icon: "magnifyingglass",
+                    subtitle: "Movies and series are matched locally from the loaded catalog."
                 )
             } else if isSearching && vodResults.isEmpty && seriesResults.isEmpty {
                 VStack(spacing: 12) {
                     ProgressView()
                         .frame(width: 38, height: 38)
-                    Text("Szukam…")
+                    Text("Searching…")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if !homeViewModel.isPhase1Loaded && service == nil {
-                ContentUnavailableView(
-                    "Loading...",
-                    systemImage: "arrow.circlepath",
-                    description: Text("Go to Home to load the library")
+                searchEmptyState(
+                    title: "Catalog Loading",
+                    icon: "arrow.circlepath",
+                    subtitle: "Open Home once so Aether can build the local search index."
                 )
             } else if vodResults.isEmpty && seriesResults.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "rectangle.slash")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.secondary)
-                    Text("No results for \"\(query)\"")
-                        .font(.title3.bold())
-                    Button("Clear") { query = "" }
-                        .buttonStyle(.bordered)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                searchEmptyState(
+                    title: "No Results",
+                    icon: "rectangle.slash",
+                    subtitle: "Nothing matched \"\(query)\"."
+                )
             } else {
-                List {
-                    if !vodResults.isEmpty {
-                        Section("Filmy (\(vodResults.count))") {
-                            ForEach(Array(vodResults.prefix(Self.resultLimit)), id: \.id) { vod in
-                                SearchResultRow(
-                                    posterURL: vod.posterURLString.flatMap(URL.init),
-                                    title: vod.title,
-                                    subtitle: vod.categoryName,
-                                    rating: vod.rating,
-                                    year: vod.year,
-                                    variantCount: vod.variants.count
-                                )
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    selectedVODItem = shelfItem(from: vod)
+                ScrollView(.vertical, showsIndicators: false) {
+                    LazyVStack(alignment: .leading, spacing: 28) {
+                        if !vodResults.isEmpty {
+                            searchSection(title: "Movies", count: vodResults.count) {
+                                LazyVGrid(columns: searchColumns, spacing: 12) {
+                                    ForEach(Array(vodResults.prefix(Self.resultLimit)), id: \.id) { vod in
+                                        SearchResultCard(
+                                            posterURL: vod.posterURLString.flatMap(URL.init),
+                                            title: vod.title,
+                                            subtitle: vod.categoryName ?? vod.genre,
+                                            rating: vod.rating,
+                                            year: vod.year,
+                                            variantCount: vod.variants.count,
+                                            systemImage: "film.fill"
+                                        ) {
+                                            selectedVODItem = shelfItem(from: vod)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if !seriesResults.isEmpty {
+                            searchSection(title: "Series", count: seriesResults.count) {
+                                LazyVGrid(columns: searchColumns, spacing: 12) {
+                                    ForEach(Array(seriesResults.prefix(Self.resultLimit)), id: \.id) { series in
+                                        SearchResultCard(
+                                            posterURL: series.posterURLString.flatMap(URL.init),
+                                            title: series.title,
+                                            subtitle: series.categoryName ?? series.genre,
+                                            rating: series.rating,
+                                            year: series.year,
+                                            variantCount: nil,
+                                            systemImage: "tv.fill"
+                                        ) {
+                                            selectedSeries = series.series
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-
-                    if !seriesResults.isEmpty {
-                        Section("Seriale (\(seriesResults.count))") {
-                            ForEach(Array(seriesResults.prefix(Self.resultLimit)), id: \.id) { series in
-                                SearchResultRow(
-                                    posterURL: series.posterURLString.flatMap(URL.init),
-                                    title: series.title,
-                                    subtitle: series.genre,
-                                    rating: series.rating,
-                                    year: series.year,
-                                    variantCount: nil
-                                )
-                                .contentShape(Rectangle())
-                                .onTapGesture { selectedSeries = series.series }
-                            }
-                        }
-                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 32)
                 }
-                .listStyle(.inset)
-                .scrollContentBackground(.hidden)
             }
         }
         .background(AetherTheme.ColorToken.background)
@@ -209,72 +191,173 @@ struct GlobalContentSearchView: View {
             vod: vod,
             tags: item.tags,
             alternateVODs: item.vodVariants,
+            subtitle: item.categoryName ?? item.genre,
+            rating: item.rating,
+            year: item.year,
+            variantCount: item.variants.count,
             onTap: {}
         )
     }
+
+    private var searchBar: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(AetherTheme.ColorToken.secondaryText)
+            TextField("Search movies and series", text: $query)
+                .textFieldStyle(.plain)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(AetherTheme.ColorToken.primaryText)
+                .focused($isSearchFocused)
+            if !query.isEmpty {
+                Button(action: { query = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(AetherTheme.ColorToken.tertiaryText)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 46)
+        .background(AetherTheme.ColorToken.elevated, in: RoundedRectangle(cornerRadius: AetherTheme.Radius.control))
+        .overlay(
+            RoundedRectangle(cornerRadius: AetherTheme.Radius.control)
+                .stroke(isSearchFocused ? AetherTheme.ColorToken.accent.opacity(0.55) : AetherTheme.ColorToken.hairline, lineWidth: 1)
+        )
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+    }
+
+    private var searchColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 300, maximum: 420), spacing: 12)]
+    }
+
+    @ViewBuilder
+    private func searchSection<Content: View>(
+        title: String,
+        count: Int,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(AetherTheme.ColorToken.primaryText)
+                Text("\(count)")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(AetherTheme.ColorToken.secondaryText)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(AetherTheme.ColorToken.surface, in: Capsule())
+                Spacer()
+            }
+            content()
+        }
+    }
+
+    private func searchEmptyState(title: String, icon: String, subtitle: String) -> some View {
+        VStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 42, weight: .semibold))
+                .foregroundStyle(AetherTheme.ColorToken.tertiaryText)
+            Text(title)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(AetherTheme.ColorToken.primaryText)
+            Text(subtitle)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(AetherTheme.ColorToken.secondaryText)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 360)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 }
 
-// MARK: - SearchResultRow
+// MARK: - SearchResultCard
 
-struct SearchResultRow: View {
+struct SearchResultCard: View {
     let posterURL: URL?
     let title: String
     let subtitle: String?
     let rating: String?
     let year: String?
     let variantCount: Int?
+    let systemImage: String
+    let action: () -> Void
+
+    @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: 12) {
-            CachedImageView(url: posterURL) {
-                Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1)
-            } content: { image in
-                image.resizable().aspectRatio(contentMode: .fill)
-            }
-            .frame(width: 54, height: 80)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+        Button(action: action) {
+            HStack(spacing: 12) {
+                CachedImageView(url: posterURL) {
+                    ZStack {
+                        AetherTheme.ColorToken.surface
+                        Image(systemName: systemImage)
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(AetherTheme.ColorToken.tertiaryText)
+                    }
+                } content: { image in
+                    image.resizable().aspectRatio(contentMode: .fill)
+                }
+                .frame(width: 58, height: 86)
+                .clipShape(RoundedRectangle(cornerRadius: 7))
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(AetherTheme.ColorToken.primaryText)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
 
-                if let sub = subtitle {
-                    Text(sub)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    if let sub = subtitle, !sub.isEmpty {
+                        Text(sub)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(AetherTheme.ColorToken.secondaryText)
+                            .lineLimit(1)
+                    }
+
+                    HStack(spacing: 8) {
+                        if let r = rating, !r.isEmpty, r != "0" {
+                            Label(r, systemImage: "star.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(AetherTheme.ColorToken.gold)
+                        }
+
+                        if let y = year, !y.isEmpty {
+                            Text(y)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(AetherTheme.ColorToken.tertiaryText)
+                        }
+
+                        if let variantCount, variantCount > 1 {
+                            Text("\(variantCount) variants")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(AetherTheme.ColorToken.secondaryText)
+                        }
+                    }
                 }
 
-                HStack(spacing: 8) {
-                    if let r = rating, !r.isEmpty, r != "0" {
-                        Label(r, systemImage: "star.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.yellow)
-                    }
+                Spacer(minLength: 8)
 
-                    if let y = year, !y.isEmpty {
-                        Text(y)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if let variantCount, variantCount > 1 {
-                        Text("\(variantCount) variants")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.72))
-                    }
-                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isHovered ? AetherTheme.ColorToken.primaryText : AetherTheme.ColorToken.tertiaryText)
             }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .foregroundStyle(.tertiary)
-                .font(.system(size: 12))
+            .padding(10)
+            .frame(maxWidth: .infinity, minHeight: 106, alignment: .leading)
+            .background(isHovered ? AetherTheme.ColorToken.elevated : AetherTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: AetherTheme.Radius.control))
+            .overlay(
+                RoundedRectangle(cornerRadius: AetherTheme.Radius.control)
+                    .stroke(isHovered ? Color.white.opacity(0.18) : AetherTheme.ColorToken.hairline, lineWidth: 1)
+            )
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 4)
+        .buttonStyle(.plain)
+        .scaleEffect(isHovered ? 1.01 : 1)
+        .animation(AetherTheme.Motion.quick, value: isHovered)
+        .onHover { isHovered = $0 }
     }
 }
 
