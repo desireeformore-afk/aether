@@ -174,6 +174,60 @@ final class PlayerPlaybackConfigTests: XCTestCase {
         XCTAssertTrue(options.contains(":start-time=1594.400"))
     }
 
+    func testPlaybackPlanCanUseLocalHLSProxyForVODMkvStartPosition() {
+        let channel = Channel(
+            name: "Episode",
+            streamURL: URL(string: "http://example.com/series/episode.mkv")!,
+            contentType: .series
+        )
+
+        let plan = PlayerPlaybackConfig.playbackPlan(
+            for: channel,
+            startPosition: 1594.4,
+            localHLSProxyAvailable: true
+        )
+        let options = PlayerPlaybackConfig.mediaOptions(plan: plan)
+
+        XCTAssertFalse(plan.isLiveStream)
+        XCTAssertEqual(plan.container, .matroska)
+        XCTAssertEqual(plan.seekStrategy, .directTime)
+        XCTAssertEqual(plan.route, .localHLSProxy)
+        XCTAssertTrue(plan.restartsPlaybackForSeek)
+        XCTAssertFalse(plan.usesPostSeekWatchdog)
+        XCTAssertEqual(plan.startPosition ?? -1, 1594.4, accuracy: 0.001)
+        XCTAssertTrue(options.contains(":input-fast-seek"))
+        XCTAssertFalse(options.contains(":mkv-seek-percent"))
+        XCTAssertFalse(options.contains { $0.hasPrefix(":start-time=") })
+    }
+
+    func testLocalPlaybackProxyResolvesExecutableFromPath() {
+        let resolved = LocalPlaybackProxy.resolvedFFmpegPath(
+            candidates: ["/missing/ffmpeg"],
+            environmentPath: "/bin:/custom/bin",
+            isExecutable: { $0 == "/custom/bin/ffmpeg" }
+        )
+
+        XCTAssertEqual(resolved, "/custom/bin/ffmpeg")
+    }
+
+    func testLocalPlaybackProxyBuildsStartTimeHLSCommand() {
+        let playlistURL = URL(fileURLWithPath: "/tmp/aether/index.m3u8")
+        let args = LocalPlaybackProxy.hlsArguments(
+            remoteURL: URL(string: "http://example.com/video.mkv")!,
+            startPosition: 42.25,
+            playlistURL: playlistURL,
+            userAgent: "AetherTest"
+        )
+
+        XCTAssertTrue(args.contains("-ss"))
+        XCTAssertTrue(args.contains("42.250"))
+        XCTAssertTrue(args.contains("-hls_segment_type"))
+        XCTAssertTrue(args.contains("fmp4"))
+        XCTAssertTrue(args.contains("-user_agent"))
+        XCTAssertTrue(args.contains("AetherTest"))
+        XCTAssertEqual(args.last, playlistURL.path)
+    }
+
     func testMatroskaStartPositionUsesInteractiveSeekCachingProfile() {
         let channel = Channel(
             name: "Episode",

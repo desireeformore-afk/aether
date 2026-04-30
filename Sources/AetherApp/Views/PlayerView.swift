@@ -170,6 +170,21 @@ struct PlayerView: View {
                         .transition(.move(edge: .top).combined(with: .opacity))
                         .padding(.top, 16)
                 }
+
+                if let message = player.playbackLimitationMessage {
+                    HStack(spacing: 8) {
+                        Image(systemName: "bolt.horizontal.circle.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text(message)
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(.black.opacity(0.7), in: RoundedRectangle(cornerRadius: 8))
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .padding(.top, player.streamErrorBanner == nil ? 16 : 6)
+                }
                 
                 Spacer() // Push the rest to bottom
                 

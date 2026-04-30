@@ -123,6 +123,10 @@ enum PlayerPlaybackConfig {
             return startPosition > 0 && startPosition.isFinite
         }
 
+        var passesStartTimeToVLC: Bool {
+            usesStartTime && route != .localHLSProxy
+        }
+
         var prefersPositionSeek: Bool {
             switch seekStrategy {
             case .directPosition, .resilientMatroska: return true
@@ -134,9 +138,19 @@ enum PlayerPlaybackConfig {
             seekStrategy == .resilientMatroska
         }
 
+        var restartsPlaybackForSeek: Bool {
+            route == .localHLSProxy
+        }
+
         var limitationMessage: String? {
-            guard route == .limitedSeek else { return nil }
-            return "This MKV provider has limited seeking. A different language/quality variant may seek faster."
+            switch route {
+            case .limitedSeek:
+                return "This MKV provider has limited seeking. A different language/quality variant may seek faster."
+            case .localHLSProxy:
+                return "Optimized MKV seeking is active."
+            case .nativeDirect, .redirectCached:
+                return nil
+            }
         }
     }
 
@@ -235,10 +249,12 @@ enum PlayerPlaybackConfig {
     static func playbackPlan(
         for channel: Channel,
         cachingProfile: CachingProfile = .standard,
-        startPosition: Double? = nil
+        startPosition: Double? = nil,
+        localHLSProxyAvailable: Bool = false
     ) -> PlaybackPlan {
         let container = playbackContainer(for: channel.streamURL)
         let live = isLiveContent(channel: channel)
+        let hasStartPosition = startPosition.map { $0.isFinite && $0 > 0 } == true
         let strategy: SeekStrategy
         let route: PlaybackRoute
 
@@ -248,8 +264,13 @@ enum PlayerPlaybackConfig {
         } else {
             switch container {
             case .matroska:
-                strategy = .resilientMatroska
-                route = startPosition.map { $0 > 0 } == true ? .limitedSeek : .redirectCached
+                if hasStartPosition, localHLSProxyAvailable {
+                    strategy = .directTime
+                    route = .localHLSProxy
+                } else {
+                    strategy = .resilientMatroska
+                    route = hasStartPosition ? .limitedSeek : .redirectCached
+                }
             case .mp4, .quickTime, .avi:
                 strategy = .directPosition
                 route = .nativeDirect
@@ -362,7 +383,7 @@ enum PlayerPlaybackConfig {
             options.append(":mkv-seek-percent")
         }
 
-        if plan.usesStartTime {
+        if plan.passesStartTimeToVLC {
             if let startPosition = plan.startPosition {
                 options.append(":start-time=\(vlcSeconds(startPosition))")
             }
@@ -462,20 +483,24 @@ public final class PlayerCore {
     private var pendingSeekRecoveryAttempt = 0
     private var activeSeekTarget: Double? = nil
     private var playbackTimeOffset: Double = 0
+    private var preservedVODDuration: TimeInterval? = nil
 
     /// Convenience alias (same value, keeps external call sites working).
     public var currentTime: TimeInterval { currentTimeValue }
 
     /// Total duration in seconds. Returns 0 if unknown / live.
     public var duration: TimeInterval {
+        if effectivePlaybackPlan?.route == .localHLSProxy, let preservedVODDuration {
+            return preservedVODDuration
+        }
         guard let media = vlcPlayer.media else { return 0 }
         let ms = media.length.intValue
         guard ms > 0 else { return 0 }
         let rawDuration = Double(ms) / 1000.0
         guard playbackTimeOffset > 0, effectivePlaybackPlan?.usesStartTime == true else {
-            return rawDuration
+            return max(rawDuration, preservedVODDuration ?? 0)
         }
-        return rawDuration + playbackTimeOffset
+        return max(rawDuration + playbackTimeOffset, preservedVODDuration ?? 0)
     }
 
     public var isPlaying: Bool { state == .playing }
@@ -511,6 +536,7 @@ public final class PlayerCore {
     /// The underlying VLC media player.
     private let vlcPlayer: VLCMediaPlayer
     private let streamURLResolver = StreamRedirectResolver()
+    private let localPlaybackProxy = LocalPlaybackProxy()
 
     /// Accessor for StreamStatsView — exposes VLC player for stats reading only.
     /// Do NOT use for playback control outside PlayerCore.
@@ -609,6 +635,12 @@ public final class PlayerCore {
 
     // MARK: - Media setup
 
+    private struct PreparedPlaybackSource {
+        let url: URL
+        let playbackPlan: PlayerPlaybackConfig.PlaybackPlan
+        let message: String?
+    }
+
     private func makeMedia(
         for channel: Channel,
         playbackURL: URL,
@@ -619,6 +651,60 @@ public final class PlayerCore {
             media.addOption(option)
         }
         return media
+    }
+
+    private func preparePlaybackSource(
+        for channel: Channel,
+        playbackPlan: PlayerPlaybackConfig.PlaybackPlan
+    ) async -> PreparedPlaybackSource {
+        if playbackPlan.route == .localHLSProxy, let startPosition = playbackPlan.startPosition {
+            let resolvedURL = await resolvedPlaybackURL(
+                originalURL: channel.streamURL,
+                playbackPlan: playbackPlan
+            )
+
+            do {
+                let proxyURL = try await localPlaybackProxy.startHLS(
+                    for: resolvedURL,
+                    startPosition: startPosition,
+                    userAgent: PlayerPlaybackConfig.httpUserAgent
+                )
+                print("[PlayerCore]   Local HLS proxy ready: \(proxyURL.path)")
+                return PreparedPlaybackSource(
+                    url: proxyURL,
+                    playbackPlan: playbackPlan,
+                    message: playbackPlan.limitationMessage
+                )
+            } catch {
+                let fallbackPlan = PlayerPlaybackConfig.playbackPlan(
+                    for: channel,
+                    cachingProfile: playbackPlan.cachingProfile,
+                    startPosition: startPosition,
+                    localHLSProxyAvailable: false
+                )
+                let fallbackURL = await resolvedPlaybackURL(
+                    originalURL: channel.streamURL,
+                    playbackPlan: fallbackPlan
+                )
+                print("[PlayerCore]   Local HLS proxy unavailable: \(error.localizedDescription)")
+                return PreparedPlaybackSource(
+                    url: fallbackURL,
+                    playbackPlan: fallbackPlan,
+                    message: "Optimized seek unavailable — using provider-limited MKV seeking."
+                )
+            }
+        }
+
+        await localPlaybackProxy.stop()
+        let playbackURL = await resolvedPlaybackURL(
+            originalURL: channel.streamURL,
+            playbackPlan: playbackPlan
+        )
+        return PreparedPlaybackSource(
+            url: playbackURL,
+            playbackPlan: playbackPlan,
+            message: playbackPlan.limitationMessage
+        )
     }
 
     private func resolvedPlaybackURL(
@@ -653,7 +739,8 @@ public final class PlayerCore {
         startPosition: Double?,
         resetRetryCount: Bool = true,
         endCurrentSession: Bool = true,
-        seekRecoveryAttempt: Int = 0
+        seekRecoveryAttempt: Int = 0,
+        allowLocalHLSProxy: Bool = true
     ) {
         lastChannelStore.save(channel)
         stopProgressTracking()
@@ -670,6 +757,9 @@ public final class PlayerCore {
         cancelLoadingWatchdog()
         let sessionID = advancePlaybackSession()
 
+        if currentChannel?.id != channel.id {
+            preservedVODDuration = nil
+        }
         currentChannel = channel
         if watchStartTime == nil {
             watchStartTime = .now
@@ -686,7 +776,8 @@ public final class PlayerCore {
         let playbackPlan = PlayerPlaybackConfig.playbackPlan(
             for: channel,
             cachingProfile: cachingProfile,
-            startPosition: startPosition
+            startPosition: startPosition,
+            localHLSProxyAvailable: allowLocalHLSProxy && LocalPlaybackProxy.isFFmpegAvailable
         )
         currentPlaybackPlan = playbackPlan
         playbackLimitationMessage = playbackPlan.limitationMessage
@@ -733,28 +824,6 @@ public final class PlayerCore {
                   self.isCurrentPlaybackSession(sessionID),
                   self.currentChannel?.id == channel.id else { return }
 
-            let playbackURL = await self.resolvedPlaybackURL(
-                originalURL: channel.streamURL,
-                playbackPlan: playbackPlan
-            )
-            guard !Task.isCancelled,
-                  self.isCurrentPlaybackSession(sessionID),
-                  self.currentChannel?.id == channel.id else { return }
-
-            if playbackURL != channel.streamURL {
-                print("[PlayerCore]   Resolved media URL: \(playbackURL.aetherMaskedForLog)")
-            }
-
-            guard let media = self.makeMedia(
-                for: channel,
-                playbackURL: playbackURL,
-                playbackPlan: playbackPlan
-            ) else {
-                self.showStreamErrorBanner("Unable to load stream")
-                self.state = .error("Unable to load stream")
-                return
-            }
-
             for _ in 0..<20 {
                 if self.currentDrawable != nil { break }
                 try? await Task.sleep(for: .milliseconds(25))
@@ -772,11 +841,38 @@ public final class PlayerCore {
                       self.currentChannel?.id == channel.id else { return }
             }
 
+            let prepared = await self.preparePlaybackSource(
+                for: channel,
+                playbackPlan: playbackPlan
+            )
+            guard !Task.isCancelled,
+                  self.isCurrentPlaybackSession(sessionID),
+                  self.currentChannel?.id == channel.id else { return }
+
+            self.currentPlaybackPlan = prepared.playbackPlan
+            self.playbackLimitationMessage = prepared.message
+            self.isLiveStream = prepared.playbackPlan.isLiveStream
+            self.playbackTimeOffset = prepared.playbackPlan.usesStartTime ? max(0, prepared.playbackPlan.startPosition ?? 0) : 0
+
+            if prepared.url != channel.streamURL {
+                print("[PlayerCore]   Resolved media URL: \(prepared.url.aetherMaskedForLog)")
+            }
+
+            guard let media = self.makeMedia(
+                for: channel,
+                playbackURL: prepared.url,
+                playbackPlan: prepared.playbackPlan
+            ) else {
+                self.showStreamErrorBanner("Unable to load stream")
+                self.state = .error("Unable to load stream")
+                return
+            }
+
             self.vlcPlayer.media = media
             self.vlcPlayer.play()
             self.disableTextTracksDuringStartup(sessionID: sessionID)
             self.pendingPlaybackStartTask = nil
-            self.startLoadingWatchdog(sessionID: sessionID, channel: channel, playbackPlan: playbackPlan)
+            self.startLoadingWatchdog(sessionID: sessionID, channel: channel, playbackPlan: prepared.playbackPlan)
         }
     }
 
@@ -793,54 +889,13 @@ public final class PlayerCore {
             updatedChannel.availableVariants = oldVariants
         }
         let targetTime = currentTime
-        let cachingProfile = PlayerPlaybackConfig.cachingProfile(
-            for: updatedChannel,
-            startPosition: targetTime,
-            startupRetryCount: 0
-        )
-        let playbackPlan = PlayerPlaybackConfig.playbackPlan(
-            for: updatedChannel,
-            cachingProfile: cachingProfile,
-            startPosition: targetTime
-        )
-        guard let media = makeMedia(
-            for: updatedChannel,
-            playbackURL: updatedChannel.streamURL,
-            playbackPlan: playbackPlan
-        ) else {
-            showStreamErrorBanner("Unable to load selected stream")
-            return
-        }
-
-        retryTask?.cancel()
-        retryTask = nil
-        cancelSeekWatchdog()
-        cancelLoadingWatchdog()
-        let shouldStopExistingMedia = vlcPlayer.isPlaying || vlcPlayer.media != nil
-        let sessionID = advancePlaybackSession()
         print("[PlayerCore] Hot-swapping stream variant at \(targetTime)s to: \(newChannel.streamURL.aetherMaskedForLog)")
-
-        state = .loading
-        hasEverPlayed = false
-        startupWatchdogRetryCount = 0
-        currentPlaybackPlan = playbackPlan
-        playbackLimitationMessage = playbackPlan.limitationMessage
-        isLiveStream = playbackPlan.isLiveStream
-        playbackTimeOffset = playbackPlan.usesStartTime ? max(0, playbackPlan.startPosition ?? 0) : 0
-        pendingSeekPosition = playbackPlan.startPosition
-        activeSeekTarget = playbackPlan.startPosition
-
-        currentChannel = updatedChannel
-
-        if shouldStopExistingMedia {
-            pendingTransitionStopEvents += 1
-            vlcPlayer.stop()
-        }
-
-        vlcPlayer.media = media
-        vlcPlayer.play()
-        disableTextTracksDuringStartup(sessionID: sessionID)
-        startLoadingWatchdog(sessionID: sessionID, channel: updatedChannel, playbackPlan: playbackPlan)
+        playInternal(
+            updatedChannel,
+            startPosition: targetTime,
+            resetRetryCount: true,
+            endCurrentSession: false
+        )
     }
 
     public func resume() {
@@ -879,6 +934,7 @@ public final class PlayerCore {
         stopProgressTracking()
         endWatchSession()
         vlcPlayer.stop()
+        Task { await localPlaybackProxy.stop() }
         currentChannel = nil
         retryCount = 0
         startupWatchdogRetryCount = 0
@@ -888,6 +944,7 @@ public final class PlayerCore {
         playbackLimitationMessage = nil
         isLiveStream = true
         playbackTimeOffset = 0
+        preservedVODDuration = nil
         currentTimeValue = 0
         pendingSeekPosition = nil
         pendingSeekRecoveryAttempt = 0
@@ -937,7 +994,7 @@ public final class PlayerCore {
         let target = boundedSeekTime(seconds)
         currentTimeValue = target
 
-        let debounceMilliseconds = effectivePlaybackPlan?.seekStrategy == .resilientMatroska
+        let debounceMilliseconds = effectivePlaybackPlan?.container == .matroska
             ? PlayerPlaybackConfig.matroskaSeekDebounceMilliseconds
             : PlayerPlaybackConfig.vodSeekDebounceMilliseconds
 
@@ -973,6 +1030,11 @@ public final class PlayerCore {
         activeSeekTarget = playbackPlan.usesPostSeekWatchdog ? seconds : nil
         if hasEverPlayed, playbackPlan.usesPostSeekWatchdog {
             state = .loading
+        }
+
+        if shouldRestartViaLocalProxy(for: playbackPlan) {
+            restartMatroskaViaLocalProxy(at: seconds)
+            return
         }
 
         let sessionID = playbackSessionID
@@ -1030,6 +1092,31 @@ public final class PlayerCore {
         } else if hasEverPlayed, state == .loading {
             state = .playing
         }
+    }
+
+    private func shouldRestartViaLocalProxy(for playbackPlan: PlayerPlaybackConfig.PlaybackPlan) -> Bool {
+        guard !playbackPlan.isLiveStream else { return false }
+        guard playbackPlan.container == .matroska else { return false }
+        return playbackPlan.restartsPlaybackForSeek || LocalPlaybackProxy.isFFmpegAvailable
+    }
+
+    private func restartMatroskaViaLocalProxy(at seconds: Double) {
+        guard let channel = currentChannel else { return }
+        let knownDuration = duration
+        if knownDuration > seconds {
+            preservedVODDuration = knownDuration
+        }
+        activeSeekTarget = nil
+        state = .loading
+        playbackLimitationMessage = "Optimized MKV seeking is active."
+        print("[PlayerCore]   Seek mode: local-hls-proxy restart at \(String(format: "%.1f", seconds))s")
+        playInternal(
+            channel,
+            startPosition: seconds,
+            resetRetryCount: false,
+            endCurrentSession: false,
+            allowLocalHLSProxy: true
+        )
     }
 
     // MARK: - Audio / Subtitle track selection
@@ -1139,6 +1226,18 @@ public final class PlayerCore {
             }
             cancelLoadingWatchdog()
             stopProgressTracking()
+            if currentPlaybackPlan?.route == .localHLSProxy, let channel = currentChannel {
+                print("[PlayerCore] Local HLS proxy playback error — falling back to limited MKV seek")
+                showStreamErrorBanner("Optimized seek failed — using provider seek")
+                playInternal(
+                    channel,
+                    startPosition: pendingSeekPosition,
+                    resetRetryCount: false,
+                    endCurrentSession: false,
+                    allowLocalHLSProxy: false
+                )
+                return
+            }
             print("[PlayerCore] VLC error — scheduling retry")
             scheduleRetry(message: "Stream error — check your connection", sessionID: sessionID)
         @unknown default:
@@ -1189,6 +1288,13 @@ public final class PlayerCore {
 
         state = .playing
         retryCount = 0
+        if currentPlaybackPlan?.route != .localHLSProxy {
+            let mediaMilliseconds = max(Int32(0), vlcPlayer.media?.length.intValue ?? 0)
+            let mediaSeconds = Double(mediaMilliseconds) / 1000.0
+            if mediaSeconds > 0, !isLiveStream {
+                preservedVODDuration = max(preservedVODDuration ?? 0, mediaSeconds)
+            }
+        }
 
         let currentMilliseconds = max(Int32(0), vlcPlayer.time.intValue)
         if currentMilliseconds > 0 {
@@ -1503,6 +1609,19 @@ public final class PlayerCore {
             let percent = Double(currentPosition * 100)
             print("[PlayerCore] Startup watchdog fired after \(Int(timeout))s for \(streamKind) \(playbackPlan.container.logLabel): \(channel.streamURL.aetherMaskedForLog) (isPlaying=\(self.vlcPlayer.isPlaying), state=\(self.state.logDescription), time=\(String(format: "%.1f", seconds))s, position=\(String(format: "%.2f", percent))%)")
 
+            if playbackPlan.route == .localHLSProxy {
+                self.showStreamErrorBanner("Optimized seek stalled — falling back to provider seek")
+                print("[PlayerCore] Local HLS proxy startup stalled — falling back to limited MKV seek")
+                self.playInternal(
+                    channel,
+                    startPosition: playbackPlan.startPosition ?? self.pendingSeekPosition,
+                    resetRetryCount: false,
+                    endCurrentSession: false,
+                    allowLocalHLSProxy: false
+                )
+                return
+            }
+
             if self.startupWatchdogRetryCount < PlayerPlaybackConfig.startupWatchdogMaxRetries {
                 self.startupWatchdogRetryCount += 1
                 self.showStreamErrorBanner("Still buffering — retrying with stronger cache")
@@ -1546,11 +1665,13 @@ public final class PlayerCore {
             guard let self,
                   self.isCurrentPlaybackSession(sessionID),
                   self.currentChannel?.id == channel.id else { return }
+            let retryThroughLocalProxy = self.currentPlaybackPlan?.route != .localHLSProxy
             self.playInternal(
                 channel,
                 startPosition: self.pendingSeekPosition,
                 resetRetryCount: false,
-                endCurrentSession: false
+                endCurrentSession: false,
+                allowLocalHLSProxy: retryThroughLocalProxy
             )
         }
     }
