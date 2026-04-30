@@ -28,6 +28,10 @@ public actor CatalogIndex {
         cachedSnapshot
     }
 
+    public func hasIndexedContent() -> Bool {
+        !movieIndex.isEmpty || !seriesIndex.isEmpty
+    }
+
     public func search(query: String, limit: Int = 30) -> CatalogSearchResults {
         let normalizedQuery = SearchText.normalize(query)
         guard normalizedQuery.count >= 2, limit > 0 else {
@@ -40,7 +44,7 @@ public actor CatalogIndex {
         )
     }
 
-    private static func topMatches(
+    fileprivate static func topMatches(
         _ items: [IndexedCatalogItem],
         query: String,
         limit: Int
@@ -91,6 +95,28 @@ public actor CatalogIndex {
         let seriesFirst = series.first?.id ?? -1
         let seriesLast = series.last?.id ?? -1
         return "\(vods.count):\(vodFirst):\(vodLast)|\(series.count):\(seriesFirst):\(seriesLast)"
+    }
+}
+
+public extension CatalogSnapshot {
+    func search(query: String, limit: Int = 30) -> CatalogSearchResults {
+        let normalizedQuery = SearchText.normalize(query)
+        guard normalizedQuery.count >= 2, limit > 0 else {
+            return CatalogSearchResults(movies: [], series: [])
+        }
+
+        return CatalogSearchResults(
+            movies: CatalogIndex.topMatches(
+                vodItems.map(IndexedCatalogItem.init(item:)),
+                query: normalizedQuery,
+                limit: limit
+            ).map(\.item),
+            series: CatalogIndex.topMatches(
+                seriesItems.map(IndexedCatalogItem.init(item:)),
+                query: normalizedQuery,
+                limit: limit
+            ).map(\.item)
+        )
     }
 }
 

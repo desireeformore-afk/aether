@@ -244,4 +244,39 @@ final class AetherCoreTests: XCTestCase {
         XCTAssertEqual(results.movies.first?.title, "Blade Runner")
         XCTAssertTrue(results.series.isEmpty)
     }
+
+    func testCatalogSnapshotSearchWorksBeforeIndexWarmup() throws {
+        let vods = [
+            XstreamVOD(
+                id: 10,
+                name: "The Matrix [PL SUB] [4K]",
+                streamIcon: nil,
+                categoryID: "1",
+                categoryName: "Sci-Fi",
+                containerExtension: "mkv",
+                rating: "8.7"
+            )
+        ]
+        let series = [
+            XstreamSeries(
+                id: 20,
+                name: "Matrix Stories",
+                cover: nil,
+                plot: nil,
+                cast: nil,
+                director: nil,
+                genre: "Sci-Fi",
+                releaseDate: "2026-01-01",
+                rating: nil,
+                categoryID: "2",
+                categoryName: "Series"
+            )
+        ]
+
+        let snapshot = CatalogBuilder.build(vods: vods, series: series)
+        let results = snapshot.search(query: "matrix", limit: 10)
+
+        XCTAssertEqual(results.movies.first?.title, "The Matrix")
+        XCTAssertEqual(results.series.first?.title, "Matrix Stories")
+    }
 }

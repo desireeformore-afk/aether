@@ -75,7 +75,18 @@ final class HomeViewModel: ObservableObject {
     var sharedService: XstreamService? { service }
 
     func searchCatalog(query: String, limit: Int = 30) async -> CatalogSearchResults {
-        await catalogIndex.search(query: query, limit: limit)
+        let indexHasContent = await catalogIndex.hasIndexedContent()
+        let indexed = await catalogIndex.search(query: query, limit: limit)
+        if indexHasContent || !indexed.movies.isEmpty || !indexed.series.isEmpty {
+            return indexed
+        }
+
+        let snapshot = catalogSnapshot
+        guard !snapshot.isEmpty else { return indexed }
+
+        return await Task.detached(priority: .userInitiated) {
+            snapshot.search(query: query, limit: limit)
+        }.value
     }
 
     /// Re-sorts shelves using current language/country preference.

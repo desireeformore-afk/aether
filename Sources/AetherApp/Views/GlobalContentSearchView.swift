@@ -19,6 +19,7 @@ struct GlobalContentSearchView: View {
     @State private var searchTask: Task<Void, Never>?
     @State private var selectedVODItem: ShelfItem?
     @State private var selectedSeries: XstreamSeries?
+    @State private var hasRequestedCatalogLoad = false
     @FocusState private var isSearchFocused: Bool
 
     var body: some View {
@@ -29,22 +30,29 @@ struct GlobalContentSearchView: View {
                 searchEmptyState(
                     title: "Search",
                     icon: "magnifyingglass",
-                    subtitle: "Movies and series are matched locally from the loaded catalog."
+                    subtitle: "Movies and series are matched instantly from Aether's local catalog."
+                )
+            } else if trimmedQuery.count < 2 {
+                searchEmptyState(
+                    title: "Keep Typing",
+                    icon: "text.magnifyingglass",
+                    subtitle: "Two characters are enough to search the local catalog."
+                )
+            } else if isCatalogPreparing && vodResults.isEmpty && seriesResults.isEmpty {
+                searchProgressState(
+                    title: "Building Catalog",
+                    subtitle: "Aether is loading movies and series once, then search stays local."
+                )
+            } else if let errorMessage = homeViewModel.errorMessage, !hasCatalogData {
+                searchEmptyState(
+                    title: "Catalog Unavailable",
+                    icon: "wifi.exclamationmark",
+                    subtitle: errorMessage
                 )
             } else if isSearching && vodResults.isEmpty && seriesResults.isEmpty {
-                VStack(spacing: 12) {
-                    ProgressView()
-                        .frame(width: 38, height: 38)
-                    Text("Searching…")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if !homeViewModel.isPhase1Loaded && service == nil {
-                searchEmptyState(
-                    title: "Catalog Loading",
-                    icon: "arrow.circlepath",
-                    subtitle: "Open Home once so Aether can build the local search index."
+                searchProgressState(
+                    title: "Searching",
+                    subtitle: "Matching against the local index."
                 )
             } else if vodResults.isEmpty && seriesResults.isEmpty {
                 searchEmptyState(
@@ -103,6 +111,7 @@ struct GlobalContentSearchView: View {
         .background(AetherTheme.ColorToken.background)
         .onAppear {
             if let q = initialQuery, !q.isEmpty { query = q }
+            requestCatalogLoadIfNeeded()
             primeSearchIndex()
         }
         .onDisappear {
@@ -121,9 +130,10 @@ struct GlobalContentSearchView: View {
                 seriesResults = []
                 return
             }
+            requestCatalogLoadIfNeeded()
             isSearching = true
             debounceTask = Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(60))
+                try? await Task.sleep(for: .milliseconds(30))
                 guard !Task.isCancelled else { return }
                 searchTask = Task { @MainActor in
                     await runSearch(query: newVal)
@@ -137,6 +147,15 @@ struct GlobalContentSearchView: View {
             refreshSearchIndexFromHome()
         }
         .onChange(of: homeViewModel.catalogSnapshot.vodItems.count) { _, _ in
+            refreshSearchIndexFromHome()
+        }
+        .onChange(of: homeViewModel.catalogSnapshot.seriesItems.count) { _, _ in
+            refreshSearchIndexFromHome()
+        }
+        .onChange(of: homeViewModel.isPhase1Loaded) { _, _ in
+            refreshSearchIndexFromHome()
+        }
+        .onChange(of: homeViewModel.isFullyLoaded) { _, _ in
             refreshSearchIndexFromHome()
         }
         .onReceive(NotificationCenter.default.publisher(for: .init("AetherOpenSearch"))) { _ in
@@ -153,6 +172,26 @@ struct GlobalContentSearchView: View {
         }
     }
 
+    private var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var hasCatalogData: Bool {
+        !homeViewModel.catalogSnapshot.isEmpty ||
+            !homeViewModel.allVODs.isEmpty ||
+            !homeViewModel.allSeries.isEmpty
+    }
+
+    private var isCatalogPreparing: Bool {
+        !hasCatalogData && homeViewModel.errorMessage == nil
+    }
+
+    private func requestCatalogLoadIfNeeded() {
+        guard !hasRequestedCatalogLoad else { return }
+        hasRequestedCatalogLoad = true
+        homeViewModel.load(credentials: credentials)
+    }
+
     private func primeSearchIndex() {
         refreshSearchIndexFromHome()
     }
@@ -167,16 +206,16 @@ struct GlobalContentSearchView: View {
     }
 
     private func runSearch(query: String) async {
-        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmedQuery.count >= 2 else {
+        let currentQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard currentQuery.count >= 2 else {
             vodResults = []
             seriesResults = []
             isSearching = false
             return
         }
 
-        let immediate = await homeViewModel.searchCatalog(query: trimmedQuery, limit: Self.resultLimit)
-        guard !Task.isCancelled, self.query == query else { return }
+        let immediate = await homeViewModel.searchCatalog(query: currentQuery, limit: Self.resultLimit)
+        guard !Task.isCancelled, trimmedQuery == currentQuery else { return }
         vodResults = immediate.movies
         seriesResults = immediate.series
         isSearching = false
@@ -263,6 +302,22 @@ struct GlobalContentSearchView: View {
                 .foregroundStyle(AetherTheme.ColorToken.tertiaryText)
             Text(title)
                 .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(AetherTheme.ColorToken.primaryText)
+            Text(subtitle)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(AetherTheme.ColorToken.secondaryText)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 360)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func searchProgressState(title: String, subtitle: String) -> some View {
+        VStack(spacing: 14) {
+            ProgressView()
+                .frame(width: 38, height: 38)
+            Text(title)
+                .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(AetherTheme.ColorToken.primaryText)
             Text(subtitle)
                 .font(.system(size: 13, weight: .medium))
