@@ -734,6 +734,10 @@ public final class PlayerCore {
     /// Starts playback of `channel`. Debounced — rapid calls within 500ms are ignored.
     public func play(_ channel: Channel, startPosition: Double? = nil) {
         if currentChannel?.id == channel.id, startPosition == nil {
+            if pendingPlaybackStartTask != nil || pendingSeekPosition != nil {
+                print("[PlayerCore] Ignoring duplicate play request during active playback transition")
+                return
+            }
             if state == .playing {
                 return
             }
@@ -767,6 +771,7 @@ public final class PlayerCore {
         pendingPlaybackStartTask?.cancel()
         pendingPlaybackStartTask = nil
         cancelLoadingWatchdog()
+        pendingTransitionStopEvents = 0
         let sessionID = advancePlaybackSession()
 
         if currentChannel?.id != channel.id {
@@ -859,9 +864,9 @@ public final class PlayerCore {
             }
 
             if self.vlcPlayer.isPlaying || self.vlcPlayer.media != nil {
-                self.pendingTransitionStopEvents += 1
                 self.vlcPlayer.stop()
                 try? await Task.sleep(for: .milliseconds(60))
+                self.pendingTransitionStopEvents = 0
                 guard !Task.isCancelled,
                       self.isCurrentPlaybackSession(sessionID),
                       self.currentChannel?.id == channel.id else { return }
@@ -900,6 +905,7 @@ public final class PlayerCore {
                 return
             }
 
+            self.activateVLCSession(sessionID)
             self.vlcPlayer.media = media
             self.vlcPlayer.play()
             self.disableTextTracksDuringStartup(sessionID: sessionID)
@@ -1791,12 +1797,15 @@ public final class PlayerCore {
     private func advancePlaybackSession() -> UInt64 {
         playbackSessionID &+= 1
         startupTimedOutSessionID = nil
-        bridge?.playbackSessionID = playbackSessionID
         return playbackSessionID
     }
 
     private func isCurrentPlaybackSession(_ sessionID: UInt64) -> Bool {
         sessionID == playbackSessionID
+    }
+
+    private func activateVLCSession(_ sessionID: UInt64) {
+        bridge?.playbackSessionID = sessionID
     }
 
     private func notifyWatchSessionEnd(channel: Channel, start: Date, duration: Int) {
