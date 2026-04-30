@@ -29,34 +29,168 @@ public enum PlayerState: Sendable, Equatable {
 enum PlayerPlaybackConfig {
     enum CachingProfile: Equatable {
         case standard
+        case interactiveSeek
         case strengthened
+
+        var logLabel: String {
+            switch self {
+            case .standard: return "standard"
+            case .interactiveSeek: return "interactive-seek"
+            case .strengthened: return "strengthened"
+            }
+        }
+    }
+
+    enum PlaybackContainer: Equatable {
+        case hls
+        case matroska
+        case mp4
+        case quickTime
+        case avi
+        case transportStream
+        case other
+
+        var logLabel: String {
+            switch self {
+            case .hls: return "HLS"
+            case .matroska: return "Matroska"
+            case .mp4: return "MP4"
+            case .quickTime: return "QuickTime"
+            case .avi: return "AVI"
+            case .transportStream: return "MPEG-TS"
+            case .other: return "Other"
+            }
+        }
+    }
+
+    enum SeekStrategy: Equatable {
+        case none
+        case directTime
+        case directPosition
+        case resilientMatroska
+
+        var logLabel: String {
+            switch self {
+            case .none: return "none"
+            case .directTime: return "direct-time"
+            case .directPosition: return "direct-position"
+            case .resilientMatroska: return "resilient-matroska"
+            }
+        }
+    }
+
+    enum PlaybackRoute: Equatable {
+        case nativeDirect
+        case redirectCached
+        case localHLSProxy
+        case limitedSeek
+
+        var logLabel: String {
+            switch self {
+            case .nativeDirect: return "native-direct"
+            case .redirectCached: return "redirect-cached"
+            case .localHLSProxy: return "local-hls-proxy"
+            case .limitedSeek: return "limited-seek"
+            }
+        }
+    }
+
+    struct PlaybackPlan: Equatable {
+        let isLiveStream: Bool
+        let container: PlaybackContainer
+        let seekStrategy: SeekStrategy
+        let route: PlaybackRoute
+        let cachingProfile: CachingProfile
+        let startPosition: Double?
+
+        var canSeek: Bool {
+            seekStrategy != .none
+        }
+
+        var usesFastSeek: Bool {
+            switch seekStrategy {
+            case .directTime, .directPosition, .resilientMatroska: return true
+            case .none: return false
+            }
+        }
+
+        var usesMatroskaSeekPercent: Bool {
+            seekStrategy == .resilientMatroska
+        }
+
+        var usesStartTime: Bool {
+            guard canSeek, let startPosition else { return false }
+            return startPosition > 0 && startPosition.isFinite
+        }
+
+        var prefersPositionSeek: Bool {
+            switch seekStrategy {
+            case .directPosition, .resilientMatroska: return true
+            case .directTime, .none: return false
+            }
+        }
+
+        var usesPostSeekWatchdog: Bool {
+            seekStrategy == .resilientMatroska
+        }
+
+        var limitationMessage: String? {
+            guard route == .limitedSeek else { return nil }
+            return "This MKV provider has limited seeking. A different language/quality variant may seek faster."
+        }
     }
 
     static let liveNetworkCachingMilliseconds = 1500
     static let liveFileCachingMilliseconds = 1000
     static let liveLiveCachingMilliseconds = 1500
-    static let vodNetworkCachingMilliseconds = 6000
-    static let vodFileCachingMilliseconds = 6000
+    static let vodNetworkCachingMilliseconds = 2500
+    static let vodFileCachingMilliseconds = 2500
+    static let seekNetworkCachingMilliseconds = 700
+    static let seekFileCachingMilliseconds = 700
+    static let seekLiveCachingMilliseconds = 700
     static let strengthenedLiveNetworkCachingMilliseconds = 2500
     static let strengthenedLiveFileCachingMilliseconds = 1500
     static let strengthenedLiveLiveCachingMilliseconds = 2500
     static let strengthenedVODNetworkCachingMilliseconds = 12000
     static let strengthenedVODFileCachingMilliseconds = 12000
-    static let startupPlaybackTimeoutSeconds = 35.0
-    static let strengthenedStartupPlaybackTimeoutSeconds = 50.0
+    static let startupPlaybackTimeoutSeconds = 20.0
+    static let seekStartupPlaybackTimeoutSeconds = 12.0
+    static let strengthenedStartupPlaybackTimeoutSeconds = 35.0
     static let startupWatchdogMaxRetries = 1
     static let startupWatchdogPollIntervalSeconds = 0.5
     static let startupWatchdogLogIntervalSeconds = 5.0
     static let startupProgressMinimumTimeAdvanceMilliseconds: Int32 = 250
     static let startupProgressMinimumPositionAdvance: Float = 0.0001
+    static let postSeekWatchdogTimeoutSeconds = 2.5
+    static let postSeekWatchdogPollIntervalSeconds = 0.4
+    static let postSeekTargetToleranceSeconds = 6.0
+    static let postSeekMaxRecoveries = 0
+    static let vodSeekDebounceMilliseconds = 120
+    static let matroskaSeekDebounceMilliseconds = 220
+    static let matroskaPositionAssistDelayMilliseconds = 350
+    static let redirectProbeTimeoutSeconds: TimeInterval = 1.6
     static let httpUserAgent = "VLC/3.0.20 LibVLC/3.0.20"
+    static let libraryOptions = [
+        "--quiet",
+        "--verbose=0",
+        "--log-verbose=0",
+        "--vout=samplebufferdisplay",
+        "--no-video-title-show",
+        "--no-spu",
+        "--sub-track=-1",
+        "--no-sub-autodetect-file",
+        "--no-stats",
+        "--avcodec-options=loglevel=quiet"
+    ]
     private static let vodExtensions: Set<String> = ["mkv", "mp4", "avi", "mov", "wmv", "flv", "m4v"]
 
     static func networkCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile = .standard) -> Int {
         switch (isLiveStream, cachingProfile) {
         case (true, .standard): return liveNetworkCachingMilliseconds
+        case (true, .interactiveSeek): return seekNetworkCachingMilliseconds
         case (true, .strengthened): return strengthenedLiveNetworkCachingMilliseconds
         case (false, .standard): return vodNetworkCachingMilliseconds
+        case (false, .interactiveSeek): return seekNetworkCachingMilliseconds
         case (false, .strengthened): return strengthenedVODNetworkCachingMilliseconds
         }
     }
@@ -64,8 +198,10 @@ enum PlayerPlaybackConfig {
     static func fileCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile = .standard) -> Int {
         switch (isLiveStream, cachingProfile) {
         case (true, .standard): return liveFileCachingMilliseconds
+        case (true, .interactiveSeek): return seekFileCachingMilliseconds
         case (true, .strengthened): return strengthenedLiveFileCachingMilliseconds
         case (false, .standard): return vodFileCachingMilliseconds
+        case (false, .interactiveSeek): return seekFileCachingMilliseconds
         case (false, .strengthened): return strengthenedVODFileCachingMilliseconds
         }
     }
@@ -73,17 +209,112 @@ enum PlayerPlaybackConfig {
     static func liveCachingMilliseconds(isLiveStream: Bool, cachingProfile: CachingProfile = .standard) -> Int {
         switch (isLiveStream, cachingProfile) {
         case (true, .standard): return liveLiveCachingMilliseconds
+        case (true, .interactiveSeek): return seekLiveCachingMilliseconds
         case (true, .strengthened): return strengthenedLiveLiveCachingMilliseconds
         case (false, .standard): return vodNetworkCachingMilliseconds
+        case (false, .interactiveSeek): return seekLiveCachingMilliseconds
         case (false, .strengthened): return strengthenedVODNetworkCachingMilliseconds
         }
     }
 
     static func startupTimeoutSeconds(cachingProfile: CachingProfile) -> Double {
-        cachingProfile == .strengthened ? strengthenedStartupPlaybackTimeoutSeconds : startupPlaybackTimeoutSeconds
+        switch cachingProfile {
+        case .standard:
+            return startupPlaybackTimeoutSeconds
+        case .interactiveSeek:
+            return seekStartupPlaybackTimeoutSeconds
+        case .strengthened:
+            return strengthenedStartupPlaybackTimeoutSeconds
+        }
     }
 
     static func isLiveStream(channel: Channel) -> Bool {
+        playbackPlan(for: channel).isLiveStream
+    }
+
+    static func playbackPlan(
+        for channel: Channel,
+        cachingProfile: CachingProfile = .standard,
+        startPosition: Double? = nil
+    ) -> PlaybackPlan {
+        let container = playbackContainer(for: channel.streamURL)
+        let live = isLiveContent(channel: channel)
+        let strategy: SeekStrategy
+        let route: PlaybackRoute
+
+        if live {
+            strategy = .none
+            route = .nativeDirect
+        } else {
+            switch container {
+            case .matroska:
+                strategy = .resilientMatroska
+                route = startPosition.map { $0 > 0 } == true ? .limitedSeek : .redirectCached
+            case .mp4, .quickTime, .avi:
+                strategy = .directPosition
+                route = .nativeDirect
+            case .hls, .transportStream, .other:
+                strategy = .directTime
+                route = .nativeDirect
+            }
+        }
+
+        let normalizedStart: Double?
+        if live {
+            normalizedStart = nil
+        } else if let startPosition, startPosition.isFinite, startPosition > 0 {
+            normalizedStart = startPosition
+        } else {
+            normalizedStart = nil
+        }
+
+        return PlaybackPlan(
+            isLiveStream: live,
+            container: container,
+            seekStrategy: strategy,
+            route: route,
+            cachingProfile: cachingProfile,
+            startPosition: normalizedStart
+        )
+    }
+
+    static func cachingProfile(
+        for channel: Channel,
+        startPosition: Double?,
+        startupRetryCount: Int
+    ) -> CachingProfile {
+        if startupRetryCount > 0 {
+            return .strengthened
+        }
+
+        let container = playbackContainer(for: channel.streamURL)
+        let shouldUseSeekProfile = startPosition.map { $0.isFinite && $0 > 0 } == true
+            && container == .matroska
+            && !isLiveContent(channel: channel)
+
+        return shouldUseSeekProfile ? .interactiveSeek : .standard
+    }
+
+    static func playbackContainer(for url: URL) -> PlaybackContainer {
+        switch url.pathExtension.lowercased() {
+        case "m3u", "m3u8":
+            return .hls
+        case "mkv", "mk3d", "webm":
+            return .matroska
+        case "mp4", "m4v":
+            return .mp4
+        case "mov", "qt":
+            return .quickTime
+        case "avi":
+            return .avi
+        case "ts", "m2ts", "mts":
+            return .transportStream
+        default:
+            return .other
+        }
+    }
+
+    private static func isLiveContent(channel: Channel) -> Bool {
         switch channel.contentType {
         case .liveTV:
             let ext = channel.streamURL.pathExtension.lowercased()
@@ -93,16 +324,55 @@ enum PlayerPlaybackConfig {
         }
     }
 
-    static func mediaOptions(isLiveStream: Bool, cachingProfile: CachingProfile) -> [String] {
-        [
-            "--network-caching=\(networkCachingMilliseconds(isLiveStream: isLiveStream, cachingProfile: cachingProfile))",
-            "--file-caching=\(fileCachingMilliseconds(isLiveStream: isLiveStream, cachingProfile: cachingProfile))",
-            "--live-caching=\(liveCachingMilliseconds(isLiveStream: isLiveStream, cachingProfile: cachingProfile))",
-            "--http-reconnect",
-            "--http-continuous",
-            "--rtsp-tcp",
-            "--http-user-agent=\(httpUserAgent)"
+    static func mediaOptions(
+        isLiveStream: Bool,
+        cachingProfile: CachingProfile,
+        startPosition: Double? = nil
+    ) -> [String] {
+        let fallbackPlan = PlaybackPlan(
+            isLiveStream: isLiveStream,
+            container: .other,
+            seekStrategy: isLiveStream ? .none : .directTime,
+            route: .nativeDirect,
+            cachingProfile: cachingProfile,
+            startPosition: startPosition
+        )
+        return mediaOptions(plan: fallbackPlan)
+    }
+
+    static func mediaOptions(plan: PlaybackPlan) -> [String] {
+        var options = [
+            ":network-caching=\(networkCachingMilliseconds(isLiveStream: plan.isLiveStream, cachingProfile: plan.cachingProfile))",
+            ":file-caching=\(fileCachingMilliseconds(isLiveStream: plan.isLiveStream, cachingProfile: plan.cachingProfile))",
+            ":live-caching=\(liveCachingMilliseconds(isLiveStream: plan.isLiveStream, cachingProfile: plan.cachingProfile))",
+            ":http-reconnect",
+            ":http-continuous",
+            ":rtsp-tcp",
+            ":sub-track=-1",
+            ":no-sub-autodetect-file",
+            ":no-spu",
+            ":http-user-agent=\(httpUserAgent)"
         ]
+
+        if plan.usesFastSeek {
+            options.append(":input-fast-seek")
+        }
+
+        if plan.usesMatroskaSeekPercent {
+            options.append(":mkv-seek-percent")
+        }
+
+        if plan.usesStartTime {
+            if let startPosition = plan.startPosition {
+                options.append(":start-time=\(vlcSeconds(startPosition))")
+            }
+        }
+
+        return options
+    }
+
+    private static func vlcSeconds(_ seconds: Double) -> String {
+        String(format: "%.3f", locale: Locale(identifier: "en_US_POSIX"), max(0, seconds))
     }
 }
 
@@ -177,6 +447,9 @@ public final class PlayerCore {
     /// Transient error banner (auto-dismisses after 5s).
     public private(set) var streamErrorBanner: String? = nil
 
+    /// User-facing note when a provider/container cannot offer premium-grade seeking.
+    public private(set) var playbackLimitationMessage: String? = nil
+
     /// Whether the current stream is live (not seekable) or VOD.
     public private(set) var isLiveStream: Bool = true
 
@@ -186,6 +459,9 @@ public final class PlayerCore {
 
     public private(set) var playbackRate: Float = 1.0
     private var pendingSeekPosition: Double? = nil
+    private var pendingSeekRecoveryAttempt = 0
+    private var activeSeekTarget: Double? = nil
+    private var playbackTimeOffset: Double = 0
 
     /// Convenience alias (same value, keeps external call sites working).
     public var currentTime: TimeInterval { currentTimeValue }
@@ -194,10 +470,21 @@ public final class PlayerCore {
     public var duration: TimeInterval {
         guard let media = vlcPlayer.media else { return 0 }
         let ms = media.length.intValue
-        return ms > 0 ? Double(ms) / 1000.0 : 0
+        guard ms > 0 else { return 0 }
+        let rawDuration = Double(ms) / 1000.0
+        guard playbackTimeOffset > 0, effectivePlaybackPlan?.usesStartTime == true else {
+            return rawDuration
+        }
+        return rawDuration + playbackTimeOffset
     }
 
     public var isPlaying: Bool { state == .playing }
+
+    private var effectivePlaybackPlan: PlayerPlaybackConfig.PlaybackPlan? {
+        if let currentPlaybackPlan { return currentPlaybackPlan }
+        guard let currentChannel else { return nil }
+        return PlayerPlaybackConfig.playbackPlan(for: currentChannel)
+    }
 
     // MARK: - Channel navigation
 
@@ -222,7 +509,8 @@ public final class PlayerCore {
     // MARK: - Internal
 
     /// The underlying VLC media player.
-    private let vlcPlayer: VLCMediaPlayer = VLCMediaPlayer()
+    private let vlcPlayer: VLCMediaPlayer
+    private let streamURLResolver = StreamRedirectResolver()
 
     /// Accessor for StreamStatsView — exposes VLC player for stats reading only.
     /// Do NOT use for playback control outside PlayerCore.
@@ -247,9 +535,14 @@ public final class PlayerCore {
     private var progressTimer: Timer?
     private var retryTask: Task<Void, Never>?
     private var loadingWatchdogTask: Task<Void, Never>?
+    private var pendingPlaybackStartTask: Task<Void, Never>?
+    private var pendingSeekTask: Task<Void, Never>?
+    private var seekWatchdogTask: Task<Void, Never>?
     private var bannerDismissTask: Task<Void, Never>?
+    private var seekGeneration: UInt64 = 0
     private var startupWatchdogRetryCount: Int = 0
     private var startupTimedOutSessionID: UInt64?
+    @ObservationIgnored private var currentPlaybackPlan: PlayerPlaybackConfig.PlaybackPlan?
     /// True once VLC fires .playing at least once for the current media.
     /// Prevents later .buffering events from hiding the video with a spinner.
     private var hasEverPlayed: Bool = false
@@ -257,6 +550,7 @@ public final class PlayerCore {
     // MARK: - Init
 
     public init() {
+        self.vlcPlayer = VLCMediaPlayer(options: PlayerPlaybackConfig.libraryOptions)
         let b = VLCDelegateBridge(owner: self)
         self.bridge = b
         vlcPlayer.delegate = b
@@ -266,7 +560,7 @@ public final class PlayerCore {
         setupRemoteCommands()
     }
 
-    // MARK: - NSView attachment (called by VLCVideoView)
+    // MARK: - Drawable attachment (called by VLCVideoView)
 
     /// Attaches the VLC renderer to an NSView/UIView so video is drawn into it.
     public func attachDrawable(_ view: AnyObject) {
@@ -317,14 +611,31 @@ public final class PlayerCore {
 
     private func makeMedia(
         for channel: Channel,
-        isLiveStream: Bool,
-        cachingProfile: PlayerPlaybackConfig.CachingProfile
+        playbackURL: URL,
+        playbackPlan: PlayerPlaybackConfig.PlaybackPlan
     ) -> VLCMedia? {
-        guard let media = VLCMedia(url: channel.streamURL) else { return nil }
-        for option in PlayerPlaybackConfig.mediaOptions(isLiveStream: isLiveStream, cachingProfile: cachingProfile) {
+        guard let media = VLCMedia(url: playbackURL) else { return nil }
+        for option in PlayerPlaybackConfig.mediaOptions(plan: playbackPlan) {
             media.addOption(option)
         }
         return media
+    }
+
+    private func resolvedPlaybackURL(
+        originalURL: URL,
+        playbackPlan: PlayerPlaybackConfig.PlaybackPlan
+    ) async -> URL {
+        guard playbackPlan.container == .matroska else { return originalURL }
+
+        if let cached = await streamURLResolver.cachedURL(for: originalURL) {
+            return cached
+        }
+
+        let resolved = await streamURLResolver.resolveFinalURL(for: originalURL)
+        if resolved != originalURL {
+            print("[PlayerCore]   MKV redirect resolved and cached")
+        }
+        return resolved
     }
 
     // MARK: - Public playback API
@@ -341,7 +652,8 @@ public final class PlayerCore {
         _ channel: Channel,
         startPosition: Double?,
         resetRetryCount: Bool = true,
-        endCurrentSession: Bool = true
+        endCurrentSession: Bool = true,
+        seekRecoveryAttempt: Int = 0
     ) {
         lastChannelStore.save(channel)
         stopProgressTracking()
@@ -350,29 +662,42 @@ public final class PlayerCore {
         }
         retryTask?.cancel()
         retryTask = nil
+        pendingSeekTask?.cancel()
+        pendingSeekTask = nil
+        cancelSeekWatchdog()
+        pendingPlaybackStartTask?.cancel()
+        pendingPlaybackStartTask = nil
         cancelLoadingWatchdog()
-
-        let shouldStopExistingMedia = vlcPlayer.isPlaying || vlcPlayer.media != nil
         let sessionID = advancePlaybackSession()
-
-        // Stop any ongoing VLC playback cleanly
-        if shouldStopExistingMedia {
-            pendingTransitionStopEvents += 1
-            vlcPlayer.stop()
-        }
 
         currentChannel = channel
         if watchStartTime == nil {
             watchStartTime = .now
         }
-        state = .loading
         if resetRetryCount {
             retryCount = 0
             startupWatchdogRetryCount = 0
         }
+        let cachingProfile = PlayerPlaybackConfig.cachingProfile(
+            for: channel,
+            startPosition: startPosition,
+            startupRetryCount: startupWatchdogRetryCount
+        )
+        let playbackPlan = PlayerPlaybackConfig.playbackPlan(
+            for: channel,
+            cachingProfile: cachingProfile,
+            startPosition: startPosition
+        )
+        currentPlaybackPlan = playbackPlan
+        playbackLimitationMessage = playbackPlan.limitationMessage
+        isLiveStream = playbackPlan.isLiveStream
+        playbackTimeOffset = playbackPlan.usesStartTime ? max(0, playbackPlan.startPosition ?? 0) : 0
+        state = .loading
         hasEverPlayed = false
-        currentTimeValue = 0
-        pendingSeekPosition = startPosition
+        currentTimeValue = max(0, playbackPlan.startPosition ?? 0)
+        pendingSeekPosition = playbackPlan.startPosition
+        pendingSeekRecoveryAttempt = seekRecoveryAttempt
+        activeSeekTarget = playbackPlan.startPosition
         availableAudioTracks = []
         availableSubtitleTracks = []
         selectedAudioTrackID = -1
@@ -385,31 +710,74 @@ public final class PlayerCore {
         print("[PlayerCore]   URL: \(url.aetherMaskedForLog)")
         print("[PlayerCore]   Extension: \(ext)")
 
-        // VOD = movies/series or seekable file containers. Live = indefinite TS/m3u8 streams.
-        isLiveStream = PlayerPlaybackConfig.isLiveStream(channel: channel)
-        let cachingProfile: PlayerPlaybackConfig.CachingProfile = startupWatchdogRetryCount > 0 ? .strengthened : .standard
         let networkCachingMilliseconds = PlayerPlaybackConfig.networkCachingMilliseconds(
-            isLiveStream: isLiveStream,
+            isLiveStream: playbackPlan.isLiveStream,
             cachingProfile: cachingProfile
         )
         let fileCachingMilliseconds = PlayerPlaybackConfig.fileCachingMilliseconds(
-            isLiveStream: isLiveStream,
+            isLiveStream: playbackPlan.isLiveStream,
             cachingProfile: cachingProfile
         )
-        print("[PlayerCore]   Type: \(isLiveStream ? "Live" : "VOD")")
-        print("[PlayerCore]   Caching profile: \(cachingProfile == .strengthened ? "strengthened" : "standard")")
+        print("[PlayerCore]   Type: \(playbackPlan.isLiveStream ? "Live" : "VOD")")
+        print("[PlayerCore]   Container: \(playbackPlan.container.logLabel)")
+        print("[PlayerCore]   Playback route: \(playbackPlan.route.logLabel)")
+        print("[PlayerCore]   Seek strategy: \(playbackPlan.seekStrategy.logLabel)")
+        print("[PlayerCore]   Caching profile: \(cachingProfile.logLabel)")
         print("[PlayerCore]   Network caching: \(networkCachingMilliseconds)ms")
         print("[PlayerCore]   File caching: \(fileCachingMilliseconds)ms")
 
-        guard let media = makeMedia(for: channel, isLiveStream: isLiveStream, cachingProfile: cachingProfile) else {
-            showStreamErrorBanner("Unable to load stream")
-            state = .error("Unable to load stream")
-            return
-        }
+        pendingPlaybackStartTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(40))
+            guard !Task.isCancelled else { return }
+            guard let self,
+                  self.isCurrentPlaybackSession(sessionID),
+                  self.currentChannel?.id == channel.id else { return }
 
-        vlcPlayer.media = media
-        vlcPlayer.play()
-        startLoadingWatchdog(sessionID: sessionID, channel: channel, cachingProfile: cachingProfile)
+            let playbackURL = await self.resolvedPlaybackURL(
+                originalURL: channel.streamURL,
+                playbackPlan: playbackPlan
+            )
+            guard !Task.isCancelled,
+                  self.isCurrentPlaybackSession(sessionID),
+                  self.currentChannel?.id == channel.id else { return }
+
+            if playbackURL != channel.streamURL {
+                print("[PlayerCore]   Resolved media URL: \(playbackURL.aetherMaskedForLog)")
+            }
+
+            guard let media = self.makeMedia(
+                for: channel,
+                playbackURL: playbackURL,
+                playbackPlan: playbackPlan
+            ) else {
+                self.showStreamErrorBanner("Unable to load stream")
+                self.state = .error("Unable to load stream")
+                return
+            }
+
+            for _ in 0..<20 {
+                if self.currentDrawable != nil { break }
+                try? await Task.sleep(for: .milliseconds(25))
+                guard !Task.isCancelled,
+                      self.isCurrentPlaybackSession(sessionID),
+                      self.currentChannel?.id == channel.id else { return }
+            }
+
+            if self.vlcPlayer.isPlaying || self.vlcPlayer.media != nil {
+                self.pendingTransitionStopEvents += 1
+                self.vlcPlayer.stop()
+                try? await Task.sleep(for: .milliseconds(60))
+                guard !Task.isCancelled,
+                      self.isCurrentPlaybackSession(sessionID),
+                      self.currentChannel?.id == channel.id else { return }
+            }
+
+            self.vlcPlayer.media = media
+            self.vlcPlayer.play()
+            self.disableTextTracksDuringStartup(sessionID: sessionID)
+            self.pendingPlaybackStartTask = nil
+            self.startLoadingWatchdog(sessionID: sessionID, channel: channel, playbackPlan: playbackPlan)
+        }
     }
 
     // MARK: - Hot-Swapping Variants
@@ -424,14 +792,29 @@ public final class PlayerCore {
         if updatedChannel.availableVariants.isEmpty, let oldVariants = currentChannel?.availableVariants {
             updatedChannel.availableVariants = oldVariants
         }
-        guard let media = makeMedia(for: updatedChannel, isLiveStream: false, cachingProfile: .standard) else {
+        let targetTime = currentTime
+        let cachingProfile = PlayerPlaybackConfig.cachingProfile(
+            for: updatedChannel,
+            startPosition: targetTime,
+            startupRetryCount: 0
+        )
+        let playbackPlan = PlayerPlaybackConfig.playbackPlan(
+            for: updatedChannel,
+            cachingProfile: cachingProfile,
+            startPosition: targetTime
+        )
+        guard let media = makeMedia(
+            for: updatedChannel,
+            playbackURL: updatedChannel.streamURL,
+            playbackPlan: playbackPlan
+        ) else {
             showStreamErrorBanner("Unable to load selected stream")
             return
         }
 
-        let targetTime = currentTime
         retryTask?.cancel()
         retryTask = nil
+        cancelSeekWatchdog()
         cancelLoadingWatchdog()
         let shouldStopExistingMedia = vlcPlayer.isPlaying || vlcPlayer.media != nil
         let sessionID = advancePlaybackSession()
@@ -440,7 +823,12 @@ public final class PlayerCore {
         state = .loading
         hasEverPlayed = false
         startupWatchdogRetryCount = 0
-        pendingSeekPosition = targetTime
+        currentPlaybackPlan = playbackPlan
+        playbackLimitationMessage = playbackPlan.limitationMessage
+        isLiveStream = playbackPlan.isLiveStream
+        playbackTimeOffset = playbackPlan.usesStartTime ? max(0, playbackPlan.startPosition ?? 0) : 0
+        pendingSeekPosition = playbackPlan.startPosition
+        activeSeekTarget = playbackPlan.startPosition
 
         currentChannel = updatedChannel
 
@@ -451,7 +839,8 @@ public final class PlayerCore {
 
         vlcPlayer.media = media
         vlcPlayer.play()
-        startLoadingWatchdog(sessionID: sessionID, channel: updatedChannel, cachingProfile: .standard)
+        disableTextTracksDuringStartup(sessionID: sessionID)
+        startLoadingWatchdog(sessionID: sessionID, channel: updatedChannel, playbackPlan: playbackPlan)
     }
 
     public func resume() {
@@ -479,6 +868,11 @@ public final class PlayerCore {
     public func stop() {
         retryTask?.cancel()
         retryTask = nil
+        pendingSeekTask?.cancel()
+        pendingSeekTask = nil
+        cancelSeekWatchdog()
+        pendingPlaybackStartTask?.cancel()
+        pendingPlaybackStartTask = nil
         cancelLoadingWatchdog()
         pendingTransitionStopEvents = 0
         advancePlaybackSession()
@@ -490,7 +884,14 @@ public final class PlayerCore {
         startupWatchdogRetryCount = 0
         startupTimedOutSessionID = nil
         hasEverPlayed = false
+        currentPlaybackPlan = nil
+        playbackLimitationMessage = nil
+        isLiveStream = true
+        playbackTimeOffset = 0
         currentTimeValue = 0
+        pendingSeekPosition = nil
+        pendingSeekRecoveryAttempt = 0
+        activeSeekTarget = nil
         availableAudioTracks = []
         availableSubtitleTracks = []
         selectedAudioTrackID = -1
@@ -523,18 +924,112 @@ public final class PlayerCore {
 
     /// Seeks forward or backward by `seconds`. No-op for live streams.
     public func seek(by seconds: Double) {
-        guard !isLiveStream else { return }
+        guard effectivePlaybackPlan?.canSeek == true else { return }
         let current = currentTime
         let target = max(0, current + seconds)
         userSeek(to: target)
     }
 
+    /// Debounced seek used by scrub gestures. The UI position updates immediately,
+    /// but VLC receives only the final settled target.
+    public func requestSeek(to seconds: Double) {
+        guard effectivePlaybackPlan?.canSeek == true, seconds.isFinite, seconds >= 0 else { return }
+        let target = boundedSeekTime(seconds)
+        currentTimeValue = target
+
+        let debounceMilliseconds = effectivePlaybackPlan?.seekStrategy == .resilientMatroska
+            ? PlayerPlaybackConfig.matroskaSeekDebounceMilliseconds
+            : PlayerPlaybackConfig.vodSeekDebounceMilliseconds
+
+        pendingSeekTask?.cancel()
+        pendingSeekTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(debounceMilliseconds))
+            guard !Task.isCancelled else { return }
+            self?.performSeek(to: target)
+        }
+    }
+
     /// User-initiated seek to an absolute position (seconds).
     public func userSeek(to seconds: Double) {
-        guard !isLiveStream, seconds.isFinite, seconds >= 0 else { return }
+        guard effectivePlaybackPlan?.canSeek == true, seconds.isFinite, seconds >= 0 else { return }
+        pendingSeekTask?.cancel()
+        pendingSeekTask = nil
+        performSeek(to: boundedSeekTime(seconds))
+    }
+
+    private func boundedSeekTime(_ seconds: Double) -> Double {
+        let mediaDuration = duration
+        if mediaDuration > 0 {
+            return min(max(0, seconds), mediaDuration)
+        }
+        return max(0, seconds)
+    }
+
+    private func performSeek(to seconds: Double, recoveryAttempt: Int = 0) {
+        guard let playbackPlan = effectivePlaybackPlan, playbackPlan.canSeek else { return }
         print("[PlayerCore] Seek to \(String(format: "%.1f", seconds))s")
-        let ms = Int32(min(seconds * 1000, Double(Int32.max)))
-        vlcPlayer.time = VLCTime(int: ms)
+        currentTimeValue = seconds
+        pendingSeekPosition = seconds
+        activeSeekTarget = playbackPlan.usesPostSeekWatchdog ? seconds : nil
+        if hasEverPlayed, playbackPlan.usesPostSeekWatchdog {
+            state = .loading
+        }
+
+        let sessionID = playbackSessionID
+        let seekID = nextSeekGeneration()
+        let mediaDuration = duration
+
+        if playbackPlan.seekStrategy == .resilientMatroska {
+            playbackLimitationMessage = "This MKV provider has limited seeking. A different language/quality variant may seek faster."
+            let ms = Int32(min(seconds * 1000, Double(Int32.max)))
+            print("[PlayerCore]   Seek mode: resilient-matroska direct-time")
+            vlcPlayer.time = VLCTime(int: ms)
+
+            if mediaDuration > 0 {
+                let position = min(max(seconds / mediaDuration, 0), 0.999_999)
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .milliseconds(PlayerPlaybackConfig.matroskaPositionAssistDelayMilliseconds))
+                    guard !Task.isCancelled,
+                          let self,
+                          self.isCurrentPlaybackSession(sessionID),
+                          self.seekGeneration == seekID,
+                          self.effectivePlaybackPlan?.seekStrategy == .resilientMatroska,
+                          !self.hasSeekReachedTarget(current: self.vlcPlaybackSeconds, target: seconds) else { return }
+
+                    print("[PlayerCore]   Seek assist: resilient-matroska position \(String(format: "%.4f", position))")
+                    self.vlcPlayer.position = position
+                }
+            }
+
+            startPostSeekWatchdog(
+                target: seconds,
+                sessionID: sessionID,
+                seekID: seekID,
+                recoveryAttempt: recoveryAttempt
+            )
+            return
+        }
+
+        if playbackPlan.prefersPositionSeek, mediaDuration > 0 {
+            let position = min(max(seconds / mediaDuration, 0), 0.999_999)
+            print("[PlayerCore]   Seek mode: \(playbackPlan.seekStrategy.logLabel) position \(String(format: "%.4f", position))")
+            vlcPlayer.position = position
+        } else {
+            print("[PlayerCore]   Seek mode: \(playbackPlan.seekStrategy.logLabel) time")
+            let ms = Int32(min(seconds * 1000, Double(Int32.max)))
+            vlcPlayer.time = VLCTime(int: ms)
+        }
+
+        if playbackPlan.usesPostSeekWatchdog {
+            startPostSeekWatchdog(
+                target: seconds,
+                sessionID: sessionID,
+                seekID: seekID,
+                recoveryAttempt: recoveryAttempt
+            )
+        } else if hasEverPlayed, state == .loading {
+            state = .playing
+        }
     }
 
     // MARK: - Audio / Subtitle track selection
@@ -658,6 +1153,26 @@ public final class PlayerCore {
         availableSubtitleTracks = []
     }
 
+    func vlcTrackAdded(_ trackType: VLCMedia.TrackType, sessionID: UInt64) {
+        guard isCurrentPlaybackSession(sessionID) else { return }
+        if trackType == .text {
+            vlcPlayer.deselectAllTextTracks()
+            selectedSubtitleTrackID = -1
+        }
+    }
+
+    private func disableTextTracksDuringStartup(sessionID: UInt64) {
+        for delay in [0.0, 0.2, 0.8] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                Task { @MainActor [weak self] in
+                    guard let self, self.isCurrentPlaybackSession(sessionID) else { return }
+                    self.vlcPlayer.deselectAllTextTracks()
+                    self.selectedSubtitleTrackID = -1
+                }
+            }
+        }
+    }
+
     private func finishStartupPlayback(sessionID: UInt64, reason: String? = nil) {
         guard isCurrentPlaybackSession(sessionID),
               startupTimedOutSessionID != sessionID,
@@ -677,7 +1192,16 @@ public final class PlayerCore {
 
         let currentMilliseconds = max(Int32(0), vlcPlayer.time.intValue)
         if currentMilliseconds > 0 {
-            currentTimeValue = Double(currentMilliseconds) / 1000.0
+            let currentSeconds = displayedPlaybackSeconds(
+                rawSeconds: Double(currentMilliseconds) / 1000.0
+            )
+            if let target = activeSeekTarget,
+               abs(currentSeconds - target) > PlayerPlaybackConfig.postSeekTargetToleranceSeconds {
+                currentTimeValue = target
+            } else {
+                currentTimeValue = currentSeconds
+                activeSeekTarget = nil
+            }
         }
 
         startProgressTracking()
@@ -688,15 +1212,164 @@ public final class PlayerCore {
 
     private func applyPendingSeekAfterStartup(sessionID: UInt64) {
         guard let seekPos = pendingSeekPosition else { return }
+        let recoveryAttempt = pendingSeekRecoveryAttempt
         pendingSeekPosition = nil
+        pendingSeekRecoveryAttempt = 0
+
+        if effectivePlaybackPlan?.usesStartTime == true {
+            let displayed = displayedPlaybackSeconds()
+            activeSeekTarget = nil
+            currentTimeValue = max(seekPos, displayed)
+            print("[PlayerCore] Start-time recovery active at \(String(format: "%.1f", currentTimeValue))s")
+            return
+        }
+
+        if hasSeekReachedTarget(current: displayedPlaybackSeconds(), target: seekPos) {
+            activeSeekTarget = nil
+            currentTimeValue = displayedPlaybackSeconds()
+            return
+        }
 
         // Execute seek after a small delay to ensure buffer is ready.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self, self.isCurrentPlaybackSession(sessionID) else { return }
-                self.userSeek(to: seekPos)
+                self.performSeek(to: self.boundedSeekTime(seekPos), recoveryAttempt: recoveryAttempt)
             }
         }
+    }
+
+    private func nextSeekGeneration() -> UInt64 {
+        seekGeneration &+= 1
+        return seekGeneration
+    }
+
+    private func cancelSeekWatchdog() {
+        seekWatchdogTask?.cancel()
+        seekWatchdogTask = nil
+        seekGeneration &+= 1
+    }
+
+    private func startPostSeekWatchdog(
+        target: Double,
+        sessionID: UInt64,
+        seekID: UInt64,
+        recoveryAttempt: Int
+    ) {
+        seekWatchdogTask?.cancel()
+        seekWatchdogTask = Task { @MainActor [weak self] in
+            let startedAt = Date()
+            while Date().timeIntervalSince(startedAt) < PlayerPlaybackConfig.postSeekWatchdogTimeoutSeconds {
+                try? await Task.sleep(for: .seconds(PlayerPlaybackConfig.postSeekWatchdogPollIntervalSeconds))
+                guard !Task.isCancelled else { return }
+                guard let self,
+                      self.isCurrentPlaybackSession(sessionID),
+                      self.seekGeneration == seekID else { return }
+
+                let current = self.vlcPlaybackSeconds
+                if self.hasSeekReachedTarget(current: current, target: target) {
+                    self.finishPostSeekBuffering(target: target, sessionID: sessionID, seekID: seekID)
+                    return
+                }
+            }
+
+            guard !Task.isCancelled else { return }
+            guard let self,
+                  self.isCurrentPlaybackSession(sessionID),
+                  self.seekGeneration == seekID else { return }
+
+            let current = self.vlcPlaybackSeconds
+            if self.hasSeekReachedTarget(current: current, target: target) {
+                self.finishPostSeekBuffering(target: target, sessionID: sessionID, seekID: seekID)
+                return
+            }
+
+            self.recoverStalledSeek(
+                target: target,
+                sessionID: sessionID,
+                seekID: seekID,
+                recoveryAttempt: recoveryAttempt
+            )
+        }
+    }
+
+    private var vlcPlaybackSeconds: Double {
+        let milliseconds = max(Int32(0), vlcPlayer.time.intValue)
+        return Double(milliseconds) / 1000.0
+    }
+
+    private func displayedPlaybackSeconds(rawSeconds: Double? = nil) -> Double {
+        let raw = rawSeconds ?? vlcPlaybackSeconds
+        guard playbackTimeOffset > 0 else { return raw }
+
+        // VLCKit often reports time relative to :start-time after reopening MKV.
+        // If it is clearly below the requested offset, project it back to full VOD time.
+        if raw + PlayerPlaybackConfig.postSeekTargetToleranceSeconds < playbackTimeOffset {
+            return playbackTimeOffset + raw
+        }
+        return raw
+    }
+
+    private func hasSeekReachedTarget(current: Double, target: Double) -> Bool {
+        abs(current - target) <= PlayerPlaybackConfig.postSeekTargetToleranceSeconds
+    }
+
+    private func finishPostSeekBuffering(target: Double, sessionID: UInt64, seekID: UInt64) {
+        guard isCurrentPlaybackSession(sessionID), seekGeneration == seekID else { return }
+        seekWatchdogTask = nil
+        activeSeekTarget = nil
+        pendingSeekPosition = nil
+
+        let current = displayedPlaybackSeconds()
+        if current > 0 {
+            currentTimeValue = current
+        } else {
+            currentTimeValue = target
+        }
+
+        if hasEverPlayed, state == .loading {
+            state = .playing
+            updateNowPlayingInfo()
+        }
+        print("[PlayerCore] Seek recovered at \(String(format: "%.1f", currentTimeValue))s")
+    }
+
+    private func recoverStalledSeek(
+        target: Double,
+        sessionID: UInt64,
+        seekID: UInt64,
+        recoveryAttempt: Int
+    ) {
+        guard isCurrentPlaybackSession(sessionID), seekGeneration == seekID else { return }
+        guard effectivePlaybackPlan?.usesPostSeekWatchdog == true else {
+            activeSeekTarget = nil
+            seekWatchdogTask = nil
+            if hasEverPlayed, state == .loading {
+                state = .playing
+            }
+            return
+        }
+        guard recoveryAttempt < PlayerPlaybackConfig.postSeekMaxRecoveries,
+              let channel = currentChannel else {
+            activeSeekTarget = nil
+            seekWatchdogTask = nil
+            if hasEverPlayed, state == .loading {
+                state = .playing
+            }
+            showStreamErrorBanner("Provider did not allow fast seek for this MKV")
+            print("[PlayerCore] Seek watchdog gave up at \(String(format: "%.1f", target))s")
+            return
+        }
+
+        print("[PlayerCore] Seek stalled at \(String(format: "%.1f", target))s — reopening VOD at target")
+        showStreamErrorBanner("Still loading selected time — reopening stream")
+        playInternal(
+            channel,
+            startPosition: target,
+            resetRetryCount: false,
+            endCurrentSession: false,
+            seekRecoveryAttempt: recoveryAttempt + 1
+        )
     }
 
     private func scheduleTrackListRefresh(sessionID: UInt64) {
@@ -733,10 +1406,10 @@ public final class PlayerCore {
     private func startLoadingWatchdog(
         sessionID: UInt64,
         channel: Channel,
-        cachingProfile: PlayerPlaybackConfig.CachingProfile
+        playbackPlan: PlayerPlaybackConfig.PlaybackPlan
     ) {
         cancelLoadingWatchdog()
-        let timeout = PlayerPlaybackConfig.startupTimeoutSeconds(cachingProfile: cachingProfile)
+        let timeout = PlayerPlaybackConfig.startupTimeoutSeconds(cachingProfile: playbackPlan.cachingProfile)
         let pollInterval = PlayerPlaybackConfig.startupWatchdogPollIntervalSeconds
         let logInterval = PlayerPlaybackConfig.startupWatchdogLogIntervalSeconds
 
@@ -769,6 +1442,14 @@ public final class PlayerCore {
                     print("[PlayerCore] Startup watchdog waiting \(Int(elapsed))s/\(Int(timeout))s: isPlaying=\(vlcIsPlaying), state=\(self.state.logDescription), time=\(String(format: "%.1f", seconds))s, position=\(String(format: "%.2f", percent))%")
                     lastLoggedIsPlaying = vlcIsPlaying
                     nextStatusLogAt = now.addingTimeInterval(logInterval)
+                }
+
+                if playbackPlan.isLiveStream && vlcIsPlaying {
+                    self.finishStartupPlayback(
+                        sessionID: sessionID,
+                        reason: "Startup watchdog observed active VLC playback"
+                    )
+                    return
                 }
 
                 if let previousTimeMilliseconds = lastTimeMilliseconds {
@@ -814,13 +1495,13 @@ public final class PlayerCore {
                   self.state == .loading else { return }
 
             self.loadingWatchdogTask = nil
-            let streamKind = self.isLiveStream ? "live" : "VOD"
+            let streamKind = playbackPlan.isLiveStream ? "live" : "VOD"
             let currentTimeMilliseconds = max(Int32(0), self.vlcPlayer.time.intValue)
             let rawPosition = Double(self.vlcPlayer.position)
             let currentPosition: Float = rawPosition.isFinite ? Float(max(0.0, rawPosition)) : 0
             let seconds = Double(currentTimeMilliseconds) / 1000.0
             let percent = Double(currentPosition * 100)
-            print("[PlayerCore] Startup watchdog fired after \(Int(timeout))s for \(streamKind): \(channel.streamURL.aetherMaskedForLog) (isPlaying=\(self.vlcPlayer.isPlaying), state=\(self.state.logDescription), time=\(String(format: "%.1f", seconds))s, position=\(String(format: "%.2f", percent))%)")
+            print("[PlayerCore] Startup watchdog fired after \(Int(timeout))s for \(streamKind) \(playbackPlan.container.logLabel): \(channel.streamURL.aetherMaskedForLog) (isPlaying=\(self.vlcPlayer.isPlaying), state=\(self.state.logDescription), time=\(String(format: "%.1f", seconds))s, position=\(String(format: "%.2f", percent))%)")
 
             if self.startupWatchdogRetryCount < PlayerPlaybackConfig.startupWatchdogMaxRetries {
                 self.startupWatchdogRetryCount += 1
@@ -878,18 +1559,22 @@ public final class PlayerCore {
 
     private func startProgressTracking() {
         let sessionID = playbackSessionID
-        // UI source timer: 0.5s on DispatchQueue.main so the closure runs on the
-        // main thread and can access @MainActor-isolated properties directly.
+        // UI source timer: 0.5s. DispatchSource callbacks are not guaranteed to
+        // run on Swift's MainActor executor, so hop explicitly before touching state.
         uiRefreshTimer?.invalidate()
         uiRefreshTimer = nil
         let src = DispatchSource.makeTimerSource(queue: .main)
         src.schedule(deadline: .now() + 0.5, repeating: 0.5)
         src.setEventHandler { [weak self] in
-            guard let self else { return }
-            MainActor.assumeIsolated {
-                guard self.isCurrentPlaybackSession(sessionID) else { return }
+            Task { @MainActor [weak self] in
+                guard let self, self.isCurrentPlaybackSession(sessionID) else { return }
                 let ms = self.vlcPlayer.time.intValue
-                let t = Double(max(0, ms)) / 1000.0
+                let rawTime = Double(max(0, ms)) / 1000.0
+                let t = self.displayedPlaybackSeconds(rawSeconds: rawTime)
+                if let target = self.activeSeekTarget,
+                   abs(t - target) > PlayerPlaybackConfig.postSeekTargetToleranceSeconds {
+                    return
+                }
                 if abs(t - self.currentTimeValue) > 0.1 {
                     self.currentTimeValue = t
 
@@ -978,10 +1663,16 @@ public final class PlayerCore {
     // MARK: - Now Playing (Lock Screen / Control Center)
 
     private func publishNowPlayingInfo(_ info: [String: Any]?) {
+        #if os(macOS)
+        // MPNowPlayingInfoCenter can trip libdispatch queue assertions under Xcode
+        // on macOS. Playback reliability is more important than lock-screen metadata.
+        return
+        #else
         let snapshot = info.map { NSDictionary(dictionary: $0) }
         DispatchQueue.main.async {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = snapshot as? [String: Any]
         }
+        #endif
     }
 
     private func updateNowPlayingInfo() {
@@ -1058,6 +1749,13 @@ final class VLCDelegateBridge: NSObject, VLCMediaPlayerDelegate, @unchecked Send
         }
     }
 
+    func mediaPlayerTrackAdded(_ trackId: String, with trackType: VLCMedia.TrackType) {
+        let sessionID = playbackSessionID
+        Task { @MainActor [weak owner] in
+            owner?.vlcTrackAdded(trackType, sessionID: sessionID)
+        }
+    }
+
     /// `- (void)mediaPlayerLengthChanged:(int64_t)length;`
     func mediaPlayerLengthChanged(_ length: Int64) {
         // Duration is read lazily from vlcPlayer.length in PlayerCore — no action needed.
@@ -1066,6 +1764,109 @@ final class VLCDelegateBridge: NSObject, VLCMediaPlayerDelegate, @unchecked Send
     /// `- (void)mediaPlayerTimeChanged:(NSNotification *)aNotification;`
     func mediaPlayerTimeChanged(_ aNotification: Notification) {
         // UI timer handles currentTimeValue updates every 0.5s — no extra action needed.
+    }
+}
+
+// MARK: - Stream redirect resolution
+
+private actor StreamRedirectResolver {
+    private var cache: [String: URL] = [:]
+
+    func cachedURL(for originalURL: URL) -> URL? {
+        cache[originalURL.absoluteString]
+    }
+
+    func resolveFinalURL(for originalURL: URL) async -> URL {
+        let key = originalURL.absoluteString
+        if let cached = cache[key] {
+            return cached
+        }
+
+        let resolved = await StreamURLProbe.resolveFinalURL(for: originalURL)
+        if resolved != originalURL {
+            cache[key] = resolved
+        }
+        return resolved
+    }
+}
+
+private enum StreamURLProbe {
+    static func resolveFinalURL(for originalURL: URL) async -> URL {
+        let redirectedURL: URL? = await withCheckedContinuation { continuation in
+            let delegate = StreamURLProbeDelegate(continuation: continuation)
+            let config = URLSessionConfiguration.ephemeral
+            config.timeoutIntervalForRequest = PlayerPlaybackConfig.redirectProbeTimeoutSeconds
+            config.timeoutIntervalForResource = PlayerPlaybackConfig.redirectProbeTimeoutSeconds
+            config.waitsForConnectivity = false
+            config.requestCachePolicy = .reloadIgnoringLocalCacheData
+
+            let queue = OperationQueue()
+            queue.maxConcurrentOperationCount = 1
+            let session = URLSession(configuration: config, delegate: delegate, delegateQueue: queue)
+
+            var request = URLRequest(url: originalURL)
+            request.httpMethod = "GET"
+            request.timeoutInterval = PlayerPlaybackConfig.redirectProbeTimeoutSeconds
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+            request.setValue("bytes=0-0", forHTTPHeaderField: "Range")
+            request.setValue(PlayerPlaybackConfig.httpUserAgent, forHTTPHeaderField: "User-Agent")
+
+            delegate.onFinish = {
+                session.invalidateAndCancel()
+            }
+            session.dataTask(with: request).resume()
+        }
+        return redirectedURL ?? originalURL
+    }
+}
+
+private final class StreamURLProbeDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    private let lock = NSLock()
+    private var didResume = false
+    private let continuation: CheckedContinuation<URL?, Never>
+    var onFinish: (() -> Void)?
+
+    init(continuation: CheckedContinuation<URL?, Never>) {
+        self.continuation = continuation
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping (URLRequest?) -> Void
+    ) {
+        resume(request.url)
+        completionHandler(nil)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        dataTask: URLSessionDataTask,
+        didReceive response: URLResponse,
+        completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
+    ) {
+        resume(nil)
+        completionHandler(.cancel)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        resume(nil)
+    }
+
+    private func resume(_ url: URL?) {
+        lock.lock()
+        if didResume {
+            lock.unlock()
+            return
+        }
+        didResume = true
+        let finish = onFinish
+        lock.unlock()
+
+        continuation.resume(returning: url)
+        finish?()
     }
 }
 

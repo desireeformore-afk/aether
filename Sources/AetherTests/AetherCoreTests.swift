@@ -122,4 +122,126 @@ final class AetherCoreTests: XCTestCase {
         let cached = try JSONDecoder().decode(ChannelCache.CachedChannel.self, from: data)
         XCTAssertEqual(cached.channel.contentType, .movie)
     }
+
+    func testCatalogBuilderGroupsProviderVariantsIntoOneMovie() throws {
+        let vods = (0..<10).map { index in
+            XstreamVOD(
+                id: 1_000 + index,
+                name: "Dune [\(index % 2 == 0 ? "PL DUB" : "EN")] [\(index % 3 == 0 ? "4K" : "HD")]",
+                streamIcon: index == 0 ? "https://example.com/dune.jpg" : nil,
+                categoryID: "42",
+                categoryName: "Action",
+                containerExtension: index % 2 == 0 ? "mp4" : "mkv",
+                rating: "8.\(index)"
+            )
+        }
+
+        let snapshot = CatalogBuilder.build(vods: vods, series: [])
+
+        XCTAssertEqual(snapshot.vodItems.count, 1)
+        XCTAssertEqual(snapshot.vodItems[0].title, "Dune")
+        XCTAssertEqual(snapshot.vodItems[0].variants.count, 10)
+        XCTAssertEqual(snapshot.vodItems[0].posterURLString, "https://example.com/dune.jpg")
+    }
+
+    func testCatalogVariantPriorityPrefersPolishDubBeforeQuality() throws {
+        let english4K = XstreamVOD(
+            id: 1,
+            name: "Arrival [EN] [4K]",
+            streamIcon: nil,
+            categoryID: "1",
+            categoryName: "Sci-Fi",
+            containerExtension: "mp4",
+            rating: nil
+        )
+        let polishSub = XstreamVOD(
+            id: 2,
+            name: "Arrival [PL SUB] [1080p]",
+            streamIcon: nil,
+            categoryID: "1",
+            categoryName: "Sci-Fi",
+            containerExtension: "mp4",
+            rating: nil
+        )
+        let polishDubHD = XstreamVOD(
+            id: 3,
+            name: "Arrival [PL DUB] [720p]",
+            streamIcon: nil,
+            categoryID: "1",
+            categoryName: "Sci-Fi",
+            containerExtension: "mkv",
+            rating: nil
+        )
+
+        let sorted = CatalogVariantSelector.sortedVODs([english4K, polishSub, polishDubHD])
+
+        XCTAssertEqual(sorted.first?.id, polishDubHD.id)
+        XCTAssertEqual(CatalogVariantSelector.variantLabel(for: polishDubHD), "PL DUB | 720p | MKV")
+    }
+
+    func testCatalogBuildsPremiumRailsAndGenreSections() throws {
+        let vods = [
+            XstreamVOD(
+                id: 1,
+                name: "Premium Movie [4K]",
+                streamIcon: nil,
+                categoryID: "a",
+                categoryName: "Action",
+                containerExtension: "mp4",
+                rating: "9.1"
+            ),
+            XstreamVOD(
+                id: 2,
+                name: "Quiet Drama [PL]",
+                streamIcon: nil,
+                categoryID: "d",
+                categoryName: "Drama",
+                containerExtension: "mp4",
+                rating: "7.0"
+            )
+        ]
+
+        let snapshot = CatalogBuilder.build(vods: vods, series: [])
+
+        XCTAssertTrue(snapshot.movieSections.contains { $0.title == "Top Rated" })
+        XCTAssertTrue(snapshot.movieSections.contains { $0.title == "4K/HDR" })
+        XCTAssertTrue(snapshot.movieGenres.contains("Action"))
+        XCTAssertTrue(snapshot.movieGenres.contains("Drama"))
+    }
+
+    func testCatalogSearchUsesLocalUnifiedIndex() async throws {
+        let index = CatalogIndex()
+        let vods = [
+            XstreamVOD(
+                id: 1,
+                name: "Blade Runner [PL DUB]",
+                streamIcon: nil,
+                categoryID: "1",
+                categoryName: "Sci-Fi",
+                containerExtension: "mp4",
+                rating: nil
+            )
+        ]
+        let series = [
+            XstreamSeries(
+                id: 2,
+                name: "Runner Series",
+                cover: nil,
+                plot: nil,
+                cast: nil,
+                director: nil,
+                genre: "Drama",
+                releaseDate: "2026-01-01",
+                rating: nil,
+                categoryID: "2",
+                categoryName: "Drama"
+            )
+        ]
+
+        await index.update(vods: vods, series: series)
+        let results = await index.search(query: "blade", limit: 10)
+
+        XCTAssertEqual(results.movies.first?.title, "Blade Runner")
+        XCTAssertTrue(results.series.isEmpty)
+    }
 }

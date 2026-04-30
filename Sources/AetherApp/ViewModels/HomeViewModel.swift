@@ -42,6 +42,7 @@ final class HomeViewModel: ObservableObject {
     @Published var liveItems: [ShelfItem] = []
     @Published var allVODs: [XstreamVOD] = []
     @Published var allSeries: [XstreamSeries] = []
+    @Published var catalogSnapshot: CatalogSnapshot = .empty
     @Published var errorMessage: String? = nil
     @Published var error: Error? = nil
 
@@ -55,6 +56,7 @@ final class HomeViewModel: ObservableObject {
     static var cachedAllVODs: [String: [XstreamVOD]] = [:]
     static var cachedAllSeries: [String: [XstreamSeries]] = [:]
     static var cachedBrandHubs: [String: [(hub: BrandHub, shelves: [(title: String, items: [ShelfItem])])]] = [:]
+    static var cachedCatalogSnapshots: [String: CatalogSnapshot] = [:]
 
     // MARK: - Disk cache keys
     private static let baseDiskCacheKey = "homevm_shelves_v1"
@@ -65,11 +67,16 @@ final class HomeViewModel: ObservableObject {
     private var hasLoaded = false
     private var loadTask: Task<Void, Never>?
     private var activeCacheKey: String?
+    private let catalogIndex = CatalogIndex()
 
     @AppStorage("preferredLanguage") var preferredLanguage: String = "pl"
     @AppStorage("preferredCountry") var preferredCountry: String = "PL"
 
     var sharedService: XstreamService? { service }
+
+    func searchCatalog(query: String, limit: Int = 30) async -> CatalogSearchResults {
+        await catalogIndex.search(query: query, limit: limit)
+    }
 
     /// Re-sorts shelves using current language/country preference.
     func rebuildWithCurrentPreferences() {
@@ -111,6 +118,21 @@ final class HomeViewModel: ObservableObject {
         if liveItems.isEmpty, let cached = Self.cachedLive[cacheKey] { liveItems = cached }
         if allVODs.isEmpty, let cached = Self.cachedAllVODs[cacheKey] { allVODs = cached }
         if allSeries.isEmpty, let cached = Self.cachedAllSeries[cacheKey] { allSeries = cached }
+        if catalogSnapshot.isEmpty, let cached = Self.cachedCatalogSnapshots[cacheKey] {
+            catalogSnapshot = cached
+            Task { await catalogIndex.update(vods: allVODs, series: allSeries) }
+        }
+        if catalogSnapshot.isEmpty, !allVODs.isEmpty || !allSeries.isEmpty {
+            let cachedVODs = allVODs
+            let cachedSeries = allSeries
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let snapshot = await self.catalogIndex.update(vods: cachedVODs, series: cachedSeries)
+                guard self.activeCacheKey == cacheKey else { return }
+                self.catalogSnapshot = snapshot
+                Self.cachedCatalogSnapshots[cacheKey] = snapshot
+            }
+        }
         if Self.cachedAllVODs[cacheKey] != nil,
            Self.cachedSeriesShelves[cacheKey] != nil,
            Self.cachedLive[cacheKey] != nil {
@@ -131,6 +153,10 @@ final class HomeViewModel: ObservableObject {
             if let cached = Self.cachedLive[cacheKey] { liveItems = cached }
             if let cached = Self.cachedAllVODs[cacheKey] { allVODs = cached }
             if let cached = Self.cachedAllSeries[cacheKey] { allSeries = cached }
+            if let cached = Self.cachedCatalogSnapshots[cacheKey] {
+                catalogSnapshot = cached
+                Task { await catalogIndex.update(vods: allVODs, series: allSeries) }
+            }
             if Self.cachedAllVODs[cacheKey] != nil,
                Self.cachedSeriesShelves[cacheKey] != nil,
                Self.cachedLive[cacheKey] != nil {
@@ -155,6 +181,7 @@ final class HomeViewModel: ObservableObject {
         Self.cachedAllVODs.removeValue(forKey: cacheKey)
         Self.cachedAllSeries.removeValue(forKey: cacheKey)
         Self.cachedBrandHubs.removeValue(forKey: cacheKey)
+        Self.cachedCatalogSnapshots.removeValue(forKey: cacheKey)
         UserDefaults.standard.removeObject(forKey: Self.diskCacheKey(for: cacheKey))
         UserDefaults.standard.removeObject(forKey: Self.diskCacheAgeKey(for: cacheKey))
         resetLoadedState()
@@ -181,14 +208,16 @@ final class HomeViewModel: ObservableObject {
                         cacheKey: cacheKey,
                         cacheFullLibrary: false
                     )
+                    await refreshCatalogSnapshot(vods: previewStreams, series: allSeries, cacheKey: cacheKey)
                 }
             }
 
             isPhase1Loaded = true
 
-            await loadFullVODLibraryInBackground(svc, cacheKey: cacheKey)
-            await loadSeriesInBackground(svc, cacheKey: cacheKey)
-            await loadLiveInBackground(svc, cacheKey: cacheKey)
+            async let fullVODLoad: Void = loadFullVODLibraryInBackground(svc, cacheKey: cacheKey)
+            async let seriesLoad: Void = loadSeriesInBackground(svc, cacheKey: cacheKey)
+            async let liveLoad: Void = loadLiveInBackground(svc, cacheKey: cacheKey)
+            _ = await (fullVODLoad, seriesLoad, liveLoad)
             guard isActive(cacheKey) else { return }
 
             isFullyLoaded = true
@@ -200,7 +229,7 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    private static func buildVODShelves(from allStreams: [XstreamVOD]) -> VODShelfPayload {
+    nonisolated private static func buildVODShelves(from allStreams: [XstreamVOD]) -> VODShelfPayload {
         // hub -> shelfName -> normalizedTitle -> Item
         var hubToShelves: [BrandHub: [String: [String: VODShelfItemPayload]]] = [:]
 
@@ -283,12 +312,25 @@ final class HomeViewModel: ObservableObject {
         Self.saveToDiskCache(topVODShelves, cacheKey: cacheKey)
     }
 
+    private func refreshCatalogSnapshot(
+        vods: [XstreamVOD],
+        series: [XstreamSeries],
+        cacheKey: String
+    ) async {
+        let snapshot = await catalogIndex.update(vods: vods, series: series)
+        guard isActive(cacheKey) else { return }
+        catalogSnapshot = snapshot
+        Self.cachedCatalogSnapshots[cacheKey] = snapshot
+    }
+
     private func loadFullVODLibraryInBackground(_ svc: XstreamService, cacheKey: String) async {
         do {
             let allStreams = try await svc.vodStreams(categoryID: nil)
             guard isActive(cacheKey) else { return }
 
-            let fullPayload = Self.buildVODShelves(from: allStreams)
+            let fullPayload = await Task.detached(priority: .utility) {
+                Self.buildVODShelves(from: allStreams)
+            }.value
             guard !fullPayload.allShelves.isEmpty else { return }
             applyVODShelfPayload(
                 fullPayload,
@@ -296,6 +338,7 @@ final class HomeViewModel: ObservableObject {
                 cacheKey: cacheKey,
                 cacheFullLibrary: true
             )
+            await refreshCatalogSnapshot(vods: allStreams, series: allSeries, cacheKey: cacheKey)
         } catch {
             guard isActive(cacheKey) else { return }
             print("[HomeViewModel] Full VOD library load failed after phase 1: \(error.localizedDescription)")
@@ -367,6 +410,7 @@ final class HomeViewModel: ObservableObject {
         allSeries = collected
         Self.cachedSeriesShelves[cacheKey] = results
         Self.cachedAllSeries[cacheKey] = collected
+        await refreshCatalogSnapshot(vods: allVODs, series: collected, cacheKey: cacheKey)
     }
 
     private func loadLiveInBackground(_ svc: XstreamService, cacheKey: String) async {
@@ -415,6 +459,7 @@ final class HomeViewModel: ObservableObject {
         liveItems = []
         allVODs = []
         allSeries = []
+        catalogSnapshot = .empty
         isPhase1Loaded = false
         isFullyLoaded = false
         errorMessage = nil

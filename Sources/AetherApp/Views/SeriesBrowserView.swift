@@ -15,6 +15,9 @@ struct SeriesBrowserView: View {
 
     // Unique category names from all series
     private var availableGenres: [String] {
+        if !homeViewModel.catalogSnapshot.seriesGenres.isEmpty {
+            return homeViewModel.catalogSnapshot.seriesGenres
+        }
         var seen = Set<String>()
         var result: [String] = []
         for series in homeViewModel.allSeries {
@@ -30,6 +33,10 @@ struct SeriesBrowserView: View {
     // Items for the currently selected genre
     private var filteredSeriesItems: [ShelfItem] {
         guard let genre = selectedGenre else { return [] }
+        let catalogItems = homeViewModel.catalogSnapshot.seriesItems(inGenre: genre)
+        if !catalogItems.isEmpty {
+            return catalogItems.compactMap { shelfItem(from: $0) }
+        }
         return homeViewModel.allSeries
             .filter { normalizedCategory(for: $0).displayName == genre }
             .map { series in
@@ -54,7 +61,7 @@ struct SeriesBrowserView: View {
 
     var body: some View {
         ZStack {
-            Color(.sRGB, red: 0.05, green: 0.05, blue: 0.05, opacity: 1).ignoresSafeArea()
+            AetherTheme.ColorToken.background.ignoresSafeArea()
 
             if homeViewModel.seriesShelves.isEmpty && !homeViewModel.isFullyLoaded {
                 seriesLoadingSkeleton
@@ -100,7 +107,7 @@ struct SeriesBrowserView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
         }
-        .background(Color(.sRGB, red: 0.05, green: 0.05, blue: 0.05, opacity: 1))
+        .background(AetherTheme.ColorToken.background)
     }
 
     // MARK: - Filtered grid (single genre)
@@ -151,6 +158,8 @@ struct SeriesBrowserView: View {
                     title: item.title,
                     imageURL: item.imageURL,
                     vod: vod,
+                    tags: item.tags,
+                    alternateVODs: item.alternateVODs,
                     onTap: { selectedVODItem = item }
                 )
             }
@@ -163,6 +172,17 @@ struct SeriesBrowserView: View {
                 onTap: { selectedSeries = series }
             )
         }
+    }
+
+    private func shelfItem(from item: UnifiedMediaItem) -> ShelfItem? {
+        guard let series = item.series else { return nil }
+        return ShelfItem(
+            id: item.id,
+            title: item.title,
+            imageURL: item.posterURLString,
+            series: series,
+            onTap: { selectedSeries = series }
+        )
     }
 
     private func updateHeroBanner() {

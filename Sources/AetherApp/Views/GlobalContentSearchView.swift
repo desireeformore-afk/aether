@@ -1,7 +1,10 @@
 import SwiftUI
 import AetherCore
+import AetherUI
 
 struct GlobalContentSearchView: View {
+    private static let resultLimit = 30
+
     let service: XstreamService?
     let credentials: XstreamCredentials
     @Bindable var player: PlayerCore
@@ -9,17 +12,14 @@ struct GlobalContentSearchView: View {
     var initialQuery: String? = nil
 
     @State private var query = ""
-    @State private var vodResults: [XstreamVOD] = []
-    @State private var seriesResults: [XstreamSeries] = []
+    @State private var vodResults: [UnifiedMediaItem] = []
+    @State private var seriesResults: [UnifiedMediaItem] = []
     @State private var isSearching = false
     @State private var debounceTask: Task<Void, Never>?
+    @State private var searchTask: Task<Void, Never>?
     @State private var selectedVODItem: ShelfItem?
     @State private var selectedSeries: XstreamSeries?
     @FocusState private var isSearchFocused: Bool
-
-    private var isLocalSearchAvailable: Bool {
-        !homeViewModel.allVODs.isEmpty || !homeViewModel.allSeries.isEmpty
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,8 +40,8 @@ struct GlobalContentSearchView: View {
                 }
             }
             .padding(12)
-            .background(Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .background(AetherTheme.ColorToken.elevated)
+            .clipShape(RoundedRectangle(cornerRadius: AetherTheme.Radius.control))
             .padding()
 
             if query.isEmpty {
@@ -50,7 +50,7 @@ struct GlobalContentSearchView: View {
                     systemImage: "magnifyingglass",
                     description: Text("Type a movie or series title")
                 )
-            } else if isSearching {
+            } else if isSearching && vodResults.isEmpty && seriesResults.isEmpty {
                 VStack(spacing: 12) {
                     ProgressView()
                         .frame(width: 38, height: 38)
@@ -80,18 +80,18 @@ struct GlobalContentSearchView: View {
                 List {
                     if !vodResults.isEmpty {
                         Section("Filmy (\(vodResults.count))") {
-                            ForEach(vodResults.prefix(50)) { vod in
+                            ForEach(Array(vodResults.prefix(Self.resultLimit)), id: \.id) { vod in
                                 SearchResultRow(
-                                    posterURL: vod.streamIcon.flatMap(URL.init),
-                                    title: vod.name,
-                                    subtitle: cleanCategoryName(vod.categoryName),
+                                    posterURL: vod.posterURLString.flatMap(URL.init),
+                                    title: vod.title,
+                                    subtitle: vod.categoryName,
                                     rating: vod.rating,
-                                    year: nil
+                                    year: vod.year,
+                                    variantCount: vod.variants.count
                                 )
                                 .contentShape(Rectangle())
                                 .onTapGesture {
-                                    let item = ShelfItem(id: "\(vod.id)", title: vod.name, imageURL: vod.streamIcon, vod: vod, onTap: {})
-                                    selectedVODItem = item
+                                    selectedVODItem = shelfItem(from: vod)
                                 }
                             }
                         }
@@ -99,16 +99,17 @@ struct GlobalContentSearchView: View {
 
                     if !seriesResults.isEmpty {
                         Section("Seriale (\(seriesResults.count))") {
-                            ForEach(seriesResults.prefix(50)) { series in
+                            ForEach(Array(seriesResults.prefix(Self.resultLimit)), id: \.id) { series in
                                 SearchResultRow(
-                                    posterURL: series.cover.flatMap(URL.init),
-                                    title: series.name,
+                                    posterURL: series.posterURLString.flatMap(URL.init),
+                                    title: series.title,
                                     subtitle: series.genre,
                                     rating: series.rating,
-                                    year: series.releaseDate
+                                    year: series.year,
+                                    variantCount: nil
                                 )
                                 .contentShape(Rectangle())
-                                .onTapGesture { selectedSeries = series }
+                                .onTapGesture { selectedSeries = series.series }
                             }
                         }
                     }
@@ -117,15 +118,21 @@ struct GlobalContentSearchView: View {
                 .scrollContentBackground(.hidden)
             }
         }
-        .background(Color.black)
+        .background(AetherTheme.ColorToken.background)
         .onAppear {
             if let q = initialQuery, !q.isEmpty { query = q }
+            primeSearchIndex()
+        }
+        .onDisappear {
+            debounceTask?.cancel()
+            searchTask?.cancel()
         }
         .onChange(of: initialQuery) { _, newVal in
             if let q = newVal, !q.isEmpty { query = q }
         }
         .onChange(of: query) { _, newVal in
             debounceTask?.cancel()
+            searchTask?.cancel()
             if newVal.isEmpty {
                 isSearching = false
                 vodResults = []
@@ -133,12 +140,22 @@ struct GlobalContentSearchView: View {
                 return
             }
             isSearching = true
-            debounceTask = Task {
-                try? await Task.sleep(for: .milliseconds(200))
+            debounceTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(60))
                 guard !Task.isCancelled else { return }
-                await runSearch(query: newVal)
-                isSearching = false
+                searchTask = Task { @MainActor in
+                    await runSearch(query: newVal)
+                }
             }
+        }
+        .onChange(of: homeViewModel.allVODs.count) { _, _ in
+            refreshSearchIndexFromHome()
+        }
+        .onChange(of: homeViewModel.allSeries.count) { _, _ in
+            refreshSearchIndexFromHome()
+        }
+        .onChange(of: homeViewModel.catalogSnapshot.vodItems.count) { _, _ in
+            refreshSearchIndexFromHome()
         }
         .onReceive(NotificationCenter.default.publisher(for: .init("AetherOpenSearch"))) { _ in
             Task { @MainActor in
@@ -154,90 +171,46 @@ struct GlobalContentSearchView: View {
         }
     }
 
+    private func primeSearchIndex() {
+        refreshSearchIndexFromHome()
+    }
+
+    private func refreshSearchIndexFromHome() {
+        let currentQuery = query
+        searchTask?.cancel()
+        searchTask = Task { @MainActor in
+            guard !Task.isCancelled, !currentQuery.isEmpty else { return }
+            await runSearch(query: currentQuery)
+        }
+    }
+
     private func runSearch(query: String) async {
-        guard !query.isEmpty else {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedQuery.count >= 2 else {
             vodResults = []
             seriesResults = []
+            isSearching = false
             return
         }
 
-        // Fast local search if cached data is available
-        if isLocalSearchAvailable {
-            vodResults = homeViewModel.allVODs
-                .filter { vodScore(query, $0) > 0 }
-                .sorted { vodScore(query, $0) > vodScore(query, $1) }
-            seriesResults = homeViewModel.allSeries
-                .filter { seriesScore(query, $0) > 0 }
-                .sorted { seriesScore(query, $0) > seriesScore(query, $1) }
-            return
-        }
-
-        // Fallback: network search via service
-        guard let svc = service else { return }
-        vodResults = await svc.searchVODs(query: query)
-        seriesResults = await svc.searchSeries(query: query)
+        let immediate = await homeViewModel.searchCatalog(query: trimmedQuery, limit: Self.resultLimit)
+        guard !Task.isCancelled, self.query == query else { return }
+        vodResults = immediate.movies
+        seriesResults = immediate.series
+        isSearching = false
     }
 
-    private func strippedTitle(_ name: String) -> String {
-        var s = name
-        for _ in 0..<3 {
-            if let range = s.range(of: #"^[A-Z0-9\+\-\.]{1,10}[\s]*[\-\|][\s]+"#,
-                                   options: [.regularExpression, .caseInsensitive]) {
-                s.removeSubrange(range)
-            } else { break }
-        }
-        return s
-    }
-
-    // MARK: - Scoring
-
-    private func fuzzyScore(_ query: String, in text: String) -> Int {
-        let q = query.lowercased()
-        let t = text.lowercased()
-        let ts = strippedTitle(t)
-
-        if ts == q { return 200 }
-        if t == q { return 190 }
-        if ts.hasPrefix(q) || t.hasPrefix(q) { return 150 }
-        let words = ts.split(separator: " ")
-        if words.contains(where: { $0.hasPrefix(q) }) { return 120 }
-        if t.contains(q) { return 100 }
-        if ts.contains(q) { return 90 }
-
-        // Fuzzy subsequence match on stripped title
-        var qi = q.startIndex
-        for ch in ts {
-            if qi < q.endIndex && ch == q[qi] {
-                qi = q.index(after: qi)
-            }
-        }
-        if qi == q.endIndex {
-            let score = Int(Double(q.count) / Double(max(ts.count, 1)) * 80)
-            return max(1, min(80, score))
-        }
-        return 0
-    }
-
-    private func vodScore(_ query: String, _ vod: XstreamVOD) -> Int {
-        let nameScore = fuzzyScore(query, in: vod.name)
-        let catScore = vod.categoryName.map { fuzzyScore(query, in: $0) / 2 } ?? 0
-        return max(nameScore, catScore)
-    }
-
-    private func seriesScore(_ query: String, _ series: XstreamSeries) -> Int {
-        let nameScore = fuzzyScore(query, in: series.name)
-        let genreScore = series.genre.map { fuzzyScore(query, in: $0) / 2 } ?? 0
-        return max(nameScore, genreScore)
-    }
-
-    private func cleanCategoryName(_ name: String?) -> String? {
-        guard let name, !name.isEmpty else { return nil }
-        let category = CategoryNormalizer.normalize(
-            rawName: name,
-            provider: .xtream,
-            contentType: .movie
+    private func shelfItem(from item: UnifiedMediaItem) -> ShelfItem? {
+        guard let vod = item.primaryVOD else { return nil }
+        return ShelfItem(
+            id: item.id,
+            title: item.title,
+            imageURL: item.posterURLString,
+            vod: vod,
+            tags: item.tags,
+            alternateVODs: item.vodVariants,
+            onTap: {}
         )
-        return category.isPrimaryVisible ? category.displayName : nil
     }
 }
 
@@ -249,14 +222,14 @@ struct SearchResultRow: View {
     let subtitle: String?
     let rating: String?
     let year: String?
+    let variantCount: Int?
 
     var body: some View {
         HStack(spacing: 12) {
-            AsyncImage(url: posterURL) { phase in
-                switch phase {
-                case .success(let img): img.resizable().aspectRatio(contentMode: .fill)
-                default: Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1)
-                }
+            CachedImageView(url: posterURL) {
+                Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1)
+            } content: { image in
+                image.resizable().aspectRatio(contentMode: .fill)
             }
             .frame(width: 54, height: 80)
             .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -274,16 +247,24 @@ struct SearchResultRow: View {
                         .lineLimit(1)
                 }
 
-                if let r = rating, !r.isEmpty, r != "0" {
-                    Label(r, systemImage: "star.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.yellow)
-                }
+                HStack(spacing: 8) {
+                    if let r = rating, !r.isEmpty, r != "0" {
+                        Label(r, systemImage: "star.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.yellow)
+                    }
 
-                if let y = year, !y.isEmpty {
-                    Text(y)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                    if let y = year, !y.isEmpty {
+                        Text(y)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let variantCount, variantCount > 1 {
+                        Text("\(variantCount) variants")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.72))
+                    }
                 }
             }
 

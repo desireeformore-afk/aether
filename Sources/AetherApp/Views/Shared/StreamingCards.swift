@@ -48,7 +48,7 @@ struct PosterCard: View {
                 }
                 .frame(width: cardWidth, height: cardHeight)
                 .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: AetherTheme.Radius.card))
 
                 if isHovered {
                     VStack(alignment: .leading, spacing: 4) {
@@ -62,7 +62,7 @@ struct PosterCard: View {
                                         .foregroundStyle(tag.isResolution ? .black : .white)
                                         .padding(.horizontal, 4)
                                         .padding(.vertical, 2)
-                                        .background(tag.isResolution ? Color(.sRGB, red: 0.85, green: 0.7, blue: 0.3, opacity: 1) : Color.white.opacity(0.3))
+                                        .background(tag.isResolution ? AetherTheme.ColorToken.gold : Color.white.opacity(0.3))
                                         .clipShape(RoundedRectangle(cornerRadius: 3))
                                 }
                             }
@@ -87,14 +87,14 @@ struct PosterCard: View {
                             endPoint: .bottom
                         )
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: AetherTheme.Radius.card))
                     .transition(.opacity)
                 }
             }
             .frame(width: cardWidth, height: cardHeight)
             .scaleEffect(isHovered ? 1.05 : 1.0)
             .shadow(color: .black.opacity(isHovered ? 0.6 : 0.15), radius: isHovered ? 20 : 8, y: isHovered ? 12 : 4)
-            .animation(.spring(response: 0.35, dampingFraction: 0.65), value: isHovered)
+            .animation(AetherTheme.Motion.spring, value: isHovered)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -192,8 +192,8 @@ struct HeroBanner: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 26)
                         .padding(.vertical, 12)
-                        .background(Color.accentColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .background(AetherTheme.ColorToken.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: AetherTheme.Radius.control))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(HoverScaleButtonStyle())
@@ -215,8 +215,6 @@ struct HeroBanner: View {
             }
             .padding(.horizontal, 40)
             .padding(.vertical, 28)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-            .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
             .padding(.horizontal, 44)
             .padding(.bottom, 36)
         }

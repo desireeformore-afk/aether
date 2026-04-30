@@ -137,15 +137,105 @@ final class PlayerPlaybackConfigTests: XCTestCase {
 
     func testNetworkCachingValuesMatchCurrentPlaybackPolicy() {
         XCTAssertEqual(PlayerPlaybackConfig.liveNetworkCachingMilliseconds, 1500)
-        XCTAssertEqual(PlayerPlaybackConfig.vodNetworkCachingMilliseconds, 6000)
+        XCTAssertEqual(PlayerPlaybackConfig.vodNetworkCachingMilliseconds, 2500)
+        XCTAssertEqual(PlayerPlaybackConfig.seekNetworkCachingMilliseconds, 700)
         XCTAssertEqual(PlayerPlaybackConfig.strengthenedVODNetworkCachingMilliseconds, 12000)
         XCTAssertGreaterThan(PlayerPlaybackConfig.vodNetworkCachingMilliseconds,
                              PlayerPlaybackConfig.liveNetworkCachingMilliseconds)
+        XCTAssertLessThan(PlayerPlaybackConfig.seekNetworkCachingMilliseconds,
+                          PlayerPlaybackConfig.vodNetworkCachingMilliseconds)
     }
 
     func testNetworkCachingSelectorUsesStreamType() {
         XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: true), 1500)
-        XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: false), 6000)
+        XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: false), 2500)
+        XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: false, cachingProfile: .interactiveSeek), 700)
         XCTAssertEqual(PlayerPlaybackConfig.networkCachingMilliseconds(isLiveStream: false, cachingProfile: .strengthened), 12000)
+    }
+
+    func testPlaybackPlanUsesResilientMatroskaForVODMkv() {
+        let channel = Channel(
+            name: "Episode",
+            streamURL: URL(string: "http://example.com/series/episode.mkv")!,
+            contentType: .series
+        )
+
+        let plan = PlayerPlaybackConfig.playbackPlan(for: channel, startPosition: 1594.4)
+        let options = PlayerPlaybackConfig.mediaOptions(plan: plan)
+
+        XCTAssertFalse(plan.isLiveStream)
+        XCTAssertEqual(plan.container, .matroska)
+        XCTAssertEqual(plan.seekStrategy, .resilientMatroska)
+        XCTAssertEqual(plan.route, .limitedSeek)
+        XCTAssertTrue(plan.usesPostSeekWatchdog)
+        XCTAssertEqual(plan.startPosition ?? -1, 1594.4, accuracy: 0.001)
+        XCTAssertTrue(options.contains(":input-fast-seek"))
+        XCTAssertTrue(options.contains(":mkv-seek-percent"))
+        XCTAssertTrue(options.contains(":start-time=1594.400"))
+    }
+
+    func testMatroskaStartPositionUsesInteractiveSeekCachingProfile() {
+        let channel = Channel(
+            name: "Episode",
+            streamURL: URL(string: "http://example.com/series/episode.mkv")!,
+            contentType: .series
+        )
+
+        let profile = PlayerPlaybackConfig.cachingProfile(
+            for: channel,
+            startPosition: 661.5,
+            startupRetryCount: 0
+        )
+        let plan = PlayerPlaybackConfig.playbackPlan(
+            for: channel,
+            cachingProfile: profile,
+            startPosition: 661.5
+        )
+        let options = PlayerPlaybackConfig.mediaOptions(plan: plan)
+
+        XCTAssertEqual(profile, .interactiveSeek)
+        XCTAssertTrue(options.contains(":network-caching=700"))
+        XCTAssertTrue(options.contains(":file-caching=700"))
+        XCTAssertTrue(options.contains(":live-caching=700"))
+    }
+
+    func testPlaybackPlanTreatsLiveHLSAsNonSeekable() {
+        let channel = Channel(
+            name: "Live",
+            streamURL: URL(string: "http://example.com/live/channel.m3u8")!,
+            contentType: .liveTV
+        )
+
+        let plan = PlayerPlaybackConfig.playbackPlan(for: channel, startPosition: 120)
+        let options = PlayerPlaybackConfig.mediaOptions(plan: plan)
+
+        XCTAssertTrue(plan.isLiveStream)
+        XCTAssertEqual(plan.container, .hls)
+        XCTAssertEqual(plan.seekStrategy, .none)
+        XCTAssertEqual(plan.route, .nativeDirect)
+        XCTAssertNil(plan.startPosition)
+        XCTAssertFalse(options.contains(":input-fast-seek"))
+        XCTAssertFalse(options.contains(":mkv-seek-percent"))
+        XCTAssertFalse(options.contains { $0.hasPrefix(":start-time=") })
+    }
+
+    func testPlaybackPlanUsesDirectPositionForVodMp4WithoutMatroskaOptions() {
+        let channel = Channel(
+            name: "Movie",
+            streamURL: URL(string: "http://example.com/movie.mp4")!,
+            contentType: .movie
+        )
+
+        let plan = PlayerPlaybackConfig.playbackPlan(for: channel, startPosition: 42)
+        let options = PlayerPlaybackConfig.mediaOptions(plan: plan)
+
+        XCTAssertFalse(plan.isLiveStream)
+        XCTAssertEqual(plan.container, .mp4)
+        XCTAssertEqual(plan.seekStrategy, .directPosition)
+        XCTAssertEqual(plan.route, .nativeDirect)
+        XCTAssertFalse(plan.usesPostSeekWatchdog)
+        XCTAssertTrue(options.contains(":input-fast-seek"))
+        XCTAssertFalse(options.contains(":mkv-seek-percent"))
+        XCTAssertTrue(options.contains(":start-time=42.000"))
     }
 }

@@ -34,6 +34,9 @@ struct VODBrowserView: View {
     // MARK: - Computed
 
     private var availableGenres: [String] {
+        if !homeViewModel.catalogSnapshot.movieGenres.isEmpty {
+            return homeViewModel.catalogSnapshot.movieGenres
+        }
         var seen = Set<String>()
         var result: [String] = []
         for vod in homeViewModel.allVODs {
@@ -47,6 +50,11 @@ struct VODBrowserView: View {
 
     private var filteredVODItems: [ShelfItem] {
         guard let genre = selectedGenre else { return [] }
+
+        let catalogItems = homeViewModel.catalogSnapshot.movieItems(inGenre: genre)
+        if !catalogItems.isEmpty {
+            return sortedVODItems(catalogItems.compactMap { shelfItem(from: $0) })
+        }
         
         var dict: [String: ShelfItem] = [:]
         for vod in homeViewModel.allVODs where normalizedCategory(for: vod).displayName == genre {
@@ -88,6 +96,28 @@ struct VODBrowserView: View {
         return items
     }
 
+    private func sortedVODItems(_ source: [ShelfItem]) -> [ShelfItem] {
+        var items = source
+        switch sortOrder {
+        case .default: break
+        case .titleAZ: items.sort { $0.title.localizedCompare($1.title) == .orderedAscending }
+        case .titleZA: items.sort { $0.title.localizedCompare($1.title) == .orderedDescending }
+        case .ratingHigh:
+            items.sort {
+                let a = Double($0.vod?.rating ?? "") ?? 0
+                let b = Double($1.vod?.rating ?? "") ?? 0
+                return a > b
+            }
+        case .ratingLow:
+            items.sort {
+                let a = Double($0.vod?.rating ?? "") ?? 0
+                let b = Double($1.vod?.rating ?? "") ?? 0
+                return a < b
+            }
+        }
+        return items
+    }
+
     private func normalizedCategory(for vod: XstreamVOD) -> NormalizedContentCategory {
         vod.normalizedCategory ?? CategoryNormalizer.normalize(
             rawID: vod.categoryID,
@@ -99,7 +129,7 @@ struct VODBrowserView: View {
 
     var body: some View {
         ZStack {
-            Color(.sRGB, red: 0.05, green: 0.05, blue: 0.05, opacity: 1).ignoresSafeArea()
+            AetherTheme.ColorToken.background.ignoresSafeArea()
 
             if homeViewModel.shelves.isEmpty && !homeViewModel.isFullyLoaded {
                 vodLoadingSkeleton
@@ -170,7 +200,7 @@ struct VODBrowserView: View {
             .foregroundStyle(.secondary)
             .padding(.trailing, 12)
         }
-        .background(Color(.sRGB, red: 0.05, green: 0.05, blue: 0.05, opacity: 1))
+        .background(AetherTheme.ColorToken.background)
     }
 
     // MARK: - Filtered grid (single genre)
@@ -249,6 +279,8 @@ struct VODBrowserView: View {
                 return ShelfItem(
                     id: item.id, title: item.title, imageURL: item.imageURL,
                     vod: vod, series: nil,
+                    tags: item.tags,
+                    alternateVODs: item.alternateVODs,
                     onTap: { selectedVODItem = item }
                 )
             } else if let series = item.series {
@@ -266,6 +298,28 @@ struct VODBrowserView: View {
             }
             return item
         }
+    }
+
+    private func shelfItem(from item: UnifiedMediaItem) -> ShelfItem? {
+        guard let vod = item.primaryVOD else { return nil }
+        let shelf = ShelfItem(
+            id: item.id,
+            title: item.title,
+            imageURL: item.posterURLString,
+            vod: vod,
+            tags: item.tags,
+            alternateVODs: item.vodVariants,
+            onTap: {}
+        )
+        return ShelfItem(
+            id: shelf.id,
+            title: shelf.title,
+            imageURL: shelf.imageURL,
+            vod: vod,
+            tags: shelf.tags,
+            alternateVODs: shelf.alternateVODs,
+            onTap: { selectedVODItem = shelf }
+        )
     }
 
     private func updateHeroBanner() {

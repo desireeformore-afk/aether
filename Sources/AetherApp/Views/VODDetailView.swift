@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AetherCore
+import AetherUI
 
 // MARK: - VODDetailView
 
@@ -22,31 +23,30 @@ struct VODDetailView: View {
         self.item = item
         self.credentials = credentials
         self.player = player
-        _selectedVOD = State(initialValue: item.vod ?? item.alternateVODs.first)
+        let variants = Self.variantVODs(for: item)
+        _selectedVOD = State(initialValue: CatalogVariantSelector.preferredVOD(from: variants))
     }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             // Ambient Backdrop Layer
             if let url = backdropURL {
-                AsyncImage(url: url) { phase in
-                    if case .success(let img) = phase {
-                        img.resizable().scaledToFill()
-                           .blur(radius: 12)  // Crisper cinematic blur
-                           .scaleEffect(1.05) // Prevent edge bleeding
-                    } else if case .empty = phase {
-                        Color(.sRGB, red: 0.05, green: 0.05, blue: 0.07, opacity: 1)
-                    }
+                CachedImageView(url: url) {
+                    Color(.sRGB, red: 0.05, green: 0.05, blue: 0.07, opacity: 1)
+                } content: { img in
+                    img.resizable().scaledToFill()
+                        .blur(radius: 12)
+                        .scaleEffect(1.05)
                 }
                 .frame(width: 680, height: 420)
                 .clipped()
             } else {
-                AsyncImage(url: selectedVOD?.streamIcon.flatMap(URL.init(string:))) { phase in
-                    if case .success(let img) = phase {
-                        img.resizable().scaledToFill()
-                           .blur(radius: 40)
-                           .scaleEffect(1.2)
-                    }
+                CachedImageView(url: selectedVOD?.streamIcon.flatMap(URL.init(string:))) {
+                    Color(.sRGB, red: 0.05, green: 0.05, blue: 0.07, opacity: 1)
+                } content: { img in
+                    img.resizable().scaledToFill()
+                        .blur(radius: 40)
+                        .scaleEffect(1.2)
                 }
                 .frame(width: 680, height: 420)
                 .clipped()
@@ -89,18 +89,15 @@ struct VODDetailView: View {
     // MARK: - Poster
 
     private var posterPanel: some View {
-        AsyncImage(url: posterURL ?? selectedVOD?.streamIcon.flatMap(URL.init(string:))) { phase in
-            switch phase {
-            case .success(let img):
-                img.resizable().scaledToFill()
-            default:
-                ZStack {
-                    Color(.sRGB, red: 0.10, green: 0.10, blue: 0.13, opacity: 1)
-                    Image(systemName: "film")
-                        .font(.system(size: 52))
-                        .foregroundStyle(.white.opacity(0.15))
-                }
+        CachedImageView(url: posterURL ?? selectedVOD?.streamIcon.flatMap(URL.init(string:))) {
+            ZStack {
+                Color(.sRGB, red: 0.10, green: 0.10, blue: 0.13, opacity: 1)
+                Image(systemName: "film")
+                    .font(.system(size: 52))
+                    .foregroundStyle(.white.opacity(0.15))
             }
+        } content: { img in
+            img.resizable().scaledToFill()
         }
         .frame(width: 240, height: 420)
         .clipped()
@@ -144,16 +141,16 @@ struct VODDetailView: View {
                 metadataRow
                     .padding(.top, 12)
 
-                if item.alternateVODs.count > 1 {
+                if variantVODs.count > 1 {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Wybierz wersję")
+                        Text("Wersja")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
                         
                         Picker("", selection: $selectedVOD) {
-                            ForEach(item.alternateVODs) { altVod in
-                                Text(altVod.name).tag(Optional(altVod))
+                            ForEach(variantVODs) { altVod in
+                                Text(CatalogVariantSelector.variantLabel(for: altVod)).tag(Optional(altVod))
                             }
                         }
                         .pickerStyle(.menu)
@@ -232,10 +229,14 @@ struct VODDetailView: View {
             Button {
                 guard let selectedVOD else { return }
                 var ch = selectedVOD.toChannel(credentials: credentials)
-                ch.availableVariants = item.alternateVODs.map { $0.toChannel(credentials: credentials) }
-                Task { @MainActor in player.play(ch) }
-                subtitleStore.search(for: selectedVOD.name)
+                ch.availableVariants = variantVODs.map { $0.toChannel(credentials: credentials) }
+                let subtitleQuery = selectedVOD.name
                 dismiss()
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(120))
+                    player.play(ch)
+                    subtitleStore.search(for: subtitleQuery)
+                }
             } label: {
                 HStack(spacing: 9) {
                     Image(systemName: "play.fill")
@@ -263,6 +264,22 @@ struct VODDetailView: View {
             .buttonStyle(.plain)
             .help(isVODFavorited ? "Remove from Favorites" : "Add to Favorites")
         }
+    }
+
+    private var variantVODs: [XstreamVOD] {
+        Self.variantVODs(for: item)
+    }
+
+    private static func variantVODs(for item: ShelfItem) -> [XstreamVOD] {
+        var seen = Set<Int>()
+        var vods: [XstreamVOD] = []
+        for vod in item.alternateVODs {
+            if seen.insert(vod.id).inserted { vods.append(vod) }
+        }
+        if let vod = item.vod, seen.insert(vod.id).inserted {
+            vods.append(vod)
+        }
+        return CatalogVariantSelector.sortedVODs(vods)
     }
 
     private var vodDeterministicID: UUID {
